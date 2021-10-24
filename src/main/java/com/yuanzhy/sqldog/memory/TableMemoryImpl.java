@@ -79,8 +79,34 @@ public class TableMemoryImpl implements Table {
         } else {
             throw new IllegalArgumentException("主键值不能为空");
         }
+        // check constraint
+        this.checkConstraint(values);
+
         this.data.put(pkValue, values);
         return pkValue;
+    }
+
+    /**
+     * TODO 唯一约束性能优化（索引）
+     * @param values
+     */
+    private void checkConstraint(Map<String, Object> values) {
+        for (Constraint c : this.constraint) {
+            String[] columnNames = c.getColumnNames();
+            if (c.getType() == ConstraintType.UNIQUE) {
+                boolean contains = data.values().stream().anyMatch(row -> {
+                    for (String columnName : columnNames) {
+                        if (!Objects.equals(row.get(columnName), values.get(columnName))) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+                Asserts.isTrue(contains, "唯一约束冲突：" + c.getName());
+            } else if (c.getType() == ConstraintType.FOREIGN_KEY) {
+                //
+            }
+        }
     }
 
     @Override
@@ -116,6 +142,8 @@ public class TableMemoryImpl implements Table {
 
     @Override
     public synchronized int updateBy(Map<String, Object> updates, Map<String, Object> wheres) {
+        Asserts.isTrue(updates.containsKey(getPkName()), "暂不支持更新主键");
+        this.checkConstraint(updates);// TODO update的唯一约束检查有bug，可能只更新了一行并且唯一键更新的和原有的一致
         int count = 0;
         for (Map.Entry<Object, Map<String, Object>> rowEntry : data.entrySet()) {
             Map<String, Object> row = rowEntry.getValue();
