@@ -40,7 +40,7 @@ public class CalciteTest {
     public void t() throws SqlParseException, RelConversionException {
         Table table = new TableBuilder().name("TEST")
                 .addColumn(new ColumnBuilder().name("ID").dataType(DataType.INT).nullable(false).build())
-                .addColumn(new ColumnBuilder().name("NAME").dataType(DataType.VARCHAR).length(50).build())
+                .addColumn(new ColumnBuilder().name("NAME").dataType(DataType.VARCHAR).precision(50).build())
                 .addColumn(new ColumnBuilder().name("AGE").dataType(DataType.INT).build())
                 .addColumn(new ColumnBuilder().name("BIRTH").dataType(DataType.DATE).build())
                 .addConstraint(new ConstraintBuilder().type(ConstraintType.PRIMARY_KEY).addColumnName("ID").build())

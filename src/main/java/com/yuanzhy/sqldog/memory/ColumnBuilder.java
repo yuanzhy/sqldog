@@ -12,7 +12,6 @@ import com.yuanzhy.sqldog.util.Asserts;
 public class ColumnBuilder {
     private String name;
     private DataType dataType;
-    private int length;
     private int precision;
     private int scale;
     private boolean nullable = true;
@@ -22,10 +21,6 @@ public class ColumnBuilder {
     }
     public ColumnBuilder dataType(DataType dataType) {
         this.dataType = dataType;
-        return this;
-    }
-    public ColumnBuilder length(int length) {
-        this.length = length;
         return this;
     }
 
@@ -54,6 +49,6 @@ public class ColumnBuilder {
             // TODO 数据长度问题
             //Asserts.isTrue(this.length > 0, "数据长度不能为空");
         }
-        return new ColumnMemoryImpl(name, dataType, length, precision, scale, nullable);
+        return new ColumnMemoryImpl(name, dataType, precision, scale, nullable);
     }
 }

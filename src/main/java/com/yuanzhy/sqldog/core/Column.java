@@ -23,11 +23,5 @@ public interface Column extends Base {
      */
     int getScale();
 
-    /**
-     * 长度, 字符串用
-     * @return
-     */
-    int getLength();
-
     boolean isNullable();
 }

@@ -15,18 +15,15 @@ public class ColumnMemoryImpl implements Column {
     /** 数据类型 */
     private final DataType dataType;
     /** 数据长度 */
-    private final int length;
-    /** 数据精度 */
     private final int precision;
     /** 小数位数 */
     private final int scale;
     /** 空 */
     private final boolean nullable;
 
-    ColumnMemoryImpl(String name, DataType dataType, int length, int precision, int scale, boolean nullable) {
+    ColumnMemoryImpl(String name, DataType dataType, int precision, int scale, boolean nullable) {
         this.name = name;
         this.dataType = dataType;
-        this.length = length;
         this.precision = precision;
         this.scale = scale;
         this.nullable = nullable;
@@ -39,11 +36,6 @@ public class ColumnMemoryImpl implements Column {
     @Override
     public DataType getDataType() {
         return dataType;
-    }
-
-    @Override
-    public int getLength() {
-        return length;
     }
     @Override
     public int getPrecision() {

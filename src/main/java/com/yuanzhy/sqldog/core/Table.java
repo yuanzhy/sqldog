@@ -1,5 +1,6 @@
 package com.yuanzhy.sqldog.core;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -11,7 +12,10 @@ public interface Table extends Base {
 
     Map<String, Column> getColumn();
 
+    List<Object[]> getData();
+
     DML getDML();
 
     Query getQuery();
+
 }

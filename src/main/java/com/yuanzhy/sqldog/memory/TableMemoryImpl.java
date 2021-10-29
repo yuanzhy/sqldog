@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -187,6 +188,11 @@ public class TableMemoryImpl implements Table, DML {
     }
 
     @Override
+    public List<Object[]> getData() {
+        return data.values().stream().map(m -> m.values().toArray()).collect(Collectors.toList());
+    }
+
+    @Override
     public DML getDML() {
         return this;
     }
@@ -331,48 +337,6 @@ public class TableMemoryImpl implements Table, DML {
                     }
                     break;
             }
-        }
-    }
-
-    public class MemoryTableBuilder {
-        private String name;
-        private Constraint primaryKey;
-        private final Map<String, Column> columnMap = new LinkedHashMap<>();
-        private final Set<Constraint> constraint = new HashSet<>();
-        private Serial serial;
-        public MemoryTableBuilder name(String name) {
-            this.name = name;
-            return this;
-        }
-        public MemoryTableBuilder addColumn(Column column) {
-            this.columnMap.put(column.getName(), column);
-            return this;
-        }
-        public MemoryTableBuilder addConstraint(Constraint constraint) {
-            if (constraint.getType() == ConstraintType.PRIMARY_KEY) {
-                this.primaryKey = constraint;
-            } else {
-                this.constraint.add(constraint);
-            }
-            return this;
-        }
-
-        public MemoryTableBuilder serial(long initValue, int step) {
-            this.serial = new SerialMemoryImpl(0, 1);
-            return this;
-        }
-
-        public Table build() {
-            Asserts.hasText(name, "表名称不能为空");
-            Asserts.notNull(primaryKey, "主键不能为空");
-            Asserts.hasEle(columnMap, "列不能为空");
-            Column pkColumn = columnMap.get(primaryKey.getColumnNames()[0]);
-            Asserts.notNull(pkColumn, "主键列不存在");
-            // setSerial
-            if (this.serial == null && pkColumn.getDataType().isSerial()) {
-                this.serial = new SerialMemoryImpl(0, 1); // 默认步长
-            }
-            return new TableMemoryImpl(name, columnMap, primaryKey, constraint, serial);
         }
     }
 }
