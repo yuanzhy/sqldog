@@ -11,7 +11,23 @@ public interface Column extends Base {
 
     DataType getDataType();
 
-    int getDataLength();
+    /**
+     * 数据精度 int, numeric等
+     * @return
+     */
+    int getPrecision();
+
+    /**
+     * 小数位数 numeric
+     * @return
+     */
+    int getScale();
+
+    /**
+     * 长度, 字符串用
+     * @return
+     */
+    int getLength();
 
     boolean isNullable();
 }

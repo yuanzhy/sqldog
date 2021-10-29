@@ -2,6 +2,7 @@ package com.yuanzhy.sqldog.memory;
 
 import com.yuanzhy.sqldog.core.Column;
 import com.yuanzhy.sqldog.core.constant.DataType;
+import com.yuanzhy.sqldog.util.Asserts;
 
 /**
  * @author yuanzhy
@@ -14,26 +15,20 @@ public class ColumnMemoryImpl implements Column {
     /** 数据类型 */
     private final DataType dataType;
     /** 数据长度 */
-    private int dataLength;
+    private final int length;
+    /** 数据精度 */
+    private final int precision;
+    /** 小数位数 */
+    private final int scale;
     /** 空 */
     private final boolean nullable;
 
-    public ColumnMemoryImpl(String name, DataType dataType) {
-        this(name, dataType, dataType.getLength());
-    }
-
-    public ColumnMemoryImpl(String name, DataType dataType, boolean nullable) {
-        this(name, dataType, dataType.getLength(), nullable);
-    }
-
-    public ColumnMemoryImpl(String name, DataType dataType, int dataLength) {
-        this(name, dataType, dataLength, true);
-    }
-
-    public ColumnMemoryImpl(String name, DataType dataType, int dataLength, boolean nullable) {
+    ColumnMemoryImpl(String name, DataType dataType, int length, int precision, int scale, boolean nullable) {
         this.name = name;
         this.dataType = dataType;
-        this.dataLength = dataLength;
+        this.length = length;
+        this.precision = precision;
+        this.scale = scale;
         this.nullable = nullable;
     }
 
@@ -45,12 +40,24 @@ public class ColumnMemoryImpl implements Column {
     public DataType getDataType() {
         return dataType;
     }
+
     @Override
-    public int getDataLength() {
-        return dataLength;
+    public int getLength() {
+        return length;
     }
+    @Override
+    public int getPrecision() {
+        return precision;
+    }
+
+    @Override
+    public int getScale() {
+        return scale;
+    }
+
     @Override
     public boolean isNullable() {
         return nullable;
     }
+
 }

@@ -1,10 +1,13 @@
 package com.yuanzhy.sqldog.memory;
 
-import com.yuanzhy.sqldog.core.Schema;
-import com.yuanzhy.sqldog.core.Table;
-
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+
+import com.yuanzhy.sqldog.core.Schema;
+import com.yuanzhy.sqldog.core.Table;
 
 /**
  * @author yuanzhy
@@ -17,7 +20,7 @@ public class SchemaMemoryImpl implements Schema {
     /** 表 */
     private final Map<String, Table> tables = new HashMap<>();
 
-    public SchemaMemoryImpl(String name) {
+    SchemaMemoryImpl(String name) {
         this.name = name;
     }
 
@@ -25,12 +28,18 @@ public class SchemaMemoryImpl implements Schema {
     public String getName() {
         return name;
     }
+
+    @Override
+    public Set<String> getTableNames() {
+        return Collections.unmodifiableSet(tables.keySet());
+    }
+
     @Override
     public Table getTable(String name) {
         return tables.get(name);
     }
     @Override
-    public void addTable(String name, Table table) {
-        this.tables.put(name, table);
+    public void addTable(Table table) {
+        this.tables.put(table.getName(), table);
     }
 }

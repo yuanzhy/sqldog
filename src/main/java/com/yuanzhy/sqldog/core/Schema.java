@@ -1,5 +1,7 @@
 package com.yuanzhy.sqldog.core;
 
+import java.util.Set;
+
 /**
  * @author yuanzhy
  * @version 1.0
@@ -7,7 +9,9 @@ package com.yuanzhy.sqldog.core;
  */
 public interface Schema extends Base {
 
+    Set<String> getTableNames();
+
     Table getTable(String name);
 
-    void addTable(String name, Table table);
+    void addTable(Table table);
 }

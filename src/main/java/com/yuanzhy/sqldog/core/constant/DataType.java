@@ -17,21 +17,21 @@ public enum DataType {
     JSON //
     ;
 
-    private final int length;
+    private final int precision;
 
     DataType() {
-        this.length = -1;
+        this.precision = 0;
     }
 
-    DataType(int length) {
-        this.length = length;
+    DataType(int precision) {
+        this.precision = precision;
     }
 
-    public int getLength() {
-        if (length == -1) {
-            throw new IllegalArgumentException(this.name() + " must has length");
-        }
-        return length;
+    public int getPrecision() {
+        //if (precision == 0) {
+        //    throw new IllegalArgumentException(this.name() + " must has length");
+        //}
+        return precision;
     }
 
     public boolean isSerial() {

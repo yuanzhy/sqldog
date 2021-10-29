@@ -1,10 +1,10 @@
 package com.yuanzhy.sqldog.memory;
 
-import com.yuanzhy.sqldog.core.Database;
-import com.yuanzhy.sqldog.core.Schema;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import com.yuanzhy.sqldog.core.Database;
+import com.yuanzhy.sqldog.core.Schema;
 
 /**
  * @author yuanzhy
@@ -23,19 +23,7 @@ public class DatabaseMemoryImpl implements Database {
     /** 模式 */
     private final Map<String, Schema> schemas = new HashMap<>();
 
-    public DatabaseMemoryImpl(String name) {
-        this(name, "UTF-8");
-    }
-
-    public DatabaseMemoryImpl(String name, String encoding) {
-        this(name, encoding, "");
-    }
-
-    public DatabaseMemoryImpl(String name, String encoding, String description) {
-        this(name, encoding, description, "");
-    }
-
-    public DatabaseMemoryImpl(String name, String encoding, String description, String tablespace) {
+    DatabaseMemoryImpl(String name, String encoding, String description, String tablespace) {
         this.name = name;
         this.encoding = encoding;
         this.description = description;
@@ -63,7 +51,7 @@ public class DatabaseMemoryImpl implements Database {
         return schemas.get(name);
     }
     @Override
-    public void addSchema(String name, Schema schema) {
-        this.schemas.put(name, schema);
+    public void addSchema(Schema schema) {
+        this.schemas.put(schema.getName(), schema);
     }
 }

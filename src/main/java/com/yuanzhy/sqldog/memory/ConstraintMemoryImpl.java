@@ -1,11 +1,10 @@
 package com.yuanzhy.sqldog.memory;
 
-import com.yuanzhy.sqldog.core.Constraint;
-import com.yuanzhy.sqldog.core.constant.ConstraintType;
-
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.stream.Collectors;
+
+import com.yuanzhy.sqldog.core.Constraint;
+import com.yuanzhy.sqldog.core.constant.ConstraintType;
 
 /**
  * @author yuanzhy
@@ -20,13 +19,7 @@ public class ConstraintMemoryImpl implements Constraint {
     /** 列名 */
     private final String[] columnNames;
 
-    public ConstraintMemoryImpl(ConstraintType type, String[] columnNames) {
-        this("PRIMARY_KEY_".concat(Arrays.stream(columnNames).map(String::toUpperCase).collect(Collectors.joining("_"))),
-                type,
-                columnNames);
-    }
-
-    public ConstraintMemoryImpl(String name, ConstraintType type, String[] columnNames) {
+    ConstraintMemoryImpl(String name, ConstraintType type, String[] columnNames) {
         this.name = name;
         this.type = type;
         this.columnNames = columnNames;

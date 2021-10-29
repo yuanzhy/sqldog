@@ -1,26 +1,39 @@
 package com.yuanzhy.sqldog.memory;
 
-import com.yuanzhy.sqldog.core.Column;
-import com.yuanzhy.sqldog.core.Constraint;
-import com.yuanzhy.sqldog.core.Serial;
-import com.yuanzhy.sqldog.core.Table;
-import com.yuanzhy.sqldog.core.constant.ConstraintType;
-import com.yuanzhy.sqldog.util.Asserts;
-
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.calcite.sql.SqlBasicCall;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlJoin;
+import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlOrderBy;
+import org.apache.calcite.sql.SqlSelect;
+
+import com.yuanzhy.sqldog.core.Column;
+import com.yuanzhy.sqldog.core.Constraint;
+import com.yuanzhy.sqldog.core.DML;
+import com.yuanzhy.sqldog.core.Query;
+import com.yuanzhy.sqldog.core.Serial;
+import com.yuanzhy.sqldog.core.Table;
+import com.yuanzhy.sqldog.core.constant.ConstraintType;
+import com.yuanzhy.sqldog.util.Asserts;
 
 /**
  * @author yuanzhy
  * @version 1.0
  * @date 2021/10/24
  */
-public class TableMemoryImpl implements Table {
+public class TableMemoryImpl implements Table, DML {
     /** 名称 */
     private final String name;
     /** 列 */
@@ -36,7 +49,9 @@ public class TableMemoryImpl implements Table {
     /** 索引 */
 //    private final List<>
 
-    private TableMemoryImpl(String name, Map<String, Column> columnMap, Constraint primaryKey, Set<Constraint> constraint, Serial serial) {
+    private final Query query = new QueryMemoryImpl();
+
+    TableMemoryImpl(String name, Map<String, Column> columnMap, Constraint primaryKey, Set<Constraint> constraint, Serial serial) {
         this.name = name;
         this.columnMap = columnMap;
         this.primaryKey = primaryKey;
@@ -164,6 +179,159 @@ public class TableMemoryImpl implements Table {
             }
         }
         return true;
+    }
+
+    @Override
+    public Map<String, Column> getColumn() {
+        return Collections.unmodifiableMap(this.columnMap);
+    }
+
+    @Override
+    public DML getDML() {
+        return this;
+    }
+
+    @Override
+    public Query getQuery() {
+        return this.query;
+    }
+
+    private class QueryMemoryImpl implements Query {
+
+        @Override
+        public Map<String, Object> select(Object id) {
+            Map<String, Object> r = data.get(id);
+            return r == null ? null : Collections.unmodifiableMap(r);
+        }
+
+        @Override
+        public List<Map<String, Object>> selectBy(SqlNode sqlNode) {
+            handleSQL(sqlNode);
+            return null;
+        }
+
+        private void handleSQL(SqlNode sqlNode) {
+            SqlKind kind = sqlNode.getKind();
+            switch (kind) {
+                case SELECT:
+                    handleSelect(sqlNode);
+                    break;
+                case UNION:
+                    ((SqlBasicCall) sqlNode).getOperandList().forEach(node -> {
+                        handleSQL(node);
+                    });
+                    break;
+                case ORDER_BY:
+                    handleOrderBy(sqlNode);
+                    break;
+            }
+        }
+
+        private void handleOrderBy(SqlNode node) {
+            SqlOrderBy sqlOrderBy = (SqlOrderBy) node;
+            SqlNode query = sqlOrderBy.query;
+            handleSQL(query);
+            SqlNodeList orderList = sqlOrderBy.orderList;
+            handlerField(orderList);
+
+            SqlNode fetch = sqlOrderBy.fetch;
+            SqlNode offset = sqlOrderBy.offset;
+            // TODO limit offset
+        }
+
+
+        private void handleSelect(SqlNode select) {
+            SqlSelect sqlSelect = (SqlSelect) select;
+            //TODO 改写SELECT的字段信息
+            SqlNodeList selectList = sqlSelect.getSelectList();
+            //字段信息
+            selectList.getList().forEach(list -> {
+                handlerField(list);
+            });
+
+            handlerFrom(sqlSelect.getFrom());
+
+            if (sqlSelect.hasWhere()) {
+                handlerField(sqlSelect.getWhere());
+            }
+
+            if (sqlSelect.hasOrderBy()) {
+                handlerField(sqlSelect.getOrderList());
+            }
+
+            SqlNodeList group = sqlSelect.getGroup();
+            if (group != null) {
+                group.forEach(groupField -> {
+                    handlerField(groupField);
+                });
+            }
+
+
+            SqlNode fetch = sqlSelect.getFetch();
+            if (fetch != null) {
+                //TODO limit
+            }
+
+        }
+
+        private void handlerFrom(SqlNode from) {
+            SqlKind kind = from.getKind();
+
+            switch (kind) {
+                case IDENTIFIER:
+                    //最终的表名
+                    SqlIdentifier sqlIdentifier = (SqlIdentifier) from;
+                    //TODO 表名的替换，所以在此之前就需要获取到模型的信息
+                    System.out.println("==tablename===" + sqlIdentifier.toString());
+                    break;
+                case AS:
+                    SqlBasicCall sqlBasicCall = (SqlBasicCall) from;
+                    SqlNode selectNode = sqlBasicCall.getOperandList().get(0);
+                    handleSQL(selectNode);
+                    break;
+                case JOIN:
+                    SqlJoin sqlJoin = (SqlJoin) from;
+                    SqlNode left = sqlJoin.getLeft();
+                    handleSQL(left);
+                    SqlNode right = sqlJoin.getRight();
+                    handleSQL(right);
+                    SqlNode condition = sqlJoin.getCondition();
+                    handlerField(condition);
+                    break;
+                case SELECT:
+                    handleSQL(from);
+                    break;
+            }
+        }
+
+        private void handlerField(SqlNode field) {
+            SqlKind kind = field.getKind();
+            switch (kind) {
+                case AS:
+                    SqlNode[] operands_as = ((SqlBasicCall) field).operands;
+                    SqlNode left_as = operands_as[0];
+                    handlerField(left_as);
+                    break;
+                case IDENTIFIER:
+                    //表示当前为子节点
+                    SqlIdentifier sqlIdentifier = (SqlIdentifier) field;
+                    System.out.println("===field===" + sqlIdentifier.toString());
+                    break;
+                default:
+                    if (field instanceof SqlBasicCall) {
+                        SqlNode[] nodes = ((SqlBasicCall) field).operands;
+                        for (int i = 0; i < nodes.length; i++) {
+                            handlerField(nodes[i]);
+                        }
+                    }
+                    if (field instanceof SqlNodeList) {
+                        ((SqlNodeList) field).getList().forEach(node -> {
+                            handlerField(node);
+                        });
+                    }
+                    break;
+            }
+        }
     }
 
     public class MemoryTableBuilder {

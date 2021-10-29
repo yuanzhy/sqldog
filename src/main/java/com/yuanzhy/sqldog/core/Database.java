@@ -15,5 +15,5 @@ public interface Database extends Base {
 
     Schema getSchema(String name);
 
-    void addSchema(String name, Schema schema);
+    void addSchema(Schema schema);
 }
