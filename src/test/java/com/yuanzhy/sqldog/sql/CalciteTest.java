@@ -27,7 +27,7 @@ import com.yuanzhy.sqldog.core.constant.DataType;
 import com.yuanzhy.sqldog.memory.ColumnBuilder;
 import com.yuanzhy.sqldog.memory.ConstraintBuilder;
 import com.yuanzhy.sqldog.memory.TableBuilder;
-import com.yuanzhy.sqldog.sql.adapter.CalciteTableAdapter;
+import com.yuanzhy.sqldog.sql.adapter.CalciteTable;
 
 /**
  *
@@ -47,7 +47,7 @@ public class CalciteTest {
                 .build();
 
         SchemaPlus schemaPlus = Frameworks.createRootSchema(true);
-        schemaPlus.add("TEST", new CalciteTableAdapter().adapt(table));
+        schemaPlus.add("TEST", new CalciteTable(table));
         FrameworkConfig config = Frameworks.newConfigBuilder()
                 .defaultSchema(schemaPlus)
                 .parserConfig(SqlParser.config()

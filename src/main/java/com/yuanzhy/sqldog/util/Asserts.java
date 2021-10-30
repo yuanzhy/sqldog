@@ -39,4 +39,8 @@ public class Asserts {
             throw new IllegalArgumentException(msg);
         }
     }
+
+    public static void isFalse(boolean value, String msg) {
+        isTrue(!value, msg);
+    }
 }

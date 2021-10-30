@@ -42,13 +42,7 @@ public class ColumnBuilder {
     public Column build() {
         Asserts.hasText(name, "列名不能为空");
         Asserts.notNull(dataType, "数据类型不能为空");
-        if (this.precision == 0) {
-            this.precision = dataType.getPrecision();
-        }
-        if (this.precision == 0) {
-            // TODO 数据长度问题
-            //Asserts.isTrue(this.length > 0, "数据长度不能为空");
-        }
+        Asserts.isFalse(dataType.isHasLength() && this.precision == 0, "数据长度不能为空");
         return new ColumnMemoryImpl(name, dataType, precision, scale, nullable);
     }
 }

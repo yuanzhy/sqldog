@@ -1,16 +1,13 @@
 package com.yuanzhy.sqldog.memory;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
+import com.yuanzhy.sqldog.core.Column;
+import com.yuanzhy.sqldog.core.Constraint;
+import com.yuanzhy.sqldog.core.DML;
+import com.yuanzhy.sqldog.core.Query;
+import com.yuanzhy.sqldog.core.Serial;
+import com.yuanzhy.sqldog.core.Table;
+import com.yuanzhy.sqldog.core.constant.ConstraintType;
+import com.yuanzhy.sqldog.util.Asserts;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlJoin;
@@ -20,14 +17,16 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOrderBy;
 import org.apache.calcite.sql.SqlSelect;
 
-import com.yuanzhy.sqldog.core.Column;
-import com.yuanzhy.sqldog.core.Constraint;
-import com.yuanzhy.sqldog.core.DML;
-import com.yuanzhy.sqldog.core.Query;
-import com.yuanzhy.sqldog.core.Serial;
-import com.yuanzhy.sqldog.core.Table;
-import com.yuanzhy.sqldog.core.constant.ConstraintType;
-import com.yuanzhy.sqldog.util.Asserts;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author yuanzhy
@@ -44,11 +43,21 @@ public class TableMemoryImpl implements Table, DML {
     private final Serial serial;
     private final Set<Constraint> constraint;
 
-    /** 数据 */
-    private final Map<Object, Map<String, Object>> data = new ConcurrentHashMap<>();
+    /**
+     * 数据
+     * key = pk value
+     * value = row data
+     *    rowMap: key = colName
+     *             value = row
+     */
+    private final Map<Object, Map<String, Object>> data = new HashMap<>();
 
-    /** 索引 */
-//    private final List<>
+    /**
+     * 唯一索引
+     * key = unique column value
+     * value = pk value
+     */
+    private final Map<String, Object> uniqueMap = new HashMap<>();
 
     private final Query query = new QueryMemoryImpl();
 
@@ -71,24 +80,15 @@ public class TableMemoryImpl implements Table, DML {
 
     @Override
     public Object insert(Map<String, Object> values) {
-        // check nullable
-        for (Column column : columnMap.values()) {
-            if (column.isNullable()) {
-                if (!values.containsKey(column.getName())) {
-                    values.put(column.getName(), null); // 放置空值
-                }
-            } else if (values.get(column.getName()) == null) {
-                throw new IllegalArgumentException("'" + column.getName() + "' is not null");
-            }
-
-        }
+        // check
+        this.checkData(values);
         // generate pk
         Object pkValue;
         String pkName = getPkName();
         if (values.containsKey(pkName)) {
             pkValue = values.get(pkName);
             // check pk
-            Asserts.isTrue(data.containsKey(pkName), "主键值冲突：" + pkValue);
+            Asserts.isFalse(data.containsKey(pkValue), "主键值冲突：" + pkValue);
         } else if (columnMap.get(pkName).getDataType().isSerial()) {
             pkValue = this.serial.next();
             values.put(pkName, pkValue);
@@ -97,27 +97,44 @@ public class TableMemoryImpl implements Table, DML {
         }
         // check constraint
         this.checkConstraint(values);
-
-        this.data.put(pkValue, values);
+        // add data
+        synchronized (data) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            for (String columnName : columnMap.keySet()) {
+                row.put(columnName, values.get(columnName));
+            }
+            for (Constraint c : this.constraint) {
+                String[] columnNames = c.getColumnNames();
+                if (c.getType() == ConstraintType.UNIQUE) {
+                    String uniColValue = Arrays.stream(columnNames).map(cn -> values.get(cn).toString()).collect(Collectors.joining("_"));
+                    uniqueMap.put(uniColValue, pkValue);
+                }
+            }
+            this.data.put(pkValue, row);
+        }
         return pkValue;
     }
 
+    private void checkData(Map<String, Object> values) {
+        for (Column column : columnMap.values()) {
+            Object value = values.get(column.getName());
+            if (!column.isNullable() && value == null) {
+                throw new IllegalArgumentException("'" + column.getName() + "' is not null");
+            }
+            Asserts.isTrue(column.getDataType().isAssignable(value), "数据类型不匹配, " + column.getName() + ":" + value);
+            // TODO 数据长度和精度校验
+        }
+    }
+
     /**
-     * TODO 唯一约束性能优化（索引）
      * @param values
      */
     private void checkConstraint(Map<String, Object> values) {
         for (Constraint c : this.constraint) {
             String[] columnNames = c.getColumnNames();
             if (c.getType() == ConstraintType.UNIQUE) {
-                boolean contains = data.values().stream().anyMatch(row -> {
-                    for (String columnName : columnNames) {
-                        if (!Objects.equals(row.get(columnName), values.get(columnName))) {
-                            return false;
-                        }
-                    }
-                    return true;
-                });
+                String uniColValue = Arrays.stream(columnNames).map(cn -> values.get(cn).toString()).collect(Collectors.joining("_"));
+                boolean contains = uniqueMap.containsKey(uniColValue);
                 Asserts.isTrue(contains, "唯一约束冲突：" + c.getName());
             } else if (c.getType() == ConstraintType.FOREIGN_KEY) {
                 //
@@ -137,8 +154,16 @@ public class TableMemoryImpl implements Table, DML {
         if (row == null) {
             return 0;
         }
-        row.putAll(updates);
-        return 1;
+        this.checkData(updates);
+        synchronized (row) {
+            for (String colName : columnMap.keySet()) {
+                if (updates.containsKey(colName)) {
+                    Object value = updates.get(colName);
+                    row.put(colName, value);
+                }
+            }
+            return 1;
+        }
     }
 
     @Override

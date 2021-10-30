@@ -5,11 +5,8 @@ import com.yuanzhy.sqldog.core.constant.DataType;
 import com.yuanzhy.sqldog.memory.ColumnBuilder;
 import com.yuanzhy.sqldog.memory.ConstraintBuilder;
 import com.yuanzhy.sqldog.memory.DatabaseBuilder;
-import com.yuanzhy.sqldog.memory.DatabaseMemoryImpl;
 import com.yuanzhy.sqldog.memory.SchemaBuilder;
-import com.yuanzhy.sqldog.memory.SchemaMemoryImpl;
 import com.yuanzhy.sqldog.memory.TableBuilder;
-
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -33,7 +30,7 @@ public class DatabaseTest {
         schema.addTable(new TableBuilder()
                 .name("test_table")
                 .addColumn(new ColumnBuilder().name("id").dataType(DataType.INT).nullable(false).build())
-                .addColumn(new ColumnBuilder().name("name").dataType(DataType.VARCHAR).length(50).build())
+                .addColumn(new ColumnBuilder().name("name").dataType(DataType.VARCHAR).precision(50).build())
                 .addConstraint(new ConstraintBuilder()
                                 .type(ConstraintType.PRIMARY_KEY)
                                 .addColumnName("id")
