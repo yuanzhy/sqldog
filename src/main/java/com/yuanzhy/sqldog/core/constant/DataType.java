@@ -1,5 +1,7 @@
 package com.yuanzhy.sqldog.core.constant;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.sql.Timestamp;
 
 /**
@@ -9,8 +11,8 @@ import java.sql.Timestamp;
  */
 public enum DataType {
 
-    INT(Integer.class), SMALL_INT(Short.class), BIG_INT(Long.class), NUMERIC(Number.class, true), // 数字
-    SERIAL(Integer.class), SMALL_SERIAL(Short.class), BIG_SERIAL(Long.class), // 序列
+    INT(Integer.class), SMALLINT(Short.class), BIGINT(Long.class), NUMERIC(Number.class, true), // 数字
+    SERIAL(Integer.class), SMALLSERIAL(Short.class), BIGSERIAL(Long.class), // 序列
     CHAR(String.class, true), VARCHAR(String.class, true),  // 字符串
     TEXT(String.class), BYTEA(Object.class), // 大字段，二进制
     DATE(java.sql.Date.class), TIMESTAMP(Timestamp.class), TIME(java.sql.Time.class), // 日期时间
@@ -33,7 +35,7 @@ public enum DataType {
     }
 
     public boolean isSerial() {
-        return this == SERIAL || this == SMALL_SERIAL || this == BIG_SERIAL;
+        return this == SERIAL || this == SMALLSERIAL || this == BIGSERIAL;
     }
 
     public boolean isHasLength() {
@@ -42,5 +44,13 @@ public enum DataType {
 
     public boolean isAssignable(Object value) {
         return clazz.isAssignableFrom(value.getClass());
+    }
+
+    public static DataType of(String dataType) {
+        if (dataType.contains("(")) {
+            dataType = StringUtils.substringBefore(dataType, "(");
+        }
+        dataType = dataType.trim().toUpperCase();
+        return DataType.valueOf(dataType);
     }
 }

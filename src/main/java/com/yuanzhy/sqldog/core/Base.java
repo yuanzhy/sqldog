@@ -8,4 +8,9 @@ package com.yuanzhy.sqldog.core;
 public interface Base {
 
     String getName();
+
+    /**
+     * 删除后的清理操作
+     */
+    void drop();
 }

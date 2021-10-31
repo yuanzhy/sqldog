@@ -2,7 +2,6 @@ package com.yuanzhy.sqldog.memory;
 
 import com.yuanzhy.sqldog.core.Column;
 import com.yuanzhy.sqldog.core.constant.DataType;
-import com.yuanzhy.sqldog.util.Asserts;
 
 /**
  * @author yuanzhy
@@ -21,18 +20,27 @@ public class ColumnMemoryImpl implements Column {
     /** 空 */
     private final boolean nullable;
 
-    ColumnMemoryImpl(String name, DataType dataType, int precision, int scale, boolean nullable) {
-        this.name = name;
+    private final Object defaultValue;
+
+    ColumnMemoryImpl(String name, DataType dataType, int precision, int scale, boolean nullable, Object defaultValue) {
+        this.name = name.toUpperCase();
         this.dataType = dataType;
         this.precision = precision;
         this.scale = scale;
         this.nullable = nullable;
+        this.defaultValue = defaultValue;
     }
 
     @Override
     public String getName() {
         return name;
     }
+
+    @Override
+    public void drop() {
+
+    }
+
     @Override
     public DataType getDataType() {
         return dataType;
@@ -52,4 +60,8 @@ public class ColumnMemoryImpl implements Column {
         return nullable;
     }
 
+    @Override
+    public Object defaultValue() {
+        return defaultValue;
+    }
 }

@@ -60,7 +60,8 @@ public class CalciteTest {
                 ).build();
         String sql = "select max(id), max(name) from test where id < 5 and name = 'zhang' or birth>'2020-10-10' group by age having age>5 order by age desc limit 3 offset 1";
         //String sql = "select ids, name from test where id < 5 and name = 'zhang' or c=1 group by a,b having c=4 limit 3 offset 1";
-        //String sql = "select ids, name from test where id < 5 and name = 'zhang' or c=1 group by a,b having c=4";
+//        sql = "create table test {id int not null, name varchar(50) default '1'}";
+//        sql = "alter table test add column name2 varchar(50) default '1'";
         //SqlParser parser = SqlParser.create(sql, config.getParserConfig());
         //SqlNode sqlNode = parser.parseQuery();
         Planner planner = Frameworks.getPlanner(config);

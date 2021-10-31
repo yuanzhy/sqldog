@@ -15,6 +15,7 @@ public class ColumnBuilder {
     private int precision;
     private int scale;
     private boolean nullable = true;
+    private Object defaultValue;
     public ColumnBuilder name(String name) {
         this.name = name;
         return this;
@@ -39,10 +40,15 @@ public class ColumnBuilder {
         return this;
     }
 
+    public ColumnBuilder defaultValue(Object defaultValue) {
+        this.defaultValue = defaultValue;
+        return this;
+    }
+
     public Column build() {
         Asserts.hasText(name, "列名不能为空");
         Asserts.notNull(dataType, "数据类型不能为空");
         Asserts.isFalse(dataType.isHasLength() && this.precision == 0, "数据长度不能为空");
-        return new ColumnMemoryImpl(name, dataType, precision, scale, nullable);
+        return new ColumnMemoryImpl(name, dataType, precision, scale, nullable, defaultValue);
     }
 }

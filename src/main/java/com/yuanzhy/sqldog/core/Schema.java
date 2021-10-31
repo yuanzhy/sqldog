@@ -14,4 +14,6 @@ public interface Schema extends Base {
     Table getTable(String name);
 
     void addTable(Table table);
+
+    void dropTable(String name);
 }

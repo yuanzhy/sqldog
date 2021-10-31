@@ -65,7 +65,7 @@ public class TestQuery {
         System.setProperty("saffron.default.collation.name",ConversionUtil.NATIVE_UTF16_CHARSET_NAME + "$en_US");
         Properties config = new Properties();
         //config.put("model", MyCsvTest.class.getClassLoader().getResource("my_csv_model.json").getPath());
-//        config.put("caseSensitive", "true");
+        config.put("caseSensitive", "false");
         conn = DriverManager.getConnection("jdbc:calcite:", config);
 
         CalciteConnection calciteConnection = conn.unwrap(CalciteConnection.class);

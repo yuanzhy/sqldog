@@ -8,7 +8,10 @@ import com.yuanzhy.sqldog.core.constant.DataType;
  * @date 2021/10/24
  */
 public interface Column extends Base {
-
+    /**
+     * 数据类型
+     * @return
+     */
     DataType getDataType();
 
     /**
@@ -23,5 +26,15 @@ public interface Column extends Base {
      */
     int getScale();
 
+    /**
+     * 可为空
+     * @return
+     */
     boolean isNullable();
+
+    /**
+     * 默认值
+     * @return
+     */
+    Object defaultValue();
 }

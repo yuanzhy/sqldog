@@ -16,6 +16,12 @@ public interface Table extends Base {
 
     DML getDML();
 
-    Query getQuery();
+    void addColumn(Column column);
+
+    void dropColumn(String columnName);
+
+    void truncate();
+
+//    Query getQuery();
 
 }

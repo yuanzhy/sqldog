@@ -62,7 +62,7 @@ public class TableMemoryImpl implements Table, DML {
     private final Query query = new QueryMemoryImpl();
 
     TableMemoryImpl(String name, Map<String, Column> columnMap, Constraint primaryKey, Set<Constraint> constraint, Serial serial) {
-        this.name = name;
+        this.name = name.toUpperCase();
         this.columnMap = columnMap;
         this.primaryKey = primaryKey;
         this.constraint = constraint;
@@ -72,6 +72,14 @@ public class TableMemoryImpl implements Table, DML {
     @Override
     public String getName() {
         return this.name;
+    }
+
+    @Override
+    public void drop() {
+        this.columnMap.clear();
+        this.constraint.clear();
+        this.uniqueMap.clear();
+        this.data.clear();
     }
 
     private String getPkName() {
@@ -101,7 +109,11 @@ public class TableMemoryImpl implements Table, DML {
         synchronized (data) {
             Map<String, Object> row = new LinkedHashMap<>();
             for (String columnName : columnMap.keySet()) {
-                row.put(columnName, values.get(columnName));
+                Object value = values.get(columnName);
+                if (!values.containsKey(columnName)) {
+                    value = columnMap.get(columnName).defaultValue();
+                }
+                row.put(columnName, value);
             }
             for (Constraint c : this.constraint) {
                 String[] columnNames = c.getColumnNames();
@@ -118,7 +130,7 @@ public class TableMemoryImpl implements Table, DML {
     private void checkData(Map<String, Object> values) {
         for (Column column : columnMap.values()) {
             Object value = values.get(column.getName());
-            if (!column.isNullable() && value == null) {
+            if (!column.isNullable() && value == null && column.defaultValue() == null) {
                 throw new IllegalArgumentException("'" + column.getName() + "' is not null");
             }
             Asserts.isTrue(column.getDataType().isAssignable(value), "数据类型不匹配, " + column.getName() + ":" + value);
@@ -223,9 +235,34 @@ public class TableMemoryImpl implements Table, DML {
     }
 
     @Override
-    public Query getQuery() {
-        return this.query;
+    public synchronized void addColumn(Column column) {
+        if (this.columnMap.containsKey(column.getName())) {
+            throw new IllegalArgumentException(column.getName() + " exists");
+        }
+        this.columnMap.put(column.getName(), column);
+        this.data.forEach((id, row) -> {
+            row.put(column.getName(), column.defaultValue());
+        });
     }
+
+    @Override
+    public synchronized void dropColumn(String columnName) {
+        this.columnMap.remove(columnName);
+        this.data.forEach((id, row) -> {
+            row.remove(columnName);
+        });
+    }
+
+    @Override
+    public synchronized void truncate() {
+        this.data.clear();
+        this.uniqueMap.clear();
+    }
+
+//    @Override
+//    public Query getQuery() {
+//        return this.query;
+//    }
 
     private class QueryMemoryImpl implements Query {
 

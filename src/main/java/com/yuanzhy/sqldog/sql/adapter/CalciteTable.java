@@ -61,12 +61,12 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
                 case SERIAL:
                     builder.add(entry.getKey(), SqlTypeName.INTEGER);
                     break;
-                case SMALL_INT:
-                case SMALL_SERIAL:
+                case SMALLINT:
+                case SMALLSERIAL:
                     builder.add(entry.getKey(), SqlTypeName.SMALLINT);
                     break;
-                case BIG_INT:
-                case BIG_SERIAL:
+                case BIGINT:
+                case BIGSERIAL:
                     builder.add(entry.getKey(), SqlTypeName.BIGINT);
                     break;
                 case NUMERIC:

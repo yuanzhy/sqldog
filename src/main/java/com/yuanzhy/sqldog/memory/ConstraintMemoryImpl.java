@@ -1,10 +1,10 @@
 package com.yuanzhy.sqldog.memory;
 
-import java.util.Arrays;
-import java.util.Objects;
-
 import com.yuanzhy.sqldog.core.Constraint;
 import com.yuanzhy.sqldog.core.constant.ConstraintType;
+
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * @author yuanzhy
@@ -28,6 +28,11 @@ public class ConstraintMemoryImpl implements Constraint {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public void drop() {
+
     }
 
     public ConstraintType getType() {
