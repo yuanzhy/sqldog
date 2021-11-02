@@ -1,5 +1,6 @@
 package com.yuanzhy.sqldog.memory;
 
+import com.yuanzhy.sqldog.builder.BaseBuilder;
 import com.yuanzhy.sqldog.core.Column;
 import com.yuanzhy.sqldog.core.constant.DataType;
 import com.yuanzhy.sqldog.util.Asserts;
@@ -9,17 +10,18 @@ import com.yuanzhy.sqldog.util.Asserts;
  * @author yuanzhy
  * @date 2021-10-26
  */
-public class ColumnBuilder {
-    private String name;
+public class ColumnBuilder extends BaseBuilder<ColumnBuilder> {
     private DataType dataType;
     private int precision;
     private int scale;
     private boolean nullable = true;
     private Object defaultValue;
-    public ColumnBuilder name(String name) {
-        this.name = name;
+
+    @Override
+    protected ColumnBuilder getSelf() {
         return this;
     }
+
     public ColumnBuilder dataType(DataType dataType) {
         this.dataType = dataType;
         return this;
@@ -45,6 +47,7 @@ public class ColumnBuilder {
         return this;
     }
 
+    @Override
     public Column build() {
         Asserts.hasText(name, "列名不能为空");
         Asserts.notNull(dataType, "数据类型不能为空");

@@ -8,9 +8,7 @@ import com.yuanzhy.sqldog.core.constant.DataType;
  * @version 1.0
  * @date 2021/10/24
  */
-public class ColumnMemoryImpl implements Column {
-    /** 名称 */
-    private final String name;
+public class ColumnMemoryImpl extends MemoryBase implements Column {
     /** 数据类型 */
     private final DataType dataType;
     /** 数据长度 */
@@ -23,17 +21,12 @@ public class ColumnMemoryImpl implements Column {
     private final Object defaultValue;
 
     ColumnMemoryImpl(String name, DataType dataType, int precision, int scale, boolean nullable, Object defaultValue) {
-        this.name = name.toUpperCase();
+        super(name.toUpperCase());
         this.dataType = dataType;
         this.precision = precision;
         this.scale = scale;
         this.nullable = nullable;
         this.defaultValue = defaultValue;
-    }
-
-    @Override
-    public String getName() {
-        return name;
     }
 
     @Override

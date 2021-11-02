@@ -31,11 +31,11 @@ public class InsertCommand extends AbstractSqlCommand {
             colArr = arr[0].split(",");
             valArr = arr[1].split(",");
         } else {
-            colArr = table.getColumn().keySet().toArray(new String[0]);
+            colArr = table.getColumns().keySet().toArray(new String[0]);
             valArr = StringUtils.substringBetween(sqlSuffix, "(", ")").split(",");
         }
         Asserts.isTrue(colArr.length == valArr.length, "sql不合法");
-        Map<String, Column> columnMap = table.getColumn();
+        Map<String, Column> columnMap = table.getColumns();
         Map<String, Object> values = new HashMap<>();
         for (int i = 0; i < colArr.length; i++) {
             final String colName = colArr[i].trim();

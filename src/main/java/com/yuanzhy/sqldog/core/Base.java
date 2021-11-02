@@ -9,6 +9,10 @@ public interface Base {
 
     String getName();
 
+    String getDescription();
+
+    void setDescription(String description);
+
     /**
      * 删除后的清理操作
      */

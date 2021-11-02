@@ -11,23 +11,16 @@ import java.util.Objects;
  * @version 1.0
  * @date 2021/10/24
  */
-public class ConstraintMemoryImpl implements Constraint {
-    /** 名称 */
-    private final String name;
+public class ConstraintMemoryImpl extends MemoryBase implements Constraint {
     /** 类型 */
     private final ConstraintType type;
     /** 列名 */
     private final String[] columnNames;
 
     ConstraintMemoryImpl(String name, ConstraintType type, String[] columnNames) {
-        this.name = name;
+        super(name.toUpperCase());
         this.type = type;
         this.columnNames = columnNames;
-    }
-
-    @Override
-    public String getName() {
-        return name;
     }
 
     @Override

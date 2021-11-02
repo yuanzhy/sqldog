@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.yuanzhy.sqldog.builder.BaseBuilder;
 import com.yuanzhy.sqldog.core.Column;
 import com.yuanzhy.sqldog.core.Constraint;
 import com.yuanzhy.sqldog.core.Serial;
@@ -17,16 +18,12 @@ import com.yuanzhy.sqldog.util.Asserts;
  * @author yuanzhy
  * @date 2021-10-26
  */
-public class TableBuilder {
-    private String name;
+public class TableBuilder extends BaseBuilder<TableBuilder> {
     private Constraint primaryKey;
     private final Map<String, Column> columnMap = new LinkedHashMap<>();
     private final Set<Constraint> constraint = new HashSet<>();
     private Serial serial;
-    public TableBuilder name(String name) {
-        this.name = name;
-        return this;
-    }
+
     public TableBuilder addColumn(Column column) {
         this.columnMap.put(column.getName(), column);
         return this;
@@ -45,6 +42,12 @@ public class TableBuilder {
         return this;
     }
 
+    @Override
+    protected TableBuilder getSelf() {
+        return this;
+    }
+
+    @Override
     public Table build() {
         Asserts.hasText(name, "表名称不能为空");
         Asserts.notNull(primaryKey, "主键不能为空");

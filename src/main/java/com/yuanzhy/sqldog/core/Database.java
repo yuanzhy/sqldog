@@ -9,8 +9,6 @@ public interface Database extends Base {
 
     String getEncoding();
 
-    String getDescription();
-
     String getTablespace();
 
     Schema getSchema(String name);

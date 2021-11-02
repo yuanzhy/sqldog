@@ -13,19 +13,12 @@ import java.util.Set;
  * @version 1.0
  * @date 2021/10/24
  */
-public class SchemaMemoryImpl implements Schema {
-    /** 名称 */
-    private final String name;
+public class SchemaMemoryImpl extends MemoryBase implements Schema {
     /** 表 */
     private final Map<String, Table> tables = new HashMap<>();
 
     SchemaMemoryImpl(String name) {
-        this.name = name.toUpperCase();
-    }
-
-    @Override
-    public String getName() {
-        return name;
+        super(name.toUpperCase());
     }
 
     @Override

@@ -41,7 +41,7 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
 
     public CalciteTable(Table table) {
         super(TYPE);
-        Asserts.hasEle(table.getColumn(), "column is empty");
+        Asserts.hasEle(table.getColumns(), "column is empty");
         this.table = table;
     }
 
@@ -52,7 +52,7 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
 
     @Override
     public RelDataType getRowType(RelDataTypeFactory typeFactory) {
-        Map<String, Column> columnMap = table.getColumn();
+        Map<String, Column> columnMap = table.getColumns();
         RelDataTypeFactory.Builder builder = typeFactory.builder();
         for (Map.Entry<String, Column> entry : columnMap.entrySet()) {
             Column column = entry.getValue();

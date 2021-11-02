@@ -33,9 +33,7 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @date 2021/10/24
  */
-public class TableMemoryImpl implements Table, DML {
-    /** 名称 */
-    private final String name;
+public class TableMemoryImpl extends MemoryBase implements Table, DML {
     /** 列 */
     private final Map<String, Column> columnMap;
     /** 约束 */
@@ -62,16 +60,11 @@ public class TableMemoryImpl implements Table, DML {
     private final Query query = new QueryMemoryImpl();
 
     TableMemoryImpl(String name, Map<String, Column> columnMap, Constraint primaryKey, Set<Constraint> constraint, Serial serial) {
-        this.name = name.toUpperCase();
+        super(name.toUpperCase());
         this.columnMap = columnMap;
         this.primaryKey = primaryKey;
         this.constraint = constraint;
         this.serial = serial;
-    }
-
-    @Override
-    public String getName() {
-        return this.name;
     }
 
     @Override
@@ -220,7 +213,12 @@ public class TableMemoryImpl implements Table, DML {
     }
 
     @Override
-    public Map<String, Column> getColumn() {
+    public Column getColumn(String name) {
+        return this.columnMap.get(name);
+    }
+
+    @Override
+    public Map<String, Column> getColumns() {
         return Collections.unmodifiableMap(this.columnMap);
     }
 

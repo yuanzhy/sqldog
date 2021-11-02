@@ -10,7 +10,9 @@ import java.util.Map;
  */
 public interface Table extends Base {
 
-    Map<String, Column> getColumn();
+    Column getColumn(String name);
+
+    Map<String, Column> getColumns();
 
     List<Object[]> getData();
 

@@ -1,5 +1,6 @@
 package com.yuanzhy.sqldog.memory;
 
+import com.yuanzhy.sqldog.builder.BaseBuilder;
 import com.yuanzhy.sqldog.core.Constraint;
 import com.yuanzhy.sqldog.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.util.Asserts;
@@ -14,19 +15,12 @@ import java.util.stream.Collectors;
  * @author yuanzhy
  * @date 2021-10-27
  */
-public class ConstraintBuilder {
+public class ConstraintBuilder extends BaseBuilder<ConstraintBuilder> {
 
-    /** 名称 */
-    private String name;
     /** 类型 */
     private ConstraintType type;
     /** 列名 */
     private List<String> columnNames = new ArrayList<>();
-
-    public ConstraintBuilder name(String name) {
-        this.name = name;
-        return this;
-    }
 
     public ConstraintBuilder type(ConstraintType type) {
         this.type = type;
@@ -38,6 +32,12 @@ public class ConstraintBuilder {
         return this;
     }
 
+    @Override
+    protected ConstraintBuilder getSelf() {
+        return this;
+    }
+
+    @Override
     public Constraint build() {
         Asserts.notNull(type, "约束类型不能为空");
         if (StringUtils.isEmpty(this.name)) {

@@ -23,7 +23,7 @@ public class CommandTest {
         Schema schema = Databases.getDefault().getSchema("ddd");
         assert schema != null;
         assert schema.getTable("abc") != null;
-        assert schema.getTable("abc").getColumn().size() == 3;
+        assert schema.getTable("abc").getColumns().size() == 3;
 
         sqlParser.parse("drop table ddd.abc").execute();
         assert schema.getTable("abc") == null;

@@ -2,6 +2,7 @@ package com.yuanzhy.sqldog.memory;
 
 import javax.xml.crypto.Data;
 
+import com.yuanzhy.sqldog.builder.BaseBuilder;
 import com.yuanzhy.sqldog.core.Database;
 import com.yuanzhy.sqldog.util.Asserts;
 
@@ -10,7 +11,7 @@ import com.yuanzhy.sqldog.util.Asserts;
  * @author yuanzhy
  * @date 2021-10-27
  */
-public class DatabaseBuilder {
+public class DatabaseBuilder extends BaseBuilder<DatabaseBuilder> {
 
     /** 名称 */
     private String name;
@@ -36,11 +37,17 @@ public class DatabaseBuilder {
         return this;
     }
 
+    @Override
+    protected DatabaseBuilder getSelf() {
+        return this;
+    }
+
     public DatabaseBuilder tablespace(String tablespace) {
         this.tablespace = tablespace;
         return this;
     }
 
+    @Override
     public Database build() {
         Asserts.hasText(name, "数据库名称不能为空");
         Asserts.hasText(encoding, "数据库编码不能为空");

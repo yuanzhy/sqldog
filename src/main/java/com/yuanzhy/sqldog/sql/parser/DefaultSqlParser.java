@@ -3,6 +3,7 @@ package com.yuanzhy.sqldog.sql.parser;
 import com.yuanzhy.sqldog.core.SqlCommand;
 import com.yuanzhy.sqldog.core.SqlParser;
 import com.yuanzhy.sqldog.sql.command.AlterTableCommand;
+import com.yuanzhy.sqldog.sql.command.CommentCommand;
 import com.yuanzhy.sqldog.sql.command.CreateSchemaCommand;
 import com.yuanzhy.sqldog.sql.command.CreateTableCommand;
 import com.yuanzhy.sqldog.sql.command.DeleteCommand;
@@ -52,6 +53,8 @@ public class DefaultSqlParser implements SqlParser {
             if (tmp.startsWith("TABLE")) {
                 return new TruncateTableCommand(sql);
             }
+        } else if (sql.startsWith("COMMENT")) {
+            return new CommentCommand(sql);
         } else if (sql.startsWith("INSERT")) {
             return new InsertCommand(sql);
         } else if (sql.startsWith("UPDATE")) {
