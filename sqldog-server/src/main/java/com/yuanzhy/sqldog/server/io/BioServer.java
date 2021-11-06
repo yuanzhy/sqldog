@@ -1,9 +1,12 @@
 package com.yuanzhy.sqldog.server.io;
 
-import com.yuanzhy.sqldog.core.SqlCommand;
-import com.yuanzhy.sqldog.core.SqlParser;
-import com.yuanzhy.sqldog.sql.parser.DefaultSqlParser;
-import com.yuanzhy.sqldog.util.ConfigUtil;
+import com.yuanzhy.sqldog.server.core.SqlCommand;
+import com.yuanzhy.sqldog.server.core.SqlParser;
+import com.yuanzhy.sqldog.server.core.constant.Auth;
+import com.yuanzhy.sqldog.server.core.constant.Consts;
+import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
+import com.yuanzhy.sqldog.server.util.ConfigUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +31,12 @@ public class BioServer implements Server {
     public void start() {
         String host = ConfigUtil.getProperty("server.host", "127.0.0.1");
         int port = Integer.parseInt(ConfigUtil.getProperty("server.port", "2345"));
+        String username = ConfigUtil.getProperty("server.username");
+        String password = ConfigUtil.getProperty("server.password");
+        if (StringUtils.isAnyEmpty(username, password)) {
+            LOG.error("config 'server.username , server.password' is missing");
+            return;
+        }
         try {
             ServerSocket ss = new ServerSocket(port);
             while (true) {
@@ -42,36 +51,94 @@ public class BioServer implements Server {
     private class Handler implements Runnable {
 
         private final Socket socket;
+        private boolean authenticated = false;
         Handler(Socket socket) {
             this.socket = socket;
         }
         @Override
         public void run() {
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
                  PrintWriter pw = new PrintWriter(socket.getOutputStream())) {
                 while (true) {
-                    String command = br.readLine();
-                    if (command.equalsIgnoreCase("quit")) {
-                        break;
+                    String params = this.waitCommand(br);
+                    if (StringUtils.isEmpty(params)) {
+                        continue;
+                    } else if (!authenticated) {
+                        if (params.startsWith("auth")) {
+                            try {
+                                doAuth(params);
+                                pw.print(Auth.SUCCESS.value());
+                            } catch (Exception e) {
+                                LOG.warn(e.getMessage());
+                                pw.println(e.getMessage().contains(Consts.END_CHAR));
+                                pw.flush();
+                                break;
+                            }
+                        } else {
+                            pw.println(Auth.ILLEGAL.value().contains(Consts.END_CHAR));
+                            pw.flush();
+                            break;
+                        }
+                    } else {
+                        if ("quit".equalsIgnoreCase(params) || "\\q".equals(params)) {
+                            break;
+                        }
+                        // 执行脚本
+                        SqlCommand sqlCommand = sqlParser.parse(params);
+                        try {
+                            String result = sqlCommand.execute();
+                            pw.print(result);
+                        } catch (RuntimeException e) {
+                            LOG.error(e.getMessage(), e);
+                            pw.print(e.getMessage());
+                        }
                     }
-                    SqlCommand sqlCommand = sqlParser.parse(command);
-                    try {
-                        sqlCommand.execute();
-                        pw.println("executed");
-                    } catch (RuntimeException e) {
-                        LOG.error(e.getMessage(), e);
-                        pw.println(e.getMessage());
-                    }
+                    pw.println(Consts.END_CHAR);
                     pw.flush();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+
             } finally {
                 try {
                     socket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            }
+        }
+
+        private String waitCommand(BufferedReader br) throws IOException {
+            StringBuilder sb = new StringBuilder();
+            while (true) {
+                String line = br.readLine();
+                if (line == null) {
+                    break;
+                }
+                sb.append(line);
+                if (line.endsWith(Consts.END_CHAR)) {
+                    break;
+                }
+                sb.append("\n");
+            }
+            return sb.toString();
+        }
+
+        private void doAuth(String params) {
+            params = params.substring(0, params.length() - 1);
+            String[] arr = params.split(Consts.SEPARATOR);
+            if (arr.length != 2) {
+                throw new IllegalArgumentException(Auth.ILLEGAL.value());
+            }
+            // username:xxx,password:123
+            String paramUsername = StringUtils.substringBetween(arr[1], "username:", ",password");
+            String paramPassword = StringUtils.substringAfter(arr[1], "password:");
+            String realUsername = ConfigUtil.getProperty("server.username");
+            String realPassword = ConfigUtil.getProperty("server.password");
+            if (realUsername.equals(paramUsername) && realPassword.equals(paramPassword)) {
+                authenticated = true;
+            } else {
+                throw new IllegalArgumentException(Auth.FAILURE.value());
             }
         }
     }

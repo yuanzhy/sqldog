@@ -1,14 +1,14 @@
 package com.yuanzhy.sqldog.calcite;
 
-import com.yuanzhy.sqldog.core.Schema;
-import com.yuanzhy.sqldog.core.Table;
-import com.yuanzhy.sqldog.core.constant.ConstraintType;
-import com.yuanzhy.sqldog.core.constant.DataType;
-import com.yuanzhy.sqldog.memory.ColumnBuilder;
-import com.yuanzhy.sqldog.memory.ConstraintBuilder;
-import com.yuanzhy.sqldog.memory.SchemaBuilder;
-import com.yuanzhy.sqldog.memory.TableBuilder;
-import com.yuanzhy.sqldog.sql.adapter.CalciteSchema;
+import com.yuanzhy.sqldog.server.core.Schema;
+import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
+import com.yuanzhy.sqldog.server.core.constant.DataType;
+import com.yuanzhy.sqldog.server.memory.ColumnBuilder;
+import com.yuanzhy.sqldog.server.memory.ConstraintBuilder;
+import com.yuanzhy.sqldog.server.memory.SchemaBuilder;
+import com.yuanzhy.sqldog.server.memory.TableBuilder;
+import com.yuanzhy.sqldog.server.sql.adapter.CalciteSchema;
 import org.apache.calcite.jdbc.CalciteConnection;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.util.ConversionUtil;

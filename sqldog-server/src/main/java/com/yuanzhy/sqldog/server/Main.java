@@ -2,7 +2,7 @@ package com.yuanzhy.sqldog.server;
 
 import com.yuanzhy.sqldog.server.io.BioServer;
 import com.yuanzhy.sqldog.server.io.NioServer;
-import com.yuanzhy.sqldog.util.ConfigUtil;
+import com.yuanzhy.sqldog.server.util.ConfigUtil;
 
 /**
  * @author yuanzhy
