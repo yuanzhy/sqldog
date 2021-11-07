@@ -22,9 +22,9 @@ public final class CliUtil {
         //OptionGroup connOptions = new OptionGroup();
         OPTIONS.addOption(Option.builder("h").hasArg(true).longOpt("host").type(String.class).desc("database server host (default: \"127.0.0.1\")").build());
         OPTIONS.addOption(Option.builder("p").hasArg(true).longOpt("port").type(Short.TYPE).desc("database server port (default: \"2345\")").build());
-        OPTIONS.addOption(Option.builder("U").required(true).hasArg(true).longOpt("username").type(String.class).desc("database user name ").build());
+        OPTIONS.addOption(Option.builder("U").hasArg(true).longOpt("username").type(String.class).desc("database user name ").build());
         //connOptions.addOption(Option.builder("w").hasArg(true).longOpt("no-password").type(String.class).desc("never prompt for password").build());
-        OPTIONS.addOption(Option.builder("P").required(true).longOpt("password").hasArg(true).type(String.class).desc("force password prompt (should happen automatically)").build());
+        OPTIONS.addOption(Option.builder("P").longOpt("password").hasArg(true).type(String.class).desc("force password prompt (should happen automatically)").build());
         //OPTIONS.addOptionGroup(connOptions);
 
         //OptionGroup generalOptions = new OptionGroup();

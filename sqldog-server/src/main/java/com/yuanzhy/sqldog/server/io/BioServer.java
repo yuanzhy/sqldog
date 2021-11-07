@@ -6,6 +6,7 @@ import com.yuanzhy.sqldog.server.core.constant.Auth;
 import com.yuanzhy.sqldog.server.core.constant.Consts;
 import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
 import com.yuanzhy.sqldog.server.util.ConfigUtil;
+import com.yuanzhy.sqldog.server.util.Databases;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +69,8 @@ public class BioServer implements Server {
                             try {
                                 doAuth(params);
                                 pw.print(Auth.SUCCESS.value());
+                                pw.print(Consts.SEPARATOR);
+                                pw.print("Welcome to sqldog v1.0.0");
                             } catch (Exception e) {
                                 LOG.warn(e.getMessage());
                                 pw.println(e.getMessage().contains(Consts.END_CHAR));
@@ -98,8 +101,8 @@ public class BioServer implements Server {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-
             } finally {
+                Databases.currSchema(null);
                 try {
                     socket.close();
                 } catch (IOException e) {
@@ -117,15 +120,15 @@ public class BioServer implements Server {
                 }
                 sb.append(line);
                 if (line.endsWith(Consts.END_CHAR)) {
+                    sb.deleteCharAt(sb.length() - 1);
                     break;
                 }
                 sb.append("\n");
             }
-            return sb.toString();
+            return sb.toString().trim();
         }
 
         private void doAuth(String params) {
-            params = params.substring(0, params.length() - 1);
             String[] arr = params.split(Consts.SEPARATOR);
             if (arr.length != 2) {
                 throw new IllegalArgumentException(Auth.ILLEGAL.value());

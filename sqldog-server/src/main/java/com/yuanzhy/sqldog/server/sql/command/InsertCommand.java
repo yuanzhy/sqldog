@@ -44,6 +44,6 @@ public class InsertCommand extends AbstractSqlCommand {
             values.put(colName, value);
         }
         table.getDML().insert(values);
-        return success(values.size());
+        return success(1);
     }
 }

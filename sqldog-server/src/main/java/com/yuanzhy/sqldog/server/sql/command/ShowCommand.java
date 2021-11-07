@@ -2,8 +2,6 @@ package com.yuanzhy.sqldog.server.sql.command;
 
 import com.yuanzhy.sqldog.server.util.Databases;
 
-import java.util.stream.Collectors;
-
 /**
  * @author yuanzhy
  * @version 1.0
@@ -15,16 +13,16 @@ public class ShowCommand extends AbstractSqlCommand {
     }
 
     @Override
-    public String execute() { // TODO 表格形式展现
+    public String execute() {
         String sqlSuffix = sql.substring("SHOW ".length());
         if ("DATABASES".equals(sqlSuffix)) {
             return Databases.getDefault().getName();
         } else if ("SCHEMAS".equals(sqlSuffix)) {
-            return Databases.getDefault().getSchemaNames().stream().collect(Collectors.joining("\n"));
+            return Databases.getDefault().toPrettyString();
         } else if ("TABLES".equals(sqlSuffix)) {
-//            Databases.getDefault().getSchema();
-            // TODO
-            return null;
+            return Databases.currSchema().toPrettyString();
+        } else if ("SEARCH_PATH".equals(sqlSuffix)) {
+            return Databases.currSchema().getName();
         } else {
             throw new UnsupportedOperationException("not supported: " + sql);
         }

@@ -51,6 +51,10 @@ public enum DataType {
             dataType = StringUtils.substringBefore(dataType, "(");
         }
         dataType = dataType.trim().toUpperCase();
-        return DataType.valueOf(dataType);
+        try {
+            return DataType.valueOf(dataType);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Illegal data type: " + dataType, e);
+        }
     }
 }

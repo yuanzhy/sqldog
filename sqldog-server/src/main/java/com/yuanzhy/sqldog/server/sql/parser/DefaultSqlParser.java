@@ -7,10 +7,12 @@ import com.yuanzhy.sqldog.server.sql.command.CommentCommand;
 import com.yuanzhy.sqldog.server.sql.command.CreateSchemaCommand;
 import com.yuanzhy.sqldog.server.sql.command.CreateTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.DeleteCommand;
+import com.yuanzhy.sqldog.server.sql.command.DescCommand;
 import com.yuanzhy.sqldog.server.sql.command.DropSchemaCommand;
 import com.yuanzhy.sqldog.server.sql.command.DropTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.InsertCommand;
 import com.yuanzhy.sqldog.server.sql.command.SelectCommand;
+import com.yuanzhy.sqldog.server.sql.command.SetCommand;
 import com.yuanzhy.sqldog.server.sql.command.ShowCommand;
 import com.yuanzhy.sqldog.server.sql.command.TruncateTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.UpdateCommand;
@@ -25,12 +27,19 @@ public class DefaultSqlParser implements SqlParser {
 
     @Override
     public SqlCommand parse(String sql) {
-        sql = sql.toUpperCase().trim().replaceAll("[\n\r\t]", " ").replaceAll("\\s+", " ");
+        sql = sql.toUpperCase().trim(); // TODO 引号中的文本不大写
         if (sql.endsWith(";")) {
             sql = sql.substring(0, sql.length() - 1);
         }
+        sql = sql.replaceAll("[\n\r\t]", " ").replaceAll("\\s+", " ").trim();
         String tmp = StringUtils.substringAfter(sql, " ").trim();
-        if (sql.startsWith("CREATE")) {
+        if (sql.startsWith("SHOW")) {
+            return new ShowCommand(sql);
+        } else if (StringUtils.startsWithAny(sql, "SET", "USE")) { // SET search_path TO my_schema;   use my_schema;
+            return new SetCommand(sql);
+        } else if (StringUtils.startsWithAny(sql, "\\D", "DESC")) { // \d table_name;
+            return new DescCommand(sql);
+        } else if (sql.startsWith("CREATE")) {
             if (tmp.startsWith("DATABASE")) {
                 throw new UnsupportedOperationException("create database is unsupported");
             } else if (tmp.startsWith("SCHEMA")) {
@@ -64,8 +73,6 @@ public class DefaultSqlParser implements SqlParser {
             return new DeleteCommand(sql);
         } else if (sql.startsWith("SELECT")) {
             return new SelectCommand(sql);
-        } else if (sql.startsWith("SHOW")) {
-            return new ShowCommand(sql);
         }
         throw new UnsupportedOperationException("operation not supported: " + sql);
     }

@@ -24,16 +24,17 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
     public RemoteCliCommand(String host, int port, String username, String password) {
         try {
             socket = new Socket(host, port);
-            br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            br = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
             pw = new PrintWriter(socket.getOutputStream(), true);
             // login
-            pw.println("auth");
-            pw.println(Consts.SEPARATOR);
-            pw.println(String.format("username:%s,password:%s;", username, password));
-            String r = br.readLine().trim();
+            String r = send("auth" + Consts.SEPARATOR + String.format("username:%s,password:%s;", username, password));
             if (!r.startsWith(Auth.SUCCESS.value())) {
+                System.out.println(r);
                 throw new IllegalArgumentException(r);
             }
+            r = r.substring(0, r.length() - 1);
+            r = r.split(Consts.SEPARATOR)[1];
+            System.out.println(r);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

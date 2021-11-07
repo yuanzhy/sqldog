@@ -28,20 +28,27 @@ public abstract class AbstractSqlCommand implements SqlCommand {
 
     protected void parseSchema(String sqlSuffix) {
         String schemaTable = StringUtils.substringBefore(sqlSuffix, " ");
-        final String schemaName = StringUtils.substringBefore(schemaTable, ".");
+        if (schemaTable.contains(".")) {
+            final String schemaName = StringUtils.substringBefore(schemaTable, ".");
 //        final String tableName = StringUtils.substringAfter(schemaTable, ".");
-        schema = Databases.getDefault().getSchema(schemaName);
-        Asserts.notNull(schema, schemaName + " not exists");
+            schema = Databases.getDefault().getSchema(schemaName);
+            Asserts.notNull(schema, schemaName + " not exists");
+        } else {
+            schema = Databases.currSchema();
+            Asserts.notNull(schema, "current schema is unset");
+        }
     }
 
     protected String parseTableName(String sqlSuffix) {
         String schemaTable = StringUtils.substringBefore(sqlSuffix, " ");
 //        final String schemaName = StringUtils.substringBefore(schemaTable, ".");
-        String tableName = StringUtils.substringAfter(schemaTable, ".");
-        if (tableName.contains("(")) {
-            tableName = StringUtils.substringBefore(tableName, "(").trim();
+        if (schemaTable.contains("(")) {
+            schemaTable = StringUtils.substringBefore(schemaTable, "(").trim();
         }
-        return tableName;
+        if (schemaTable.contains(".")) {
+            return StringUtils.substringAfter(schemaTable, ".").trim();
+        }
+        return schemaTable;
     }
 
     protected void parseSchemaTable(String sqlSuffix) {

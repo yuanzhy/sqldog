@@ -19,10 +19,12 @@ public class ConnectCliCommand extends RemoteCliCommand {
     protected void executeInternal() {
         Scanner scanner = new Scanner(System.in);
         while (true) {
+            System.out.print(">>> ");
             String command = this.waitCommand(scanner);
             String res = send(command);
             System.out.println(res);
             if ("quit".equalsIgnoreCase(command) || "\\q".equals(command)) {
+                close();
                 break;
             }
         }
@@ -37,6 +39,7 @@ public class ConnectCliCommand extends RemoteCliCommand {
                 break;
             }
             sb.append("\n");
+            System.out.print("> ");
         }
         return sb.toString();
     }

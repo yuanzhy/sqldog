@@ -1,17 +1,17 @@
 package com.yuanzhy.sqldog.server.memory;
 
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-
-import com.yuanzhy.sqldog.server.core.builder.BaseBuilder;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Constraint;
 import com.yuanzhy.sqldog.server.core.Serial;
 import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.core.builder.BaseBuilder;
 import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.server.core.util.Asserts;
+
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -49,11 +49,11 @@ public class TableBuilder extends BaseBuilder<TableBuilder> {
 
     @Override
     public Table build() {
-        Asserts.hasText(name, "表名称不能为空");
-        Asserts.notNull(primaryKey, "主键不能为空");
-        Asserts.hasEle(columnMap, "列不能为空");
+        Asserts.hasText(name, "table name must not be null");
+        Asserts.notNull(primaryKey, "primaryKey must not be null");
+        Asserts.hasEle(columnMap, "table must has column");
         Column pkColumn = columnMap.get(primaryKey.getColumnNames()[0]);
-        Asserts.notNull(pkColumn, "主键列不存在");
+        Asserts.notNull(pkColumn, "primaryKey column '"+primaryKey.getColumnNames()[0]+"' not exists");
         // setSerial
         if (this.serial == null && pkColumn.getDataType().isSerial()) {
             this.serial = new SerialMemoryImpl(0, 1); // 默认步长

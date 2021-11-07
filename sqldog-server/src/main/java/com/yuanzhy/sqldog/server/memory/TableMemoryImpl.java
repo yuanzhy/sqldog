@@ -66,6 +66,29 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
         this.constraint = constraint;
         this.serial = serial;
     }
+    /*
+                              Table "public.company"
+         Column  |     Type      | Collation | Nullable | Default
+        ---------+---------------+-----------+----------+---------
+         id      | integer       |           | not null |
+         name    | text          |           | not null |
+         age     | integer       |           | not null |
+         address | character(50) |           |          |
+         salary  | real          |           |          |
+        Indexes:
+            "company_pkey" PRIMARY KEY, btree (id)
+     */
+    @Override
+    public String toPrettyString() {
+        return "\t Table \"" + name + "\"\n" +
+                joinByVLine("Column", "Type", "Nullable", "Default", "Description") + "\n" +
+                genHLine(5) + "\n" +
+                columnMap.values().stream().map(Column::toPrettyString).collect(Collectors.joining("\n")) + "\n" +
+                "Constraint:\n" +
+                "    " + primaryKey.toPrettyString() + "\n" +
+                constraint.stream().map(Constraint::toPrettyString).map(s -> "    " + s).collect(Collectors.joining("\n"))
+                ;
+    }
 
     @Override
     public void drop() {

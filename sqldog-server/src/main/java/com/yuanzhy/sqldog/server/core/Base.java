@@ -13,6 +13,8 @@ public interface Base {
 
     void setDescription(String description);
 
+    String toPrettyString();
+
     /**
      * 删除后的清理操作
      */

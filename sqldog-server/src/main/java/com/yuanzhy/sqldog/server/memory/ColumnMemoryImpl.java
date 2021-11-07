@@ -3,6 +3,8 @@ package com.yuanzhy.sqldog.server.memory;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.constant.DataType;
 
+import java.util.Objects;
+
 /**
  * @author yuanzhy
  * @version 1.0
@@ -27,6 +29,16 @@ public class ColumnMemoryImpl extends MemoryBase implements Column {
         this.scale = scale;
         this.nullable = nullable;
         this.defaultValue = defaultValue;
+    }
+
+    @Override
+    public String toPrettyString() {
+        // Column  |     Type    | Nullable | Default | Description
+        return joinByVLine(name,
+                dataType.isHasLength() ? dataType.name() + "(" + precision + (scale > 0 ? "," + scale : "") + ")" : dataType.name(),
+                nullable ? "NULL" : "NOT NULL",
+                Objects.toString(defaultValue),
+                description);
     }
 
     @Override
