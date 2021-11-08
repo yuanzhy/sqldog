@@ -84,24 +84,19 @@ public class DefaultSqlParser implements SqlParser {
         boolean valueToken = false;
         boolean escape = false;
         for (char c : str.toCharArray()) {
+            // --- 转义处理 ---
             if (c == Consts.SQL_ESCAPE) {
                 escape = true;
                 sb.append(c);
                 continue;
             }
-            if (escape) {
-                sb.append(Character.toUpperCase(c));
-                escape = false;
+            if (!escape && c == Consts.SQL_QUOTES) {
+                valueToken = !valueToken;
+                sb.append(c);
             } else {
-                if (c == Consts.SQL_QUOTES) {
-                    valueToken = !valueToken;
-                    sb.append(c);
-                } else if (valueToken) {
-                    sb.append(c);
-                } else {
-                    sb.append(Character.toUpperCase(c));
-                }
+                sb.append(valueToken ? c : Character.toUpperCase(c));
             }
+            escape = false;
         }
         return sb.toString();
     }
