@@ -7,7 +7,7 @@ package com.yuanzhy.sqldog.server.core;
  */
 public interface SqlCommand {
     /**
-     * 执行sql，TODO 返回值
+     * 执行sql
      */
     String execute();
 }
