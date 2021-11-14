@@ -1,5 +1,8 @@
 package com.yuanzhy.sqldog.server.core;
 
+import org.apache.calcite.sql.SqlDelete;
+import org.apache.calcite.sql.SqlUpdate;
+
 import java.util.Map;
 
 /**
@@ -12,11 +15,11 @@ public interface DML {
 
     Object insert(Map<String, Object> values);
 
-    int delete(Object id);
+//    int delete(Object id);
 
-    int update(Map<String, Object> updates, Object id);
+//    int update(Map<String, Object> updates, Object id);
 
-    int deleteBy(Map<String, Object> wheres);
+    int deleteBy(SqlDelete sqlDelete);
 
-    int updateBy(Map<String, Object> updates, Map<String, Object> wheres);
+    int updateBy(SqlUpdate sqlUpdate);
 }

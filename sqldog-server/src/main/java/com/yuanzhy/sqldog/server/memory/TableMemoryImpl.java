@@ -1,31 +1,34 @@
 package com.yuanzhy.sqldog.server.memory;
 
+import com.google.common.collect.Sets;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Constraint;
 import com.yuanzhy.sqldog.server.core.DML;
-import com.yuanzhy.sqldog.server.core.Query;
 import com.yuanzhy.sqldog.server.core.Serial;
 import com.yuanzhy.sqldog.server.core.Table;
 import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
+import com.yuanzhy.sqldog.server.core.constant.DataType;
 import com.yuanzhy.sqldog.server.core.util.Asserts;
 import org.apache.calcite.sql.SqlBasicCall;
-import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlJoin;
+import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.SqlOrderBy;
-import org.apache.calcite.sql.SqlSelect;
+import org.apache.calcite.sql.SqlUpdate;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -56,8 +59,6 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
      * value = pk value
      */
     private final Map<String, Object> uniqueMap = new HashMap<>();
-
-    private final Query query = new QueryMemoryImpl();
 
     TableMemoryImpl(String name, Map<String, Column> columnMap, Constraint primaryKey, Set<Constraint> constraint, Serial serial) {
         super(name.toUpperCase());
@@ -112,23 +113,31 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
         if (values.containsKey(pkName)) {
             pkValue = values.get(pkName);
             // check pk
-            Asserts.isFalse(data.containsKey(pkValue), "主键值冲突：" + pkValue);
+            Asserts.isFalse(data.containsKey(pkValue), "Primary key conflict：" + pkValue);
         } else if (columnMap.get(pkName).getDataType().isSerial()) {
             pkValue = this.serial.next();
             values.put(pkName, pkValue);
         } else {
-            throw new IllegalArgumentException("主键值不能为空");
+            throw new IllegalArgumentException("Primary key must be not null");
         }
         // check constraint
         this.checkConstraint(values);
         // add data
         synchronized (data) {
             Map<String, Object> row = new LinkedHashMap<>();
-            for (String columnName : columnMap.keySet()) {
-                Object value = values.get(columnName);
+            for (Map.Entry<String, Column> entry : columnMap.entrySet()) {
+                String columnName = entry.getKey();
+                Column column = entry.getValue();
+                //不包含，此列，则赋予defaultValue
                 if (!values.containsKey(columnName)) {
-                    value = columnMap.get(columnName).defaultValue();
+                    row.put(columnName, column.defaultValue());
+                    continue;
                 }
+                Object value = values.get(columnName);
+                if (value == null) {
+                    continue;
+                }
+                value = column.getDataType().parseValue(value.toString());
                 row.put(columnName, value);
             }
             for (Constraint c : this.constraint) {
@@ -170,70 +179,210 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
         }
     }
 
-    @Override
-    public int delete(Object id) {
-        Object removeValue = data.remove(id);
-        return removeValue == null ? 0 : 1;
-    }
+//    @Override
+//    public int delete(Object id) {
+//        Object removeValue = data.remove(id);
+//        return removeValue == null ? 0 : 1;
+//    }
+
+//    @Override
+//    public int update(Map<String, Object> updates, Object id) {
+//        Map<String, Object> row = data.get(id);
+//        if (row == null) {
+//            return 0;
+//        }
+//        this.checkData(updates);
+//        synchronized (row) {
+//            for (String colName : columnMap.keySet()) {
+//                if (updates.containsKey(colName)) {
+//                    Object value = updates.get(colName);
+//                    row.put(colName, value);
+//                }
+//            }
+//            return 1;
+//        }
+//    }
 
     @Override
-    public int update(Map<String, Object> updates, Object id) {
-        Map<String, Object> row = data.get(id);
-        if (row == null) {
-            return 0;
-        }
-        this.checkData(updates);
-        synchronized (row) {
-            for (String colName : columnMap.keySet()) {
-                if (updates.containsKey(colName)) {
-                    Object value = updates.get(colName);
-                    row.put(colName, value);
+    public synchronized int deleteBy(SqlDelete sqlDelete) {
+        int count = 0;
+        if (sqlDelete.getCondition() instanceof SqlBasicCall) {
+            Set<Map<String, Object>> dataList = handleWhere(data.values(), (SqlBasicCall)sqlDelete.getCondition());
+            String pkName = getPkName();
+            for (Map<String, Object> row : dataList) {
+                Map<String, Object> deletedRow = data.remove(row.get(pkName));
+                if (deletedRow == null) {
+                    continue;
+                }
+                count++;
+                // 删除唯一索引
+                for (Constraint c : this.constraint) {
+                    String[] columnNames = c.getColumnNames();
+                    if (c.getType() == ConstraintType.UNIQUE) {
+                        String uniColValue = Arrays.stream(columnNames).map(cn -> row.get(cn).toString()).collect(Collectors.joining("_"));
+                        uniqueMap.remove(uniColValue);
+                    }
                 }
             }
-            return 1;
-        }
-    }
-
-    @Override
-    public synchronized int deleteBy(Map<String, Object> wheres) {
-        Iterator<Map.Entry<Object, Map<String, Object>>> ite = data.entrySet().iterator();
-        int count = 0;
-        while (ite.hasNext()) {
-            Map.Entry<Object, Map<String, Object>> entry = ite.next();
-            Map<String, Object> row = entry.getValue();
-            if (isMatch(row, wheres)) {
-                ite.remove();
-                count++;
-            }
+        } else {
+            throw new UnsupportedOperationException("not supported: " + sqlDelete.getCondition());
         }
         return count;
     }
 
     @Override
-    public synchronized int updateBy(Map<String, Object> updates, Map<String, Object> wheres) {
-        Asserts.isTrue(updates.containsKey(getPkName()), "暂不支持更新主键");
-        this.checkConstraint(updates);// TODO update的唯一约束检查有bug，可能只更新了一行并且唯一键更新的和原有的一致
+    public synchronized int updateBy(SqlUpdate sqlUpdate) {
+        List<String> colList = sqlUpdate.getTargetColumnList().stream().map(SqlNode::toString).collect(Collectors.toList());
+        Asserts.isFalse(colList.contains(getPkName()), "Temporary unsupported update primary key");
+        List<Object> valList = new ArrayList<>(colList.size());
+        for (int i = 0; i < colList.size(); i++) {
+            DataType dt = columnMap.get(colList.get(i)).getDataType();
+            SqlNode s = sqlUpdate.getSourceExpressionList().get(i);
+            if (!(s instanceof SqlLiteral)) {
+                throw new UnsupportedOperationException("not supported: " + s.toString());
+            }
+            valList.add(dt.parseValue(((SqlLiteral) s).toValue()));
+        }
+        // checkConstraint TODO
+//        for (Constraint c : constraint) {
+//            String[] columnNames = c.getColumnNames();
+//            if (c.getType() == ConstraintType.UNIQUE) {
+//                String uniColValue = Arrays.stream(columnNames).map(cn -> values.get(cn).toString()).collect(Collectors.joining("_"));
+//                boolean contains = uniqueMap.containsKey(uniColValue);
+//                Asserts.isTrue(contains, "Unique key conflict：" + c.getName());
+//            } else if (c.getType() == ConstraintType.FOREIGN_KEY) {
+//                //
+//            }
+//        }
         int count = 0;
-        for (Map.Entry<Object, Map<String, Object>> rowEntry : data.entrySet()) {
-            Map<String, Object> row = rowEntry.getValue();
-            if (isMatch(row, wheres)) {
-                row.putAll(updates);
+        if (sqlUpdate.getCondition() instanceof SqlBasicCall) {
+            Set<Map<String, Object>> dataList = handleWhere(data.values(), (SqlBasicCall)sqlUpdate.getCondition());
+            for (Map<String, Object> row : dataList) {
+                for (int i = 0; i < colList.size(); i++) {
+                    row.put(colList.get(i), valList.get(i));
+                }
                 count++;
             }
+        } else {
+            throw new UnsupportedOperationException("not supported: " + sqlUpdate.getCondition());
         }
         return count;
     }
 
-    private boolean isMatch(Map<String, Object> row, Map<String, Object> wheres) {
-        for (Map.Entry<String, Object> whereEntry : wheres.entrySet()) {
-            Object whereValue = whereEntry.getValue();
-            Object whereKey = whereEntry.getKey();
-            if (!Objects.equals(whereValue, row.get(whereKey))) {
-                return false;
+    private Set<Map<String, Object>> handleWhere(Collection<Map<String, Object>> sources, SqlBasicCall condition) {
+        SqlKind kind = condition.getOperator().getKind();
+        SqlNode left = condition.getOperandList().get(0);
+        SqlNode right = condition.getOperandList().size() > 1 ? condition.getOperandList().get(1): null;
+        if (kind == SqlKind.AND) {
+            Set<Map<String, Object>> leftData, rightData;
+            if (left instanceof SqlBasicCall) {
+                leftData = handleWhere(sources, (SqlBasicCall) left);
+            } else {
+                throw new UnsupportedOperationException("operation not support: " + left.toString());
             }
+            if (right instanceof SqlBasicCall) {
+                rightData = handleWhere(sources, (SqlBasicCall) right);
+            } else {
+                throw new UnsupportedOperationException("operation not support: " + right.toString());
+            }
+            return Sets.intersection(leftData, rightData);
+        } else if (kind == SqlKind.OR) {
+            Set<Map<String, Object>> leftData, rightData;
+            if (left instanceof SqlBasicCall) {
+                leftData = handleWhere(sources, (SqlBasicCall) left);
+            } else {
+                throw new UnsupportedOperationException("operation not support: " + left.toString());
+            }
+            if (right instanceof SqlBasicCall) {
+                rightData = handleWhere(sources, (SqlBasicCall) right);
+            } else {
+                throw new UnsupportedOperationException("operation not support: " + right.toString());
+            }
+            return Sets.union(leftData, rightData);
         }
-        return true;
+        if (left instanceof SqlBasicCall) {
+            // where ID + AGE > 15 // 暂不支持
+            throw new UnsupportedOperationException("operation not support: " + left.toString());
+        }
+        String leftString = left.toString();
+        // where TT.ID < 15
+        String colName = leftString.contains(".") ? StringUtils.substringAfter(leftString, ".") : leftString;
+        Predicate<Map<String, Object>> fn = null;
+        DataType dt = columnMap.get(colName).getDataType();
+        Object val = parseValue(right, dt);
+        if (kind == SqlKind.BETWEEN) {
+            Object val2 = parseValue(condition.getOperandList().get(2), dt);
+            fn = m -> m.get(colName) != null
+                    && ObjectUtils.compare((Comparable)m.get(colName), (Comparable)val) >= 0
+                    && ObjectUtils.compare((Comparable)m.get(colName), (Comparable)val2) <= 0;
+        } else if (kind == SqlKind.EQUALS) {
+            fn = m -> val != null && val.equals(m.get(colName));
+        } else if (kind == SqlKind.NOT_EQUALS) {
+            fn = m -> val != null && !val.equals(m.get(colName));
+        } else if (kind == SqlKind.IN) {
+            fn = m -> m.get(colName) != null && ((List)val).contains(m.get(colName));
+        } else if (kind == SqlKind.NOT_IN) {
+            fn = m -> m.get(colName) != null && !((List)val).contains(m.get(colName));
+        } /*else if (kind == SqlKind.EXISTS) {
+
+        } */else if (kind == SqlKind.IS_NULL) {
+            fn = m -> m.get(colName) == null;
+        } else if (kind == SqlKind.IS_NOT_NULL) {
+            fn = m -> m.get(colName) != null;
+        } else if (kind == SqlKind.LESS_THAN) {
+            fn = m -> m.get(colName) != null && ObjectUtils.compare((Comparable)m.get(colName), (Comparable)val) < 0;
+        } else if (kind == SqlKind.LESS_THAN_OR_EQUAL) {
+            fn = m -> m.get(colName) != null && ObjectUtils.compare((Comparable)m.get(colName), (Comparable)val) <= 0;
+        } else if (kind == SqlKind.GREATER_THAN) {
+            fn = m -> m.get(colName) != null && ObjectUtils.compare((Comparable)m.get(colName), (Comparable)val) > 0;
+        } else if (kind == SqlKind.GREATER_THAN_OR_EQUAL) {
+            fn = m -> m.get(colName) != null && ObjectUtils.compare((Comparable)m.get(colName), (Comparable)val) >= 0;
+        } else {
+            throw new UnsupportedOperationException("operation not support: " + condition.toString());
+        }
+        // TODO + -
+        return sources.stream().filter(fn).collect(Collectors.toSet());
     }
+
+    private Object parseValue(SqlNode sqlNode, DataType dt) {
+        if (sqlNode == null) {
+            return null;
+        }
+        Object val;
+        if (sqlNode instanceof SqlLiteral) {
+            val = dt.parseValue(((SqlLiteral) sqlNode).toValue());
+//            if (dt == DataType.DATE) {
+//                val = DateUtil.parseSqlDate(((SqlLiteral) right).getValueAs(String.class));
+//            } else if (dt == DataType.TIME) {
+//                val = DateUtil.parseSqlTime(((SqlLiteral) right).getValueAs(String.class));
+//            } else if (dt == DataType.TIMESTAMP) {
+//                val = DateUtil.parseTimestamp(((SqlLiteral) right).getValueAs(String.class));
+//            } else {
+//                val = ((SqlLiteral)right).getValueAs(dt.getClazz());
+//            }
+        } else if (sqlNode instanceof SqlNodeList) {
+            val = ((SqlNodeList) sqlNode).getList().stream().map(s -> {
+                if (s instanceof SqlLiteral) {
+                    return dt.parseValue(((SqlLiteral) s).toValue());
+                }
+                throw new UnsupportedOperationException("operation not support: " + s.toString());
+            }).collect(Collectors.toList());
+        } else {
+            throw new UnsupportedOperationException("operation not support: " + sqlNode.toString());
+        }
+        return val;
+    }
+
+//    private boolean isMatch(Map<String, Object> row, Map<String, Object> wheres) {
+//        for (Map.Entry<String, Object> whereEntry : wheres.entrySet()) {
+//            Object whereValue = whereEntry.getValue();
+//            Object whereKey = whereEntry.getKey();
+//            if (!Objects.equals(whereValue, row.get(whereKey))) {
+//                return false;
+//            }
+//        }
+//        return true;
+//    }
 
     @Override
     public Column getColumn(String name) {
@@ -284,142 +433,4 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
 //    public Query getQuery() {
 //        return this.query;
 //    }
-
-    private class QueryMemoryImpl implements Query {
-
-        @Override
-        public Map<String, Object> select(Object id) {
-            Map<String, Object> r = data.get(id);
-            return r == null ? null : Collections.unmodifiableMap(r);
-        }
-
-        @Override
-        public List<Map<String, Object>> selectBy(SqlNode sqlNode) {
-            handleSQL(sqlNode);
-            return null;
-        }
-
-        private void handleSQL(SqlNode sqlNode) {
-            SqlKind kind = sqlNode.getKind();
-            switch (kind) {
-                case SELECT:
-                    handleSelect(sqlNode);
-                    break;
-                case UNION:
-                    ((SqlBasicCall) sqlNode).getOperandList().forEach(node -> {
-                        handleSQL(node);
-                    });
-                    break;
-                case ORDER_BY:
-                    handleOrderBy(sqlNode);
-                    break;
-            }
-        }
-
-        private void handleOrderBy(SqlNode node) {
-            SqlOrderBy sqlOrderBy = (SqlOrderBy) node;
-            SqlNode query = sqlOrderBy.query;
-            handleSQL(query);
-            SqlNodeList orderList = sqlOrderBy.orderList;
-            handlerField(orderList);
-
-            SqlNode fetch = sqlOrderBy.fetch;
-            SqlNode offset = sqlOrderBy.offset;
-            // TODO limit offset
-        }
-
-
-        private void handleSelect(SqlNode select) {
-            SqlSelect sqlSelect = (SqlSelect) select;
-            //TODO 改写SELECT的字段信息
-            SqlNodeList selectList = sqlSelect.getSelectList();
-            //字段信息
-            selectList.getList().forEach(list -> {
-                handlerField(list);
-            });
-
-            handlerFrom(sqlSelect.getFrom());
-
-            if (sqlSelect.hasWhere()) {
-                handlerField(sqlSelect.getWhere());
-            }
-
-            if (sqlSelect.hasOrderBy()) {
-                handlerField(sqlSelect.getOrderList());
-            }
-
-            SqlNodeList group = sqlSelect.getGroup();
-            if (group != null) {
-                group.forEach(groupField -> {
-                    handlerField(groupField);
-                });
-            }
-
-
-            SqlNode fetch = sqlSelect.getFetch();
-            if (fetch != null) {
-                //TODO limit
-            }
-
-        }
-
-        private void handlerFrom(SqlNode from) {
-            SqlKind kind = from.getKind();
-
-            switch (kind) {
-                case IDENTIFIER:
-                    //最终的表名
-                    SqlIdentifier sqlIdentifier = (SqlIdentifier) from;
-                    //TODO 表名的替换，所以在此之前就需要获取到模型的信息
-                    System.out.println("==tablename===" + sqlIdentifier.toString());
-                    break;
-                case AS:
-                    SqlBasicCall sqlBasicCall = (SqlBasicCall) from;
-                    SqlNode selectNode = sqlBasicCall.getOperandList().get(0);
-                    handleSQL(selectNode);
-                    break;
-                case JOIN:
-                    SqlJoin sqlJoin = (SqlJoin) from;
-                    SqlNode left = sqlJoin.getLeft();
-                    handleSQL(left);
-                    SqlNode right = sqlJoin.getRight();
-                    handleSQL(right);
-                    SqlNode condition = sqlJoin.getCondition();
-                    handlerField(condition);
-                    break;
-                case SELECT:
-                    handleSQL(from);
-                    break;
-            }
-        }
-
-        private void handlerField(SqlNode field) {
-            SqlKind kind = field.getKind();
-            switch (kind) {
-                case AS:
-                    SqlNode[] operands_as = ((SqlBasicCall) field).operands;
-                    SqlNode left_as = operands_as[0];
-                    handlerField(left_as);
-                    break;
-                case IDENTIFIER:
-                    //表示当前为子节点
-                    SqlIdentifier sqlIdentifier = (SqlIdentifier) field;
-                    System.out.println("===field===" + sqlIdentifier.toString());
-                    break;
-                default:
-                    if (field instanceof SqlBasicCall) {
-                        SqlNode[] nodes = ((SqlBasicCall) field).operands;
-                        for (int i = 0; i < nodes.length; i++) {
-                            handlerField(nodes[i]);
-                        }
-                    }
-                    if (field instanceof SqlNodeList) {
-                        ((SqlNodeList) field).getList().forEach(node -> {
-                            handlerField(node);
-                        });
-                    }
-                    break;
-            }
-        }
-    }
 }

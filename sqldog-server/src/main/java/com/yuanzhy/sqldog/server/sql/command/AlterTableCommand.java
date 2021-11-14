@@ -54,7 +54,7 @@ public class AlterTableCommand extends AbstractSqlCommand {
             if (tmp.contains(" DEFAULT ")) {
                 String rawDefault = StringUtils.substringAfter(tmp, " DEFAULT ");
                 rawDefault = StringUtils.substringBefore(rawDefault, " ").trim();
-                cb.defaultValue(super.parseValue(dataType, rawDefault));
+                cb.defaultValue(dataType.parseValue(rawDefault));
             }
             table.addColumn(cb.build());
         } else {

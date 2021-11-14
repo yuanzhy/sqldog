@@ -3,11 +3,9 @@ package com.yuanzhy.sqldog.server.sql.command;
 import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.core.SqlCommand;
 import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.core.constant.DataType;
-import com.yuanzhy.sqldog.server.memory.ColumnBuilder;
 import com.yuanzhy.sqldog.server.core.util.Asserts;
+import com.yuanzhy.sqldog.server.memory.ColumnBuilder;
 import com.yuanzhy.sqldog.server.util.Databases;
-import com.yuanzhy.sqldog.server.core.util.DateUtil;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -68,29 +66,6 @@ public abstract class AbstractSqlCommand implements SqlCommand {
             cb.scale(Integer.parseInt(StringUtils.substringAfter(preScale, ",").trim()));
         } else {
             cb.precision(Integer.parseInt(preScale));
-        }
-    }
-
-    protected Object parseValue(DataType dt, String rawValue) {
-        if (rawValue.startsWith("'")) {
-            String defaultValue = StringUtils.substringBetween(rawValue, "'");
-            if (dt == DataType.DATE) {
-                return DateUtil.parseSqlDate(defaultValue);
-            } else if (dt == DataType.TIME) {
-                return DateUtil.parseSqlTime(defaultValue);
-            } else if (dt == DataType.TIMESTAMP) {
-                return DateUtil.parseTimestamp(defaultValue);
-            } else if (dt == DataType.CHAR || dt == DataType.VARCHAR) {
-                return String.valueOf(defaultValue);
-            } else {
-                throw new UnsupportedOperationException(rawValue + " not supported");
-            }
-        } else if (rawValue.startsWith("[")) {
-            throw new UnsupportedOperationException(rawValue + " not supported");
-        } else if (rawValue.startsWith("{")) {
-            return rawValue;
-        } else {
-            return Integer.parseInt(rawValue);
         }
     }
 

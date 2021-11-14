@@ -80,7 +80,7 @@ public class CreateTableCommand extends AbstractSqlCommand {
         if (rawColInfo.contains(" DEFAULT ")) {
             String rawDefault = StringUtils.substringAfter(rawColInfo, " DEFAULT ");
             rawDefault = StringUtils.substringBefore(rawDefault, " ").trim();
-            cb.defaultValue(super.parseValue(dataType, rawDefault));
+            cb.defaultValue(dataType.parseValue(rawDefault));
         }
         return cb;
     }
