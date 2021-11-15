@@ -1,10 +1,5 @@
 package com.yuanzhy.sqldog.server.util;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Properties;
-
 import org.apache.calcite.jdbc.CalciteConnection;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.parser.SqlParser;
@@ -13,6 +8,11 @@ import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
 import org.apache.calcite.util.ConversionUtil;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Properties;
 
 /**
  * @author yuanzhy
@@ -30,6 +30,7 @@ public class Calcites {
         System.setProperty("saffron.default.collation.name",ConversionUtil.NATIVE_UTF16_CHARSET_NAME + "$en_US");
         Properties config = new Properties();
         //config.put("model", MyCsvTest.class.getClassLoader().getResource("my_csv_model.json").getPath());
+        config.put("parserFactory", "com.yuanzhy.sqldog.server.sql.adapter.CalciteParserFactory");
         config.put("caseSensitive", "false");
         try {
             Connection conn = DriverManager.getConnection("jdbc:calcite:", config);

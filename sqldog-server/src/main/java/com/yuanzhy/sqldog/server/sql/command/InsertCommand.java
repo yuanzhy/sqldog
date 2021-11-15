@@ -40,7 +40,7 @@ public class InsertCommand extends AbstractSqlCommand {
         for (int i = 0; i < colArr.length; i++) {
             final String colName = colArr[i].trim();
             final String rawValue = valArr[i].trim();
-            final Object value = columnMap.get(colName).getDataType().parseValue(rawValue);
+            final Object value = columnMap.get(colName).getDataType().parseRawValue(rawValue);
             values.put(colName, value);
         }
         table.getDML().insert(values);

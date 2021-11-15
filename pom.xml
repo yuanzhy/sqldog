@@ -20,8 +20,8 @@
     </properties>
     <modules>
         <module>sqldog-core</module>
-        <module>sqldog-server</module>
         <module>sqldog-cli</module>
+        <module>sqldog-server</module>
         <module>sqldog-jdbc</module>
     </modules>
     <dependencies>

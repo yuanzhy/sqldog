@@ -52,8 +52,11 @@ public enum DataType {
         return clazz;
     }
 
-    public Object parseValue(String rawValue) {
+    public Object parseRawValue(String rawValue) {
         if (rawValue == null) {
+            return null;
+        }
+        if (rawValue.equals("NULL")) {
             return null;
         }
         if (rawValue.startsWith("'")) {
@@ -64,7 +67,7 @@ public enum DataType {
                 return DateUtil.parseSqlTime(defaultValue);
             } else if (this == DataType.TIMESTAMP) {
                 return DateUtil.parseTimestamp(defaultValue);
-            } else if (this == DataType.CHAR || this == DataType.VARCHAR || this == DataType.TEXT) {
+            } else if (this.getClazz() == String.class) {
                 return defaultValue;
             } else {
                 throw new UnsupportedOperationException(rawValue + " not supported");
@@ -74,7 +77,7 @@ public enum DataType {
         }
 //        else if (rawValue.startsWith("{") || dt == DataType.BYTEA) {
 //            return rawValue;
-//        }
+//        } // TODO 数字精度损失
         else if (this == DataType.BIGINT || this == DataType.BIGSERIAL) {
             return Long.valueOf(rawValue);
         } else if (this == DataType.INT || this == DataType.SERIAL) {
@@ -85,8 +88,44 @@ public enum DataType {
             return Boolean.valueOf(rawValue);
         } else if (this == DataType.NUMERIC) {
             return BigDecimal.valueOf(Double.parseDouble(rawValue));
+        } else if (this.getClazz() == String.class) {
+            throw new IllegalArgumentException("Illegal data type, " + this.name() + ": " + rawValue);
         }
         return rawValue;
+    }
+
+    public Object parseValue(String value) {
+        if (value == null) {
+            return null;
+        }
+        if (value.equals("NULL")) {
+            return null;
+        }
+        if (this == DataType.DATE) {
+            return DateUtil.parseSqlDate(value);
+        } else if (this == DataType.TIME) {
+            return DateUtil.parseSqlTime(value);
+        } else if (this == DataType.TIMESTAMP) {
+            return DateUtil.parseTimestamp(value);
+        }
+//        } else if (rawValue.startsWith("[")) {
+//            throw new UnsupportedOperationException(rawValue + " not supported");
+//        }
+//        else if (rawValue.startsWith("{") || dt == DataType.BYTEA) {
+//            return rawValue;
+//        } // TODO 数字精度损失
+        else if (this == DataType.BIGINT || this == DataType.BIGSERIAL) {
+            return Long.valueOf(value);
+        } else if (this == DataType.INT || this == DataType.SERIAL) {
+            return Integer.valueOf(value);
+        } else if (this == DataType.SMALLINT || this == DataType.SMALLSERIAL) {
+            return Short.valueOf(value);
+        } else if (this == DataType.BOOLEAN) {
+            return Boolean.valueOf(value);
+        } else if (this == DataType.NUMERIC) {
+            return BigDecimal.valueOf(Double.parseDouble(value));
+        }
+        return value;
     }
 
     public static DataType of(String dataType) {

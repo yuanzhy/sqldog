@@ -1,14 +1,18 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import com.yuanzhy.sqldog.server.core.util.DateUtil;
+import com.yuanzhy.sqldog.server.util.Calcites;
+import com.yuanzhy.sqldog.server.util.FormatterUtil;
+
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-
-import com.yuanzhy.sqldog.server.core.util.DateUtil;
-import com.yuanzhy.sqldog.server.util.Calcites;
-import com.yuanzhy.sqldog.server.util.FormatterUtil;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Arrays;
+import java.util.Base64;
 
 /**
  * @author yuanzhy
@@ -51,15 +55,33 @@ public class SelectCommand extends AbstractSqlCommand {
                 String[] values = new String[columnLabels.length];
                 for (int i = 0; i < columnLabels.length; i++) {
                     Object value = rs.getObject(columnLabels[i]);
-                    if (value instanceof Date) {
-                        values[i] = DateUtil.formatSqlDate((Date)value);
-                    }
+                    values[i] = this.toString(value);
                 }
-                FormatterUtil.joinByVLine(MAX_LENGTH, columnLabels);
+                sb.append(FormatterUtil.joinByVLine(MAX_LENGTH, values)).append("\n");
             }
+            sb.append("\n");
+            sb.append(success(count));
+            return sb.toString();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return success();
+    }
+
+    private String toString(Object value) {
+        if (value instanceof Date) {
+            return DateUtil.formatSqlDate((Date)value);
+        } else if (value instanceof Time) {
+            return DateUtil.formatTime((Time)value);
+        } else if (value instanceof Time) {
+            return DateUtil.formatTime((Time)value);
+        } else if (value instanceof Timestamp) {
+            return DateUtil.formatTimestamp((Timestamp)value);
+        } else if (value instanceof byte[]) {
+            return Base64.getEncoder().encodeToString((byte[])value);
+        } else if (value instanceof Object[]) {
+            return Arrays.toString((Object[])value);
+        } else {
+            return String.valueOf(value);
+        }
     }
 }

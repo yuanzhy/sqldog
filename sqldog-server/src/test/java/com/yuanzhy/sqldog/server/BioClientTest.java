@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
@@ -21,7 +22,7 @@ public class BioClientTest {
         InputStream is = s.getInputStream();
         OutputStream os = s.getOutputStream();
         BufferedReader bufNet = new BufferedReader(new InputStreamReader(is));
-        PrintWriter prtWriter = new PrintWriter(os, true);
+        PrintWriter prtWriter = new PrintWriter(new OutputStreamWriter(os, "UTF-8"), true);
         Scanner scanner = new Scanner(System.in);
         while (true) {
             String input = scanner.nextLine();

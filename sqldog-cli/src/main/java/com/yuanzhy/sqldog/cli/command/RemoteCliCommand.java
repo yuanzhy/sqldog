@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 
@@ -25,7 +26,7 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
         try {
             socket = new Socket(host, port);
             br = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
-            pw = new PrintWriter(socket.getOutputStream(), true);
+            pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
             // login
             String r = send("auth" + Consts.SEPARATOR + String.format("username:%s,password:%s;", username, password));
             if (!r.startsWith(Auth.SUCCESS.value())) {

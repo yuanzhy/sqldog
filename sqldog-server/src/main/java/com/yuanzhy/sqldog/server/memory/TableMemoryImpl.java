@@ -19,6 +19,7 @@ import org.apache.calcite.sql.SqlUpdate;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -134,10 +135,11 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
                     continue;
                 }
                 Object value = values.get(columnName);
-                if (value == null) {
-                    continue;
-                }
-                value = column.getDataType().parseValue(value.toString());
+//                if (value == null) {
+//                    row.put(columnName, null);
+//                    continue;
+//                }
+//                value = column.getDataType().parseRawValue(value.toString());
                 row.put(columnName, value);
             }
             for (Constraint c : this.constraint) {
@@ -158,8 +160,18 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
             if (!column.isNullable() && value == null && column.defaultValue() == null) {
                 throw new IllegalArgumentException("'" + column.getName() + "' is not null");
             }
-            Asserts.isTrue(column.getDataType().isAssignable(value), "数据类型不匹配, " + column.getName() + ":" + value);
-            // TODO 数据长度和精度校验
+            if (value == null) {
+                continue;
+            }
+            Asserts.isTrue(column.getDataType().isAssignable(value), "DataType mismatch, " + column.getName() + ":" + value);
+            if (column.getDataType().isHasLength()) {
+                Asserts.isTrue(value.toString().length() <= column.getPrecision(), "Data length over range, " + column.getName() + "(" + column.getPrecision() + "): " + value);
+            }
+            if (column.getScale() > 0) {
+                BigDecimal d = (BigDecimal) value;
+                d = d.setScale(column.getScale(), BigDecimal.ROUND_HALF_UP);
+                values.put(column.getName(), d);
+            }
         }
     }
 
@@ -245,7 +257,7 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
             if (!(s instanceof SqlLiteral)) {
                 throw new UnsupportedOperationException("not supported: " + s.toString());
             }
-            valList.add(dt.parseValue(((SqlLiteral) s).toValue()));
+            valList.add(parseValue(s, dt));
         }
         // checkConstraint TODO
 //        for (Constraint c : constraint) {
@@ -357,15 +369,6 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
         Object val;
         if (sqlNode instanceof SqlLiteral) {
             val = dt.parseValue(((SqlLiteral) sqlNode).toValue());
-//            if (dt == DataType.DATE) {
-//                val = DateUtil.parseSqlDate(((SqlLiteral) right).getValueAs(String.class));
-//            } else if (dt == DataType.TIME) {
-//                val = DateUtil.parseSqlTime(((SqlLiteral) right).getValueAs(String.class));
-//            } else if (dt == DataType.TIMESTAMP) {
-//                val = DateUtil.parseTimestamp(((SqlLiteral) right).getValueAs(String.class));
-//            } else {
-//                val = ((SqlLiteral)right).getValueAs(dt.getClazz());
-//            }
         } else if (sqlNode instanceof SqlNodeList) {
             val = ((SqlNodeList) sqlNode).getList().stream().map(s -> {
                 if (s instanceof SqlLiteral) {
