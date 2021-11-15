@@ -1,9 +1,10 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.memory.SchemaBuilder;
 import com.yuanzhy.sqldog.server.util.Databases;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author yuanzhy

@@ -1,10 +1,12 @@
 package com.yuanzhy.sqldog.server.util;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.core.util.Asserts;
 import com.yuanzhy.sqldog.server.memory.DatabaseBuilder;
-import org.apache.commons.lang3.StringUtils;
+import com.yuanzhy.sqldog.server.sql.decorator.DatabaseDecorator;
 
 /**
  * @author yuanzhy
@@ -13,7 +15,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class Databases {
     // TODO 默认先只支持单实例库
-    private static final Database DEFAULT = new DatabaseBuilder().name("default").description("sqldog default db").build();
+    private static final Database DEFAULT = new DatabaseDecorator(new DatabaseBuilder().name("default").description("sqldog default db").build());
 
     private static final ThreadLocal<String> TL = new ThreadLocal<>();
 

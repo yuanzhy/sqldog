@@ -1,10 +1,7 @@
 package com.yuanzhy.sqldog.server.memory;
 
 import com.yuanzhy.sqldog.server.core.Base;
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.Arrays;
-import java.util.stream.Collectors;
+import com.yuanzhy.sqldog.server.util.FormatterUtil;
 
 /**
  *
@@ -36,16 +33,10 @@ public abstract class MemoryBase implements Base {
     }
 
     protected String joinByVLine(String... values) {
-        return Arrays.stream(values).map(v -> " " + StringUtils.rightPad(StringUtils.trimToEmpty(v), 15)).collect(Collectors.joining("|"));
+        return FormatterUtil.joinByVLine(15, values);
     }
 
     protected String genHLine(int count) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            sb.append(StringUtils.repeat("-", 15));
-            sb.append("-");
-        }
-        sb.deleteCharAt(sb.length() - 1);
-        return sb.toString();
+        return FormatterUtil.genHLine(15, count);
     }
 }

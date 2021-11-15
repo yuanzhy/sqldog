@@ -10,6 +10,7 @@ public final class Consts {
     public static final String SEPARATOR = "#~&~#";
 
     public static final String END_CHAR = ";";
+    public static final String BREAK_CHAR = "~#&#~";
 
     public static final char SQL_ESCAPE = '\\';
     public static final char SQL_QUOTES = '\'';
