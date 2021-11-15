@@ -206,8 +206,12 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
     @Override
     public synchronized int deleteBy(SqlDelete sqlDelete) {
         int count = 0;
-        if (sqlDelete.getCondition() instanceof SqlBasicCall) {
-            Set<Map<String, Object>> dataList = handleWhere(data.values(), (SqlBasicCall)sqlDelete.getCondition());
+        SqlNode condition = sqlDelete.getCondition();
+        if (condition == null) {
+            count = data.size();
+            this.truncate();
+        } else if (condition instanceof SqlBasicCall) {
+            Set<Map<String, Object>> dataList = handleWhere(data.values(), (SqlBasicCall)condition);
             String pkName = getPkName();
             for (Map<String, Object> row : dataList) {
                 Map<String, Object> deletedRow = data.remove(row.get(pkName));
@@ -225,7 +229,7 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
                 }
             }
         } else {
-            throw new UnsupportedOperationException("not supported: " + sqlDelete.getCondition());
+            throw new UnsupportedOperationException("not supported: " + condition);
         }
         return count;
     }
@@ -254,19 +258,21 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
 //                //
 //            }
 //        }
-        int count = 0;
-        if (sqlUpdate.getCondition() instanceof SqlBasicCall) {
-            Set<Map<String, Object>> dataList = handleWhere(data.values(), (SqlBasicCall)sqlUpdate.getCondition());
-            for (Map<String, Object> row : dataList) {
-                for (int i = 0; i < colList.size(); i++) {
-                    row.put(colList.get(i), valList.get(i));
-                }
-                count++;
-            }
+        SqlNode condition = sqlUpdate.getCondition();
+        Collection<Map<String, Object>> dataList;
+        if (condition == null) {
+            dataList = data.values();
+        } else if (condition instanceof SqlBasicCall) {
+            dataList = handleWhere(data.values(), (SqlBasicCall)condition);
         } else {
-            throw new UnsupportedOperationException("not supported: " + sqlUpdate.getCondition());
+            throw new UnsupportedOperationException("not supported: " + condition);
         }
-        return count;
+        for (Map<String, Object> row : dataList) {
+            for (int i = 0; i < colList.size(); i++) {
+                row.put(colList.get(i), valList.get(i));
+            }
+        }
+        return dataList.size();
     }
 
     private Set<Map<String, Object>> handleWhere(Collection<Map<String, Object>> sources, SqlBasicCall condition) {
