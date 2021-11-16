@@ -1,6 +1,6 @@
 package com.yuanzhy.sqldog.server.core.constant;
 
-import com.yuanzhy.sqldog.server.core.util.DateUtil;
+import com.yuanzhy.sqldog.core.util.DateUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;

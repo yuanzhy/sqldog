@@ -1,7 +1,7 @@
 package com.yuanzhy.sqldog.cli.command;
 
-import com.yuanzhy.sqldog.server.core.constant.Auth;
-import com.yuanzhy.sqldog.server.core.constant.Consts;
+import com.yuanzhy.sqldog.core.constant.Auth;
+import com.yuanzhy.sqldog.core.constant.Consts;
 import org.apache.commons.io.IOUtils;
 
 import java.io.BufferedReader;

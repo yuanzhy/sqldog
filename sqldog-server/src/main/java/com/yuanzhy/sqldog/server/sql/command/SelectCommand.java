@@ -1,6 +1,6 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
-import com.yuanzhy.sqldog.server.core.util.DateUtil;
+import com.yuanzhy.sqldog.core.util.DateUtil;
 import com.yuanzhy.sqldog.server.util.Calcites;
 import com.yuanzhy.sqldog.server.util.FormatterUtil;
 

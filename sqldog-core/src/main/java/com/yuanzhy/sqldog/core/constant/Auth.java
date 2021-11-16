@@ -1,4 +1,4 @@
-package com.yuanzhy.sqldog.server.core.constant;
+package com.yuanzhy.sqldog.core.constant;
 
 /**
  * @author yuanzhy

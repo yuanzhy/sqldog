@@ -1,4 +1,4 @@
-package com.yuanzhy.sqldog.server.core;
+package com.yuanzhy.sqldog.core;
 
 import org.apache.commons.lang3.StringUtils;
 

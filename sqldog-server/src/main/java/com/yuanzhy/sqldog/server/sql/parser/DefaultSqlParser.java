@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.yuanzhy.sqldog.server.core.SqlCommand;
 import com.yuanzhy.sqldog.server.core.SqlParser;
-import com.yuanzhy.sqldog.server.core.constant.Consts;
+import com.yuanzhy.sqldog.core.constant.Consts;
 import com.yuanzhy.sqldog.server.sql.command.AlterTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.CommentCommand;
 import com.yuanzhy.sqldog.server.sql.command.CreateSchemaCommand;

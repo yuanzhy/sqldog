@@ -1,6 +1,6 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
-import com.yuanzhy.sqldog.server.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.util.Databases;
 
 /**

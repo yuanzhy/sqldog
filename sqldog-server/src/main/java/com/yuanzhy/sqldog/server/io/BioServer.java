@@ -2,8 +2,8 @@ package com.yuanzhy.sqldog.server.io;
 
 import com.yuanzhy.sqldog.server.core.SqlCommand;
 import com.yuanzhy.sqldog.server.core.SqlParser;
-import com.yuanzhy.sqldog.server.core.constant.Auth;
-import com.yuanzhy.sqldog.server.core.constant.Consts;
+import com.yuanzhy.sqldog.core.constant.Auth;
+import com.yuanzhy.sqldog.core.constant.Consts;
 import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
 import com.yuanzhy.sqldog.server.util.ConfigUtil;
 import com.yuanzhy.sqldog.server.util.Databases;

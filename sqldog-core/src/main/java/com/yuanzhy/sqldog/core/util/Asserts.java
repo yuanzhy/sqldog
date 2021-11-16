@@ -1,4 +1,4 @@
-package com.yuanzhy.sqldog.server.core.util;
+package com.yuanzhy.sqldog.core.util;
 
 import java.util.Collection;
 import java.util.Map;

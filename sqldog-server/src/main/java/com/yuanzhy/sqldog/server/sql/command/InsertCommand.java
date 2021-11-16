@@ -1,7 +1,7 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
 import com.yuanzhy.sqldog.server.core.Column;
-import com.yuanzhy.sqldog.server.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.Asserts;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;

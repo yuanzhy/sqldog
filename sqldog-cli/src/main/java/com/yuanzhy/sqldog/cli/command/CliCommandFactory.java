@@ -1,8 +1,8 @@
 package com.yuanzhy.sqldog.cli.command;
 
 import com.yuanzhy.sqldog.cli.util.CliUtil;
-import com.yuanzhy.sqldog.server.core.SqldogVersion;
-import com.yuanzhy.sqldog.server.core.util.Asserts;
+import com.yuanzhy.sqldog.core.SqldogVersion;
+import com.yuanzhy.sqldog.core.util.Asserts;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang3.math.NumberUtils;
 

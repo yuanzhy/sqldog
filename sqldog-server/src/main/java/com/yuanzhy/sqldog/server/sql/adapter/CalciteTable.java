@@ -2,7 +2,7 @@ package com.yuanzhy.sqldog.server.sql.adapter;
 
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.Asserts;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.java.AbstractQueryableTable;
 import org.apache.calcite.linq4j.AbstractEnumerable;

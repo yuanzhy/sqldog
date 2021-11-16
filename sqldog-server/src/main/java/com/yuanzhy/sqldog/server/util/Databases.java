@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.server.core.Schema;
-import com.yuanzhy.sqldog.server.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.memory.DatabaseBuilder;
 import com.yuanzhy.sqldog.server.sql.decorator.DatabaseDecorator;
 

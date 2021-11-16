@@ -4,9 +4,9 @@ import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Constraint;
 import com.yuanzhy.sqldog.server.core.Serial;
 import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.core.builder.BaseBuilder;
+import com.yuanzhy.sqldog.core.builder.BaseBuilder;
 import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
-import com.yuanzhy.sqldog.server.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.Asserts;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;

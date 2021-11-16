@@ -1,4 +1,4 @@
-package com.yuanzhy.sqldog.server.core.util;
+package com.yuanzhy.sqldog.core.util;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;

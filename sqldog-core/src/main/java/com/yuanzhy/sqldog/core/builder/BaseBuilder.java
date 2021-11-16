@@ -1,4 +1,4 @@
-package com.yuanzhy.sqldog.server.core.builder;
+package com.yuanzhy.sqldog.core.builder;
 
 /**
  *

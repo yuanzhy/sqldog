@@ -1,9 +1,9 @@
 package com.yuanzhy.sqldog.server.memory;
 
-import com.yuanzhy.sqldog.server.core.builder.BaseBuilder;
+import com.yuanzhy.sqldog.core.builder.BaseBuilder;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.constant.DataType;
-import com.yuanzhy.sqldog.server.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.Asserts;
 
 /**
  *
