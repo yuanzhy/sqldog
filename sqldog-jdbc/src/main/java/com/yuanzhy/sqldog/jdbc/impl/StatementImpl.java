@@ -1,5 +1,7 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
+import com.yuanzhy.sqldog.jdbc.SqldogConnection;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,6 +14,10 @@ import java.sql.Statement;
  * @date 2021-11-16
  */
 public class StatementImpl implements Statement {
+
+    StatementImpl(SqldogConnection connection, String schema) {
+
+    }
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
         return null;
