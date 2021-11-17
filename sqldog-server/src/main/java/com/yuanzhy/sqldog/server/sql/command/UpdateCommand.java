@@ -1,5 +1,8 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Calcites;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlUpdate;
@@ -16,14 +19,15 @@ public class UpdateCommand extends AbstractSqlCommand {
     }
 
     @Override
-    public String execute() {
+    public SqlResult execute() {
         // update scheme.table_name set name='zs', age=15 where id = 1
         try {
             SqlNode sqlNode = Calcites.getPanner().parse(sql);
 //            Calcites.getPanner().validate(sqlNode); // TODO validate
             SqlUpdate update = (SqlUpdate) sqlNode;
             super.parseSchemaTable(update.getTargetTable().toString());
-            return success(table.getDML().updateBy(update));
+            int rows = table.getDML().updateBy(update);
+            return new SqlResultBuilder(StatementType.DML).schema(schema.getName()).table(table.getName()).rows(rows).build();
         } catch (SqlParseException /*| ValidationException*/ e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }

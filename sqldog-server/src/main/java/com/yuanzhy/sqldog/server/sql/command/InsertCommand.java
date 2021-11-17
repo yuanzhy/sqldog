@@ -1,7 +1,10 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
-import com.yuanzhy.sqldog.server.core.Column;
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.core.Column;
+import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
@@ -18,7 +21,7 @@ public class InsertCommand extends AbstractSqlCommand {
     }
 
     @Override
-    public String execute() {
+    public SqlResult execute() {
         // insert into scheme.table_name (id, name) values(1, 'zs')
         // insert into scheme.table_name values(1, 'zs')
         String sqlSuffix = sql.substring("insert into ".length());
@@ -43,7 +46,8 @@ public class InsertCommand extends AbstractSqlCommand {
             final Object value = columnMap.get(colName).getDataType().parseRawValue(rawValue);
             values.put(colName, value);
         }
-        table.getDML().insert(values);
-        return success(1);
+        Object pk = table.getDML().insert(values);
+        return new SqlResultBuilder(StatementType.DML).schema(schema.getName()).table(table.getName()).rows(1)
+                .data(pk).build();
     }
 }

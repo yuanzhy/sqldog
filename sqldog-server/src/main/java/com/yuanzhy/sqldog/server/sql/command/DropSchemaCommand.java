@@ -1,6 +1,9 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.core.Schema;
+import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Databases;
 import org.apache.commons.lang3.StringUtils;
 
@@ -15,7 +18,7 @@ public class DropSchemaCommand extends AbstractSqlCommand {
     }
 
     @Override
-    public String execute() {
+    public SqlResult execute() {
         // drop schema SCHEMA_NAME
         String schemaName = sql.substring("DROP SCHEMA ".length());
         schemaName = StringUtils.substringBefore(schemaName, " ");
@@ -24,6 +27,6 @@ public class DropSchemaCommand extends AbstractSqlCommand {
             throw new IllegalArgumentException(schemaName + " not exists");
         }
         Databases.getDefault().dropSchema(schemaName);
-        return success();
+        return new SqlResultBuilder(StatementType.DDL).schema(schemaName).build();
     }
 }

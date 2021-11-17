@@ -68,12 +68,4 @@ public abstract class AbstractSqlCommand implements SqlCommand {
             cb.precision(Integer.parseInt(preScale));
         }
     }
-
-    protected String success() {
-        return "(0 rows)";
-    }
-
-    protected String success(int rows) {
-        return "(" + rows + " rows)";
-    }
 }

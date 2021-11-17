@@ -1,10 +1,13 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.server.core.constant.DataType;
 import com.yuanzhy.sqldog.server.memory.ColumnBuilder;
 import com.yuanzhy.sqldog.server.memory.ConstraintBuilder;
 import com.yuanzhy.sqldog.server.memory.TableBuilder;
+import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -18,7 +21,7 @@ public class CreateTableCommand extends AbstractSqlCommand {
         super(sql);
     }
     @Override
-    public String execute() {
+    public SqlResult execute() {
         // create table schema.table_name()
         String sqlSuffix = sql.substring("CREATE TABLE ".length());
         super.parseSchema(sqlSuffix);
@@ -49,7 +52,7 @@ public class CreateTableCommand extends AbstractSqlCommand {
             }
         }
         schema.addTable(tb.build());
-        return success();
+        return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(tableName).build();
     }
 
     private ColumnBuilder handleCol(TableBuilder tb, String rawColInfo) {

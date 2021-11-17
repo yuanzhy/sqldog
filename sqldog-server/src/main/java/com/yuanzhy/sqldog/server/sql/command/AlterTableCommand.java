@@ -1,7 +1,10 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.core.constant.DataType;
 import com.yuanzhy.sqldog.server.memory.ColumnBuilder;
+import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -16,7 +19,7 @@ public class AlterTableCommand extends AbstractSqlCommand {
     }
 
     @Override
-    public String execute() {
+    public SqlResult execute() {
         // ALTER TABLE schema.table_name ADD column_name datatype;
         // ALTER TABLE schema.table_name DROP COLUMN column_name;
         // ALTER TABLE schema.table_name ALTER COLUMN column_name TYPE datatype;
@@ -60,6 +63,6 @@ public class AlterTableCommand extends AbstractSqlCommand {
         } else {
             throw new UnsupportedOperationException("operation not supported: " + sql);
         }
-        return success();
+        return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(table.getName()).build();
     }
 }

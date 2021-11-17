@@ -1,5 +1,9 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
+
 /**
  * @author yuanzhy
  * @version 1.0
@@ -12,11 +16,11 @@ public class TruncateTableCommand extends AbstractSqlCommand {
     }
 
     @Override
-    public String execute() {
+    public SqlResult execute() {
         // truncate schema.table_name
         String sqlSuffix = sql.substring("TRUNCATE ".length());
         super.parseSchemaTable(sqlSuffix);
         table.truncate();
-        return success();
+        return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(table.getName()).build();
     }
 }

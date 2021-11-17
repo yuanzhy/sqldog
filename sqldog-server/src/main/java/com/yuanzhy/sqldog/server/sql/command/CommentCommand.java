@@ -1,5 +1,8 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -14,7 +17,7 @@ public class CommentCommand extends AbstractSqlCommand {
     }
 
     @Override
-    public String execute() {
+    public SqlResult execute() {
         // comment on table schema.table is '一个神奇的表';
         // comment on column schema.table.column is '一个神奇的列';
         String type = sql.substring("COMMENT ON ".length());
@@ -32,6 +35,6 @@ public class CommentCommand extends AbstractSqlCommand {
         } else {
             throw new UnsupportedOperationException("not supported: " + sql);
         }
-        return success();
+        return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(table.getName()).build();
     }
 }

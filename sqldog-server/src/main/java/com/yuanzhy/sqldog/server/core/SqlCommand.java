@@ -1,5 +1,7 @@
 package com.yuanzhy.sqldog.server.core;
 
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+
 /**
  * @author yuanzhy
  * @version 1.0
@@ -9,5 +11,5 @@ public interface SqlCommand {
     /**
      * 执行sql
      */
-    String execute();
+    SqlResult execute();
 }

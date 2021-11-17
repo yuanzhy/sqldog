@@ -70,11 +70,11 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
     }
     /*
                               Table "public.company"
-         Column  |     Type      | Collation | Nullable | Default
-        ---------+---------------+-----------+----------+---------
-         id      | integer       |           | not null |
-         name    | text          |           | not null |
-         age     | integer       |           | not null |
+         Column  |     Type      |  Nullable | Default | Description
+        ---------+---------------+-----------+----------+------------
+         id      | integer       |  not null |          |
+         name    | text          |  not null |          |
+         age     | integer       |  not null |          |
          address | character(50) |           |          |
          salary  | real          |           |          |
         Indexes:

@@ -1,6 +1,9 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Databases;
 
 /**
@@ -14,7 +17,7 @@ public class SetCommand extends AbstractSqlCommand {
     }
 
     @Override
-    public String execute() {
+    public SqlResult execute() {
         // SET search_path TO my_schema;
         String schemaName;
         if (sql.startsWith("SET SEARCH_PATH TO ")) {
@@ -26,6 +29,6 @@ public class SetCommand extends AbstractSqlCommand {
         }
         Asserts.hasText(schemaName, "Illegal schema name");
         Databases.currSchema(schemaName);
-        return "current " + schemaName;
+        return new SqlResultBuilder(StatementType.OTHER).schema(schema.getName()).build();
     }
 }

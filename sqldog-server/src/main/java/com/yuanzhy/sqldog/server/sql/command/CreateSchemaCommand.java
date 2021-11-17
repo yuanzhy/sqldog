@@ -1,10 +1,12 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
-import org.apache.commons.lang3.StringUtils;
-
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.memory.SchemaBuilder;
+import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Databases;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author yuanzhy
@@ -18,12 +20,12 @@ public class CreateSchemaCommand extends AbstractSqlCommand {
     }
 
     @Override
-    public String execute() {
+    public SqlResult execute() {
         // create schema SCHEMA_NAME
         String schemaName = sql.substring("CREATE SCHEMA ".length());
         schemaName = StringUtils.substringBefore(schemaName, " ");
         Schema schema = new SchemaBuilder().name(schemaName).build();
         Databases.getDefault().addSchema(schema);
-        return success();
+        return new SqlResultBuilder(StatementType.DDL).schema(schemaName).build();
     }
 }

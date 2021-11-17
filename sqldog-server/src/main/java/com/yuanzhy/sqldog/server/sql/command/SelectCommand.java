@@ -1,18 +1,16 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
-import com.yuanzhy.sqldog.core.util.DateUtil;
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Calcites;
-import com.yuanzhy.sqldog.server.util.FormatterUtil;
 
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.Arrays;
-import java.util.Base64;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author yuanzhy
@@ -21,14 +19,12 @@ import java.util.Base64;
  */
 public class SelectCommand extends AbstractSqlCommand {
 
-    private static final int MAX_LENGTH = 20;
-
     public SelectCommand(String sql) {
         super(sql);
     }
 
     @Override
-    public String execute() {
+    public SqlResult execute() {
         try {
             Statement stat = Calcites.getConnection().createStatement();
             ResultSet rs = stat.executeQuery(sql);
@@ -40,48 +36,36 @@ public class SelectCommand extends AbstractSqlCommand {
                 columnLabels[i] = columnLabel;
             }
             // TODO 返回太多卡死内存占用过大问题
-            StringBuilder sb = new StringBuilder();
-            sb.append(FormatterUtil.joinByVLine(MAX_LENGTH, columnLabels)).append("\n");
-            sb.append(FormatterUtil.genHLine(MAX_LENGTH, rsmd.getColumnCount())).append("\n");
-
-                    //columnMap.values().stream().map(Column::toPrettyString).collect(Collectors.joining("\n")) + "\n" +
-                    //"Constraint:\n" +
-                    //"    " + primaryKey.toPrettyString() + "\n" +
-                    //constraint.stream().map(Constraint::toPrettyString).map(s -> "    " + s).collect(Collectors.joining("\n"))
-                    //;
-            int count = 0;
+            List<Object[]> data = new ArrayList<>();
             while (rs.next()) {
-                count++;
-                String[] values = new String[columnLabels.length];
+                Object[] values = new String[columnLabels.length];
                 for (int i = 0; i < columnLabels.length; i++) {
                     Object value = rs.getObject(columnLabels[i]);
-                    values[i] = this.toString(value);
+                    values[i] = value;
                 }
-                sb.append(FormatterUtil.joinByVLine(MAX_LENGTH, values)).append("\n");
+                data.add(values);
             }
-            sb.append("\n");
-            sb.append(success(count));
-            return sb.toString();
+            return new SqlResultBuilder(StatementType.DQL).rows(data.size()).headers(columnLabels).data(data).build();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private String toString(Object value) {
-        if (value instanceof Date) {
-            return DateUtil.formatSqlDate((Date)value);
-        } else if (value instanceof Time) {
-            return DateUtil.formatTime((Time)value);
-        } else if (value instanceof Time) {
-            return DateUtil.formatTime((Time)value);
-        } else if (value instanceof Timestamp) {
-            return DateUtil.formatTimestamp((Timestamp)value);
-        } else if (value instanceof byte[]) {
-            return Base64.getEncoder().encodeToString((byte[])value);
-        } else if (value instanceof Object[]) {
-            return Arrays.toString((Object[])value);
-        } else {
-            return String.valueOf(value);
-        }
-    }
+//    private String toString(Object value) {
+//        if (value instanceof Date) {
+//            return DateUtil.formatSqlDate((Date)value);
+//        } else if (value instanceof Time) {
+//            return DateUtil.formatTime((Time)value);
+//        } else if (value instanceof Time) {
+//            return DateUtil.formatTime((Time)value);
+//        } else if (value instanceof Timestamp) {
+//            return DateUtil.formatTimestamp((Timestamp)value);
+//        } else if (value instanceof byte[]) {
+//            return Base64.getEncoder().encodeToString((byte[])value);
+//        } else if (value instanceof Object[]) {
+//            return Arrays.toString((Object[])value);
+//        } else {
+//            return String.valueOf(value);
+//        }
+//    }
 }

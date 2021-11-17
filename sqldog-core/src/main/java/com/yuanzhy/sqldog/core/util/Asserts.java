@@ -43,4 +43,8 @@ public class Asserts {
     public static void isFalse(boolean value, String msg) {
         isTrue(!value, msg);
     }
+
+    public static void gteZero(int value, String msg) {
+        isTrue(value < 0, msg);
+    }
 }
