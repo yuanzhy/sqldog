@@ -10,6 +10,8 @@ import java.util.List;
  * @date 2021/11/17
  */
 public class SqlResultImpl implements SqlResult {
+
+    private static final long serialVersionUID = 1L;
     /** sql分类 */
     private final StatementType type;
     /** 影响行数 */

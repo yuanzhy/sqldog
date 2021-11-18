@@ -8,6 +8,9 @@ import com.yuanzhy.sqldog.core.sql.SqlResult;
  * @date 2021/11/18
  */
 public class ResponseImpl implements Response {
+
+    private static final long serialVersionUID = 1L;
+
     private final boolean success;
     private final String message;
     private final SqlResult result;
