@@ -23,7 +23,7 @@ public class FileCliCommand extends RemoteCliCommand {
     }
 
     @Override
-    public void executeInternal() {
+    public void execute() {
         try {
             String sql = FileUtils.readFileToString(file, "UTF-8").trim();
             executeAndExit(sql);

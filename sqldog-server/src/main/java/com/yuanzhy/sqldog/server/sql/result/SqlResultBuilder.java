@@ -2,6 +2,7 @@ package com.yuanzhy.sqldog.server.sql.result;
 
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.sql.SqlResultImpl;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.util.Databases;
 

@@ -1,17 +1,25 @@
 package com.yuanzhy.sqldog.server.io;
 
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
-
+import com.yuanzhy.sqldog.core.rmi.Executor;
+import com.yuanzhy.sqldog.core.rmi.RMIServer;
+import com.yuanzhy.sqldog.core.rmi.Response;
+import com.yuanzhy.sqldog.core.rmi.ResponseImpl;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.server.core.SqlCommand;
+import com.yuanzhy.sqldog.server.core.SqlParser;
+import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
+import com.yuanzhy.sqldog.server.util.ConfigUtil;
+import com.yuanzhy.sqldog.server.util.Databases;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.yuanzhy.sqldog.core.rmi.CommandHandler;
-import com.yuanzhy.sqldog.core.rmi.Response;
-import com.yuanzhy.sqldog.server.util.ConfigUtil;
+import java.rmi.ConnectException;
+import java.rmi.NoSuchObjectException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 
 /**
  *
@@ -19,7 +27,9 @@ import com.yuanzhy.sqldog.server.util.ConfigUtil;
  * @date 2021-11-18
  */
 public class RmiServer implements Server {
-    private static final Logger log = LoggerFactory.getLogger(BioServer.class);
+    private static final Logger log = LoggerFactory.getLogger(RmiServer.class);
+
+    private SqlParser sqlParser = new DefaultSqlParser();
     @Override
     public void start() {
         String host = ConfigUtil.getProperty("server.host", "127.0.0.1");
@@ -36,10 +46,9 @@ public class RmiServer implements Server {
             // 但是,将远程对象注册到RMI Registry之后,
             // 客户端就可以通过RMI Registry请求到该远程服务对象的stub，
             // 利用stub代理就可以访问远程服务对象了。
-            CommandHandler remoteHandler = new CommandHandlerImpl();
-            LocateRegistry.createRegistry(port);
-            Registry registry = LocateRegistry.getRegistry();
-            registry.bind("handler", remoteHandler);
+            RMIServer remoteHandler = new RMIServerImpl();
+            Registry registry = LocateRegistry.createRegistry(port);
+            registry.bind("rmiServer", remoteHandler);
             log.info("Sqldog server ready");
             // 如果不想再让该对象被继续调用，使用下面一行
             // UnicastRemoteObject.unexportObject(remoteMath, false);
@@ -48,26 +57,45 @@ public class RmiServer implements Server {
         }
     }
 
-    private class CommandHandlerImpl extends UnicastRemoteObject implements CommandHandler {
+    private class RMIServerImpl extends UnicastRemoteObject implements RMIServer {
 
-        protected CommandHandlerImpl() throws RemoteException { }
+        protected RMIServerImpl() throws RemoteException { }
 
         @Override
-        public Response auth(String username, String password) {
-            System.out.println("auth");
-            return null;
+        public Executor connect(String username, String password) throws RemoteException {
+            String realUsername = ConfigUtil.getProperty("server.username");
+            String realPassword = ConfigUtil.getProperty("server.password");
+            if (realUsername.equals(username) && realPassword.equals(password)) {
+                ExecutorImpl executor = new ExecutorImpl();
+                return (Executor) UnicastRemoteObject.exportObject(executor, 0);
+            } else {
+                throw new ConnectException("Authentication failure");
+            }
         }
+    }
+
+    private class ExecutorImpl implements Executor {
 
         @Override
-        public Response quit() {
-            System.out.println("quit");
-            return null;
+        public String getVersion() {
+            return "1.0.0";
         }
 
         @Override
         public Response execute(String cmd) {
-            System.out.println("cmd");
-            return null;
+            SqlCommand sqlCommand = sqlParser.parse(cmd);
+            try {
+                SqlResult result = sqlCommand.execute();
+                return new ResponseImpl(true, result);
+            } catch (Exception e) {
+                return new ResponseImpl(false, e.getMessage());
+            }
+        }
+
+        @Override
+        public void close() throws NoSuchObjectException {
+            Databases.currSchema(null);
+            UnicastRemoteObject.unexportObject(this, true);
         }
     }
 }

@@ -1,16 +1,16 @@
 package com.yuanzhy.sqldog.cli.command;
 
-import com.yuanzhy.sqldog.core.constant.Auth;
-import com.yuanzhy.sqldog.core.constant.Consts;
-import org.apache.commons.io.IOUtils;
+import com.yuanzhy.sqldog.core.rmi.Executor;
+import com.yuanzhy.sqldog.core.rmi.RMIServer;
+import com.yuanzhy.sqldog.core.rmi.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.Socket;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 
 /**
  * @author yuanzhy
@@ -18,71 +18,72 @@ import java.net.Socket;
  * @date 2021/11/6
  */
 public abstract class RemoteCliCommand implements CliCommand, Closeable {
-    protected final Socket socket;
-    protected final BufferedReader br;
-    protected final PrintWriter pw;
+    protected final Logger log = LoggerFactory.getLogger(this.getClass());
+    protected final Executor executor;
 
     public RemoteCliCommand(String host, int port, String username, String password) {
+        // login
+        Executor executor;
         try {
-            socket = new Socket(host, port);
-            br = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
-            pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
-            // login
-            String r = send("auth" + Consts.SEPARATOR + String.format("username:%s,password:%s;", username, password));
-            if (!r.startsWith(Auth.SUCCESS.value())) {
-                System.out.println(r);
-                throw new IllegalArgumentException(r);
-            }
-            r = r.substring(0, r.length() - 1);
-            r = r.split(Consts.SEPARATOR)[1];
-            System.out.println(r);
-        } catch (IOException e) {
+            Registry registry = LocateRegistry.getRegistry(host, port);
+            RMIServer rmiServer = (RMIServer) registry.lookup("rmiServer");
+            executor = rmiServer.connect(username, password);
+            System.out.println("Welcome to sqldog " + executor.getVersion());
+        } catch (RemoteException | NotBoundException e) {
+            System.out.println(e.getMessage());
             throw new RuntimeException(e);
         }
+        this.executor = executor;
     }
 
-    public final void execute() {
+    private RMIServer createRmiServer(String host, int port) {
         try {
-            this.executeInternal();
-        } finally {
-            close();
+            Registry registry = LocateRegistry.getRegistry(host, port);
+            return (RMIServer) registry.lookup("rmiServer");
+        } catch (RemoteException | NotBoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
     protected final void executeAndExit(String cmd) {
         try {
-            System.out.println(send(cmd));
+            Response response = executor.execute(cmd);
+            System.out.println(response.getMessage());
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
         } finally {
             close();
         }
     }
 
-    protected final String send(String cmd) {
-        if (!cmd.endsWith(Consts.END_CHAR)) {
-            cmd = cmd.concat(Consts.END_CHAR);
-        }
-        pw.println(cmd);
-        try {
-            StringBuilder sb = new StringBuilder();
-            while (true) {
-                String line = br.readLine();
-                sb.append(line);
-                if (line.endsWith(Consts.END_CHAR)) {
-                    break;
-                }
-                sb.append("\n");
-            }
-            sb.deleteCharAt(sb.length() - 1);
-            return sb.toString();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected abstract void executeInternal();
-
     @Override
     public void close() {
-        IOUtils.closeQuietly(br, pw, socket);
+        try {
+            executor.close();
+        } catch (RemoteException e) {
+            log.warn(e.getMessage(), e);
+        }
     }
+
+//    protected final String send(String cmd) {
+//        if (!cmd.endsWith(Consts.END_CHAR)) {
+//            cmd = cmd.concat(Consts.END_CHAR);
+//        }
+//        pw.println(cmd);
+//        try {
+//            StringBuilder sb = new StringBuilder();
+//            while (true) {
+//                String line = br.readLine();
+//                sb.append(line);
+//                if (line.endsWith(Consts.END_CHAR)) {
+//                    break;
+//                }
+//                sb.append("\n");
+//            }
+//            sb.deleteCharAt(sb.length() - 1);
+//            return sb.toString();
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 }

@@ -15,7 +15,7 @@ public class CommandCliCommand extends RemoteCliCommand {
     }
 
     @Override
-    protected void executeInternal() {
+    public void execute() {
         executeAndExit(sql);
     }
 }

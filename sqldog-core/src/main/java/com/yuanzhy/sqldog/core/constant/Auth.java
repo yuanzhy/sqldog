@@ -5,6 +5,7 @@ package com.yuanzhy.sqldog.core.constant;
  * @version 1.0
  * @date 2021/11/6
  */
+@Deprecated
 public enum Auth {
 
     SUCCESS("Authentication Success"),

@@ -1,9 +1,8 @@
-package com.yuanzhy.sqldog.server.sql.result;
-
-import java.util.List;
+package com.yuanzhy.sqldog.core.sql;
 
 import com.yuanzhy.sqldog.core.constant.StatementType;
-import com.yuanzhy.sqldog.core.sql.SqlResult;
+
+import java.util.List;
 
 /**
  * @author yuanzhy
@@ -24,7 +23,7 @@ public class SqlResultImpl implements SqlResult {
     /** sql分类 */
     private final List<Object[]> data;
 
-    SqlResultImpl(StatementType type, int rows, String schema, String table, String[] headers, List<Object[]> data) {
+    public SqlResultImpl(StatementType type, int rows, String schema, String table, String[] headers, List<Object[]> data) {
         this.type = type;
         this.rows = rows;
         this.schema = schema;

@@ -12,7 +12,7 @@ public class ListCliCommand extends RemoteCliCommand {
     }
 
     @Override
-    protected void executeInternal() {
+    public void execute() {
         executeAndExit("show schemas");
     }
 }
