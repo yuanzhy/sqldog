@@ -1,16 +1,16 @@
-package com.yuanzhy.sqldog.core.sql;
+package com.yuanzhy.sqldog.server.sql.result;
+
+import java.util.List;
 
 import com.yuanzhy.sqldog.core.constant.StatementType;
-
-import java.io.Serializable;
-import java.util.List;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
 
 /**
  * @author yuanzhy
  * @version 1.0
  * @date 2021/11/17
  */
-public class SqlResultImpl implements SqlResult, Serializable {
+public class SqlResultImpl implements SqlResult {
     /** sql分类 */
     private final StatementType type;
     /** 影响行数 */
@@ -24,7 +24,7 @@ public class SqlResultImpl implements SqlResult, Serializable {
     /** sql分类 */
     private final List<Object[]> data;
 
-    public SqlResultImpl(StatementType type, int rows, String schema, String table, String[] headers, List<Object[]> data) {
+    SqlResultImpl(StatementType type, int rows, String schema, String table, String[] headers, List<Object[]> data) {
         this.type = type;
         this.rows = rows;
         this.schema = schema;

@@ -4,10 +4,8 @@ import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
+import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Databases;
-
-import java.util.Set;
 
 /**
  * @author yuanzhy

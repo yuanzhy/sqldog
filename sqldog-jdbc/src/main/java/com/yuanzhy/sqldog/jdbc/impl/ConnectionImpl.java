@@ -221,7 +221,7 @@ public class ConnectionImpl extends UnsupportedConnection implements SqldogConne
             throws SQLException {
         checkClosed();
 
-        StatementImpl stmt = new StatementImpl(this, this.schema);
+        StatementImpl stmt = new StatementImpl(this, this.schema, resultSetType, resultSetConcurrency);
 //        stmt.setResultSetType(resultSetType);
 //        stmt.setResultSetConcurrency(resultSetConcurrency);
         return stmt;

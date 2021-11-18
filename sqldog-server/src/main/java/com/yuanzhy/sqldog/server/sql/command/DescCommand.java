@@ -2,7 +2,7 @@ package com.yuanzhy.sqldog.server.sql.command;
 
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
-import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
+import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 
 import java.util.stream.Collectors;
 

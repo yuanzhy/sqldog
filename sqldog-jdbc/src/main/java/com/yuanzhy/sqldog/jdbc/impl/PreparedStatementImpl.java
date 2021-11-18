@@ -21,12 +21,19 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 
+import com.yuanzhy.sqldog.jdbc.SqldogConnection;
+
 /**
  *
  * @author yuanzhy
  * @date 2021-11-16
  */
-public class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
+class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
+
+    PreparedStatementImpl(SqldogConnection connection, String schema, int resultSetType,
+            int resultSetConcurrency) {
+        super(connection, schema, resultSetType, resultSetConcurrency);
+    }
 
     @Override
     public ResultSet executeQuery() throws SQLException {

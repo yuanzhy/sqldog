@@ -4,7 +4,7 @@ import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.core.Column;
-import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
+import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;

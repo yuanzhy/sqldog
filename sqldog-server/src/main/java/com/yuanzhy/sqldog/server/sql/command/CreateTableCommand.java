@@ -7,7 +7,7 @@ import com.yuanzhy.sqldog.server.core.constant.DataType;
 import com.yuanzhy.sqldog.server.memory.ColumnBuilder;
 import com.yuanzhy.sqldog.server.memory.ConstraintBuilder;
 import com.yuanzhy.sqldog.server.memory.TableBuilder;
-import com.yuanzhy.sqldog.server.sql.SqlResultBuilder;
+import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 import org.apache.commons.lang3.StringUtils;
 
 /**

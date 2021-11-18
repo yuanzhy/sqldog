@@ -2,6 +2,7 @@ package com.yuanzhy.sqldog.core.sql;
 
 import com.yuanzhy.sqldog.core.constant.StatementType;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -9,17 +10,17 @@ import java.util.List;
  * @version 1.0
  * @date 2021/11/17
  */
-public interface SqlResult {
+public interface SqlResult extends Serializable {
 
-    public StatementType getType();
+    StatementType getType();
 
-    public int getRows();
+    int getRows();
 
-    public String getSchema();
+    String getSchema();
 
-    public String getTable();
+    String getTable();
 
-    public String[] getHeaders();
+    String[] getHeaders();
 
-    public List<Object[]> getData();
+    List<Object[]> getData();
 }

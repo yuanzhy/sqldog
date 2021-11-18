@@ -1,16 +1,5 @@
 package com.yuanzhy.sqldog.server.io;
 
-import com.yuanzhy.sqldog.server.core.SqlCommand;
-import com.yuanzhy.sqldog.server.core.SqlParser;
-import com.yuanzhy.sqldog.core.constant.Auth;
-import com.yuanzhy.sqldog.core.constant.Consts;
-import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
-import com.yuanzhy.sqldog.server.util.ConfigUtil;
-import com.yuanzhy.sqldog.server.util.Databases;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -18,6 +7,21 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.yuanzhy.sqldog.core.codec.Codec;
+import com.yuanzhy.sqldog.core.codec.SerializeCodec;
+import com.yuanzhy.sqldog.core.constant.Auth;
+import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.server.core.SqlCommand;
+import com.yuanzhy.sqldog.server.core.SqlParser;
+import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
+import com.yuanzhy.sqldog.server.util.ConfigUtil;
+import com.yuanzhy.sqldog.server.util.Databases;
 
 /**
  * @author yuanzhy
@@ -28,7 +32,9 @@ public class BioServer implements Server {
 
     private static final Logger LOG = LoggerFactory.getLogger(BioServer.class);
 
-    private SqlParser sqlParser = new DefaultSqlParser();
+    private final SqlParser sqlParser = new DefaultSqlParser();
+
+    private final Codec<SqlResult> codec = new SerializeCodec<>();
     @Override
     public void start() {
         String host = ConfigUtil.getProperty("server.host", "127.0.0.1");
@@ -90,8 +96,8 @@ public class BioServer implements Server {
                         // 执行脚本
                         SqlCommand sqlCommand = sqlParser.parse(params);
                         try {
-                            String result = sqlCommand.execute();
-                            pw.print(result);
+                            SqlResult result = sqlCommand.execute();
+                            pw.print(new String(codec.encode(result)));
                         } catch (RuntimeException e) {
                             LOG.error(e.getMessage(), e);
                             pw.print(e.getMessage());

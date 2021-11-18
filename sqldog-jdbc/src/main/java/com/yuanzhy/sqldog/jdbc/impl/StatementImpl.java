@@ -1,26 +1,55 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
-import com.yuanzhy.sqldog.jdbc.SqldogConnection;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLWarning;
 import java.sql.Statement;
+
+import com.yuanzhy.sqldog.jdbc.SqldogConnection;
 
 /**
  *
  * @author yuanzhy
  * @date 2021-11-16
  */
-public class StatementImpl implements Statement {
+class StatementImpl extends AbstractStatement implements Statement {
 
-    StatementImpl(SqldogConnection connection, String schema) {
+    protected final SqldogConnection connection;
+    protected final String schema;
+    private final int resultSetType;
+    private final int resultSetConcurrency;
+    private int maxFieldSize = Short.MAX_VALUE;
+    private int maxRows = Integer.MAX_VALUE;
+    private int queryTimeout = 0;
+    private boolean poolable = true;
+    private boolean closeOnCompletion = false;
 
+
+    StatementImpl(SqldogConnection connection, String schema, int resultSetType, int resultSetConcurrency) {
+        this.connection = connection;
+        this.schema = schema;
+        this.resultSetType = resultSetType;
+        this.resultSetConcurrency = resultSetConcurrency;
     }
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
+        char firstStatementChar = Util.firstAlphaCharUc(sql, Util.findStartOfStatement(sql));
+        checkForDml(sql, firstStatementChar);
         return null;
+    }
+
+    protected void checkForDml(String sql, char firstStatementChar) throws SQLException {
+        if ((firstStatementChar == 'I') || (firstStatementChar == 'U') || (firstStatementChar == 'D') || (firstStatementChar == 'A')
+                || (firstStatementChar == 'C') || (firstStatementChar == 'T') || (firstStatementChar == 'R')) {
+            String noCommentSql = Util.stripComments(sql, "'\"", "'\"", true, false, true, true);
+
+            if (Util.startsWithIgnoreCaseAndWs(noCommentSql, "INSERT") || Util.startsWithIgnoreCaseAndWs(noCommentSql, "UPDATE")
+                    || Util.startsWithIgnoreCaseAndWs(noCommentSql, "DELETE") || Util.startsWithIgnoreCaseAndWs(noCommentSql, "DROP")
+                    || Util.startsWithIgnoreCaseAndWs(noCommentSql, "CREATE") || Util.startsWithIgnoreCaseAndWs(noCommentSql, "ALTER")
+                    || Util.startsWithIgnoreCaseAndWs(noCommentSql, "TRUNCATE") || Util.startsWithIgnoreCaseAndWs(noCommentSql, "RENAME")) {
+                throw new SQLException("Can not issue data manipulation statements with executeQuery().");
+            }
+        }
     }
 
     @Override
@@ -29,28 +58,25 @@ public class StatementImpl implements Statement {
     }
 
     @Override
-    public void close() throws SQLException {
-
-    }
-
-    @Override
     public int getMaxFieldSize() throws SQLException {
-        return 0;
+        return maxFieldSize;
     }
 
     @Override
     public void setMaxFieldSize(int max) throws SQLException {
-
+        checkNum(max);
+        maxFieldSize = max;
     }
 
     @Override
     public int getMaxRows() throws SQLException {
-        return 0;
+        return maxRows;
     }
 
     @Override
     public void setMaxRows(int max) throws SQLException {
-
+        checkNum(max);
+        this.maxRows = max;
     }
 
     @Override
@@ -60,26 +86,17 @@ public class StatementImpl implements Statement {
 
     @Override
     public int getQueryTimeout() throws SQLException {
-        return 0;
+        return queryTimeout;
     }
 
     @Override
     public void setQueryTimeout(int seconds) throws SQLException {
-
+        checkNum(seconds);
+        this.queryTimeout = seconds;
     }
 
     @Override
     public void cancel() throws SQLException {
-
-    }
-
-    @Override
-    public SQLWarning getWarnings() throws SQLException {
-        return null;
-    }
-
-    @Override
-    public void clearWarnings() throws SQLException {
 
     }
 
@@ -130,12 +147,14 @@ public class StatementImpl implements Statement {
 
     @Override
     public int getResultSetConcurrency() throws SQLException {
-        return 0;
+        checkClosed();
+        return resultSetConcurrency;
     }
 
     @Override
     public int getResultSetType() throws SQLException {
-        return 0;
+        checkClosed();
+        return resultSetType;
     }
 
     @Override
@@ -155,7 +174,8 @@ public class StatementImpl implements Statement {
 
     @Override
     public Connection getConnection() throws SQLException {
-        return null;
+        checkClosed();
+        return this.connection;
     }
 
     @Override
@@ -199,42 +219,37 @@ public class StatementImpl implements Statement {
     }
 
     @Override
-    public int getResultSetHoldability() throws SQLException {
-        return 0;
-    }
-
-    @Override
-    public boolean isClosed() throws SQLException {
-        return false;
-    }
-
-    @Override
     public void setPoolable(boolean poolable) throws SQLException {
-
+        this.poolable = poolable;
     }
 
     @Override
     public boolean isPoolable() throws SQLException {
-        return false;
+        return poolable;
     }
 
     @Override
     public void closeOnCompletion() throws SQLException {
-
+        checkClosed();
+        this.closeOnCompletion = true;
     }
 
     @Override
     public boolean isCloseOnCompletion() throws SQLException {
-        return false;
+        checkClosed();
+        return closeOnCompletion;
     }
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        return null;
+        if (iface.isInstance(this)) {
+            return iface.cast(this);
+        }
+        throw new SQLException("does not implement '" + iface + "'");
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        return false;
+        return iface.isInstance(this);
     }
 }
