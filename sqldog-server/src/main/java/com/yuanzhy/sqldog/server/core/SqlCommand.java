@@ -12,4 +12,6 @@ public interface SqlCommand {
      * 执行sql
      */
     SqlResult execute();
+
+    void currentSchema(String schema);
 }

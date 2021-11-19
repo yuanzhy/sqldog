@@ -1,9 +1,11 @@
 package com.yuanzhy.sqldog.server.memory;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.yuanzhy.sqldog.core.builder.BaseBuilder;
+import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.constant.DataType;
-import com.yuanzhy.sqldog.core.util.Asserts;
 
 /**
  *
@@ -52,6 +54,9 @@ public class ColumnBuilder extends BaseBuilder<ColumnBuilder> {
         Asserts.hasText(name, "列名不能为空");
         Asserts.notNull(dataType, "数据类型不能为空");
         Asserts.isFalse(dataType.isHasLength() && this.precision == 0, "数据长度不能为空");
+        if (defaultValue != null && dataType == DataType.CHAR) {
+            defaultValue = StringUtils.rightPad(defaultValue.toString(), this.precision);
+        }
         return new ColumnMemoryImpl(name, dataType, precision, scale, nullable, defaultValue);
     }
 }

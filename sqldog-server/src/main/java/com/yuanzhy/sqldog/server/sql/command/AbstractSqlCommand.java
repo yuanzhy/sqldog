@@ -24,6 +24,14 @@ public abstract class AbstractSqlCommand implements SqlCommand {
         this.sql = sql;
     }
 
+    @Override
+    public void currentSchema(String schema) {
+        if (schema != null) {
+            this.schema = Databases.getDefault().getSchema(schema);
+            checkSchema();
+        }
+    }
+
     protected void parseSchema(String sqlSuffix) {
         String schemaTable = StringUtils.substringBefore(sqlSuffix, " ");
         if (schemaTable.contains(".")) {
@@ -32,9 +40,12 @@ public abstract class AbstractSqlCommand implements SqlCommand {
             schema = Databases.getDefault().getSchema(schemaName);
             Asserts.notNull(schema, schemaName + " not exists");
         } else {
-            schema = Databases.currSchema();
-            Asserts.notNull(schema, "current schema is unset");
+            checkSchema();
         }
+    }
+
+    protected void checkSchema() {
+        Asserts.notNull(schema, "current schema is unset");
     }
 
     protected String parseTableName(String sqlSuffix) {

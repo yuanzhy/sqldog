@@ -27,6 +27,9 @@ public class InsertCommand extends AbstractSqlCommand {
         String sqlSuffix = sql.substring("insert into ".length());
         super.parseSchemaTable(sqlSuffix);
         sqlSuffix = StringUtils.substringAfter(sqlSuffix, table.getName()).trim();
+        if (!sqlSuffix.startsWith("VALUES")) {
+            throw new IllegalArgumentException("Illegal sql: " + sql);
+        }
         String[] colArr, valArr;
         if (sqlSuffix.startsWith("(")) {
             // 说明包含 列明

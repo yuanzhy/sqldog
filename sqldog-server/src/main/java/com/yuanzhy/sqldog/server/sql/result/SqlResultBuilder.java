@@ -1,13 +1,12 @@
 package com.yuanzhy.sqldog.server.sql.result;
 
+import java.util.Collections;
+import java.util.List;
+
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.sql.SqlResultImpl;
 import com.yuanzhy.sqldog.core.util.Asserts;
-import com.yuanzhy.sqldog.server.util.Databases;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * @author yuanzhy
@@ -71,13 +70,6 @@ public class SqlResultBuilder {
     }
 
     public SqlResult build() {
-        if (schema == null) {
-            try {
-                schema = Databases.currSchema().getName();
-            } catch (Exception e) {
-                // ignore
-            }
-        }
         return new SqlResultImpl(type, rows, schema, table, headers, data);
     }
 }

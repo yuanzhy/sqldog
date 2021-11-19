@@ -1,5 +1,7 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import java.util.stream.Collectors;
+
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.core.Schema;
@@ -28,18 +30,25 @@ public class ShowCommand extends AbstractSqlCommand {
             return builder.headers("Database", "Name", "Description")
                     .data(Databases.getDefault().getSchemaNames().stream().map(s -> {
                         Schema schema = Databases.getDefault().getSchema(s);
-                        return new Object[]{dbName, schema.getName(), schema.getDescription()};
-                    })).build();
+                        return new Object[]{dbName, schema.getName(), schema.getDescription()}; }).collect(
+                            Collectors.toList()))
+                    .build();
         } else if ("TABLES".equals(sqlSuffix)) {
-            Schema schema = Databases.currSchema();
+            checkSchema();
             return builder.headers("Schema", "Name", "Type", "Description")
                     .schema(schema.getName())
                     .data(schema.getTableNames().stream().map(t -> {
                         Table table = schema.getTable(t);
-                        return new Object[]{schema.getName(), table.getName(), "table", schema.getDescription()};
-                    })).build();
+                        return new Object[]{schema.getName(), table.getName(), "table", schema.getDescription()}; }).collect(Collectors.toList())
+                    ).build();
+            // TODO 显示约束信息
+            //"Constraint:\n" +
+            //        "    " + primaryKey.toPrettyString() + "\n" +
+            //        constraint.stream().map(Constraint::toPrettyString).map(s -> "    " + s).collect(
+            //                Collectors.joining("\n"))
         } else if ("SEARCH_PATH".equals(sqlSuffix)) {
-            return builder.schema(Databases.currSchema().getName()).build();
+            checkSchema();
+            return builder.schema(schema.getName()).build();
         } else {
             throw new UnsupportedOperationException("not supported: " + sql);
         }

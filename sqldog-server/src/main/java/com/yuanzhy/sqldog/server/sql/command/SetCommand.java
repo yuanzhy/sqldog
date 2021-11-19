@@ -4,7 +4,6 @@ import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
-import com.yuanzhy.sqldog.server.util.Databases;
 
 /**
  * @author yuanzhy
@@ -28,7 +27,7 @@ public class SetCommand extends AbstractSqlCommand {
             throw new UnsupportedOperationException("not supported: " + sql);
         }
         Asserts.hasText(schemaName, "Illegal schema name");
-        Databases.currSchema(schemaName);
-        return new SqlResultBuilder(StatementType.OTHER).schema(schema.getName()).build();
+        currentSchema(schemaName);
+        return new SqlResultBuilder(StatementType.OTHER).schema(schemaName).build();
     }
 }

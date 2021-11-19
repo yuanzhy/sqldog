@@ -1,14 +1,19 @@
 package com.yuanzhy.sqldog.server.memory;
 
-import com.google.common.collect.Sets;
-import com.yuanzhy.sqldog.server.core.Column;
-import com.yuanzhy.sqldog.server.core.Constraint;
-import com.yuanzhy.sqldog.server.core.DML;
-import com.yuanzhy.sqldog.server.core.Serial;
-import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
-import com.yuanzhy.sqldog.server.core.constant.DataType;
-import com.yuanzhy.sqldog.core.util.Asserts;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlKind;
@@ -19,18 +24,15 @@ import org.apache.calcite.sql.SqlUpdate;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import com.google.common.collect.Sets;
+import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.core.Column;
+import com.yuanzhy.sqldog.server.core.Constraint;
+import com.yuanzhy.sqldog.server.core.DML;
+import com.yuanzhy.sqldog.server.core.Serial;
+import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
+import com.yuanzhy.sqldog.server.core.constant.DataType;
 
 /**
  * @author yuanzhy
@@ -67,29 +69,6 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
         this.primaryKey = primaryKey;
         this.constraint = constraint;
         this.serial = serial;
-    }
-    /*
-                              Table "public.company"
-         Column  |     Type      |  Nullable | Default | Description
-        ---------+---------------+-----------+----------+------------
-         id      | integer       |  not null |          |
-         name    | text          |  not null |          |
-         age     | integer       |  not null |          |
-         address | character(50) |           |          |
-         salary  | real          |           |          |
-        Indexes:
-            "company_pkey" PRIMARY KEY, btree (id)
-     */
-    @Override
-    public String toPrettyString() {
-        return "\t Table \"" + name + "\"\n" +
-                joinByVLine("Column", "Type", "Nullable", "Default", "Description") + "\n" +
-                genHLine(5) + "\n" +
-                columnMap.values().stream().map(Column::toPrettyString).collect(Collectors.joining("\n")) + "\n" +
-                "Constraint:\n" +
-                "    " + primaryKey.toPrettyString() + "\n" +
-                constraint.stream().map(Constraint::toPrettyString).map(s -> "    " + s).collect(Collectors.joining("\n"))
-                ;
     }
 
     @Override
@@ -140,6 +119,9 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
 //                    continue;
 //                }
 //                value = column.getDataType().parseRawValue(value.toString());
+                if (column.getDataType() == DataType.CHAR && Objects.toString(value).length() < column.getPrecision()) {
+                    value = StringUtils.rightPad(Objects.toString(value), column.getPrecision());
+                }
                 row.put(columnName, value);
             }
             for (Constraint c : this.constraint) {

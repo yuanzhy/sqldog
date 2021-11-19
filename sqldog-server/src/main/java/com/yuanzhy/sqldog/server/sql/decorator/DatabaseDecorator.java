@@ -67,11 +67,6 @@ public class DatabaseDecorator implements Database {
     }
 
     @Override
-    public String toPrettyString() {
-        return delegate.toPrettyString();
-    }
-
-    @Override
     public void drop() {
         org.apache.calcite.jdbc.CalciteSchema calciteSchema = Calcites.getRootSchema().unwrap(org.apache.calcite.jdbc.CalciteSchema.class);
         for (String schemaName : delegate.getSchemaNames()) {

@@ -52,6 +52,11 @@ public class ConfigUtil {
         return StringUtils.isEmpty(value) ? defaultValue : value;
     }
 
+    public static int getIntProperty(String key) {
+        String value = props.getProperty(key);
+        return Integer.parseInt(value);
+    }
+
     public static boolean getBoolProperty(String key) {
         String value = getProperty(key);
         return Boolean.parseBoolean(value);

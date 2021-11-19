@@ -1,6 +1,8 @@
 package com.yuanzhy.sqldog.server.sql.adapter;
 
-import com.yuanzhy.sqldog.server.util.Databases;
+import java.io.Reader;
+import java.util.Arrays;
+
 import org.apache.calcite.sql.SqlAsOperator;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -11,17 +13,16 @@ import org.apache.calcite.sql.SqlOrderBy;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.impl.SqlParserImpl;
 
-import java.io.Reader;
-import java.util.Arrays;
-
 /**
  * @author yuanzhy
  * @version 1.0
  * @date 2021/11/15
  */
 public class CalciteSqlParser extends SqlParserImpl {
-    public CalciteSqlParser(Reader reader) {
+    private final String schema;
+    public CalciteSqlParser(Reader reader, String schema) {
         super(reader);
+        this.schema = schema;
     }
 
     @Override
@@ -76,7 +77,7 @@ public class CalciteSqlParser extends SqlParserImpl {
     private void handleIdentifier(SqlIdentifier sqlIdentifier) {
         if (sqlIdentifier.names.size() == 1) {
             // 如果不带模式， 则自动拼接上
-            sqlIdentifier.setNames(Arrays.asList(new String[]{Databases.currSchema().getName(), sqlIdentifier.names.get(0)}), null);
+            sqlIdentifier.setNames(Arrays.asList(new String[]{ schema, sqlIdentifier.names.get(0)}), null);
         }
     }
 }

@@ -45,6 +45,6 @@ public class Asserts {
     }
 
     public static void gteZero(int value, String msg) {
-        isTrue(value < 0, msg);
+        isTrue(value >= 0, msg);
     }
 }

@@ -4,6 +4,7 @@ import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Calcites;
+import com.yuanzhy.sqldog.server.util.Databases;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -26,6 +27,9 @@ public class SelectCommand extends AbstractSqlCommand {
     @Override
     public SqlResult execute() {
         try {
+            if (schema != null) {
+                Databases.currSchema(schema.getName());
+            }
             Statement stat = Calcites.getConnection().createStatement();
             ResultSet rs = stat.executeQuery(sql);
             ResultSetMetaData rsmd = rs.getMetaData();
@@ -38,7 +42,7 @@ public class SelectCommand extends AbstractSqlCommand {
             // TODO 返回太多卡死内存占用过大问题
             List<Object[]> data = new ArrayList<>();
             while (rs.next()) {
-                Object[] values = new String[columnLabels.length];
+                Object[] values = new Object[columnLabels.length];
                 for (int i = 0; i < columnLabels.length; i++) {
                     Object value = rs.getObject(columnLabels[i]);
                     values[i] = value;

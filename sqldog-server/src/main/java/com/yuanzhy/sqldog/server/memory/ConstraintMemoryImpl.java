@@ -1,11 +1,10 @@
 package com.yuanzhy.sqldog.server.memory;
 
-import com.yuanzhy.sqldog.server.core.Constraint;
-import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
-
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.stream.Collectors;
+
+import com.yuanzhy.sqldog.server.core.Constraint;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 
 /**
  * @author yuanzhy
@@ -22,11 +21,6 @@ public class ConstraintMemoryImpl extends MemoryBase implements Constraint {
         super(name.toUpperCase());
         this.type = type;
         this.columnNames = columnNames;
-    }
-
-    @Override
-    public String toPrettyString() {
-        return "\"" + name + "\" " + type.name() + " " + Arrays.stream(columnNames).collect(Collectors.joining(",", "(", ")"));
     }
 
     @Override

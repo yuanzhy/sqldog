@@ -14,6 +14,7 @@ public class TestCommand {
     private static final String U = "root";
     private static final String PW = "123456";
     public static void main(String[] args) {
+        new CommandCliCommand(H, P, U, PW, "desc test.t").execute();
         new CommandCliCommand(H, P, U, PW, "create schema haha").execute();
         new CommandCliCommand(H, P, U, PW, "create schema hehe").execute();
         new ListCliCommand(H, P, U, PW).execute();

@@ -1,7 +1,6 @@
 package com.yuanzhy.sqldog.server.memory;
 
 import com.yuanzhy.sqldog.server.core.Base;
-import com.yuanzhy.sqldog.server.util.FormatterUtil;
 
 /**
  *
@@ -11,7 +10,7 @@ import com.yuanzhy.sqldog.server.util.FormatterUtil;
 public abstract class MemoryBase implements Base {
 
     protected final String name;
-    protected String description;
+    protected String description = "";
 
     protected MemoryBase(String name) {
         this.name = name;
@@ -29,14 +28,10 @@ public abstract class MemoryBase implements Base {
 
     @Override
     public void setDescription(String description) {
+        if (description == null) {
+            description = "";
+        }
         this.description = description;
     }
 
-    protected String joinByVLine(String... values) {
-        return FormatterUtil.joinByVLine(15, values);
-    }
-
-    protected String genHLine(int count) {
-        return FormatterUtil.genHLine(15, count);
-    }
 }

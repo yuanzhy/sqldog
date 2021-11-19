@@ -2,9 +2,9 @@ package com.yuanzhy.sqldog.server.util;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.server.core.Schema;
-import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.memory.DatabaseBuilder;
 import com.yuanzhy.sqldog.server.sql.decorator.DatabaseDecorator;
 
@@ -23,12 +23,8 @@ public class Databases {
         return DEFAULT;
     }
 
-    public static Schema currSchema() {
-        String schemaName = TL.get();
-        Asserts.hasText(schemaName, "current schema is null, please execute 'use schema_name'");
-        Schema schema = getDefault().getSchema(schemaName);
-        Asserts.notNull(schema, "current schema '" + schemaName + "' not exists");
-        return schema;
+    public static String currSchema() {
+        return TL.get();
     }
 
     public static void currSchema(String schemaName) {

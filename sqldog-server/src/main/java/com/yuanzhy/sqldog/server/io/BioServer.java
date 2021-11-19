@@ -21,7 +21,6 @@ import com.yuanzhy.sqldog.server.core.SqlCommand;
 import com.yuanzhy.sqldog.server.core.SqlParser;
 import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
 import com.yuanzhy.sqldog.server.util.ConfigUtil;
-import com.yuanzhy.sqldog.server.util.Databases;
 
 /**
  * @author yuanzhy
@@ -109,7 +108,7 @@ public class BioServer implements Server {
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                Databases.currSchema(null);
+                //Databases.currSchema(null);
                 try {
                     socket.close();
                 } catch (IOException e) {

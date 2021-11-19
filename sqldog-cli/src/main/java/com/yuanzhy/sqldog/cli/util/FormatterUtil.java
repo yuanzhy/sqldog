@@ -1,10 +1,9 @@
-package com.yuanzhy.sqldog.server.util;
-
-import org.apache.commons.lang3.StringUtils;
+package com.yuanzhy.sqldog.cli.util;
 
 import java.util.Arrays;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -12,8 +11,6 @@ import java.util.stream.Collectors;
  * @date 2021-11-15
  */
 public final class FormatterUtil {
-
-    private static final Pattern DOUBLE_BYTE_PATTERN = Pattern.compile("[^x00-xff]");
 
     public static String joinByVLine(int maxLength, String... values) {
         return Arrays.stream(values).map(v -> {
@@ -35,7 +32,7 @@ public final class FormatterUtil {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < count; i++) {
             sb.append(StringUtils.repeat("-", maxLength));
-            sb.append("-");
+            sb.append("-+");
         }
         sb.deleteCharAt(sb.length() - 1);
         return sb.toString();
