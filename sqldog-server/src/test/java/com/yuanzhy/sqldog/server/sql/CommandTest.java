@@ -1,7 +1,6 @@
 package com.yuanzhy.sqldog.server.sql;
 
 import com.yuanzhy.sqldog.server.core.Schema;
-import com.yuanzhy.sqldog.server.core.SqlParser;
 import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
 import com.yuanzhy.sqldog.server.util.Databases;
 import org.junit.Test;

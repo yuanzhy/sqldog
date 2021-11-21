@@ -1,7 +1,7 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
 import com.yuanzhy.sqldog.server.core.Schema;
-import com.yuanzhy.sqldog.server.core.SqlCommand;
+import com.yuanzhy.sqldog.server.sql.SqlCommand;
 import com.yuanzhy.sqldog.server.core.Table;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.memory.ColumnBuilder;

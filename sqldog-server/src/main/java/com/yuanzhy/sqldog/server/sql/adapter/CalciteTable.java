@@ -1,8 +1,8 @@
 package com.yuanzhy.sqldog.server.sql.adapter;
 
+import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.core.util.Asserts;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.java.AbstractQueryableTable;
 import org.apache.calcite.linq4j.AbstractEnumerable;
@@ -11,17 +11,27 @@ import org.apache.calcite.linq4j.Enumerator;
 import org.apache.calcite.linq4j.Linq4j;
 import org.apache.calcite.linq4j.QueryProvider;
 import org.apache.calcite.linq4j.Queryable;
+import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.logical.LogicalTableModify;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.schema.ModifiableTable;
 import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.impl.AbstractTableQueryable;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,7 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author yuanzhy
  * @date 2021-10-26
  */
-public class CalciteTable extends AbstractQueryableTable implements ScannableTable/*, ModifiableTable*/ {
+public class CalciteTable extends AbstractQueryableTable implements ScannableTable, ModifiableTable {
     private static final Logger LOG = LoggerFactory.getLogger(CalciteTable.class);
     private static final Type TYPE = Object[].class;
 
@@ -109,7 +119,7 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
 
     @Override
     public Enumerable<Object[]> scan(DataContext root) {
-        LOG.info("scan");
+//        LOG.info("scan");
         final AtomicBoolean cancelFlag = DataContext.Variable.CANCEL_FLAG.get(root);
         return new AbstractEnumerable<Object[]>() {
             @Override
@@ -163,7 +173,7 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
 
     @Override
     public <T> Queryable<T> asQueryable(QueryProvider queryProvider, SchemaPlus schema, String tableName) {
-        LOG.info("asQueryable");
+//        LOG.info("asQueryable");
         return new AbstractTableQueryable<T>(queryProvider, schema, this, tableName) {
             @Override public Enumerator<T> enumerator() {
                 //noinspection unchecked
@@ -174,5 +184,16 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
 
     private List<Object[]> getData() {
         return table.getData();
+    }
+
+    @Override
+    public @Nullable Collection getModifiableCollection() {
+        return getData();
+    }
+
+    @Override
+    public TableModify toModificationRel(RelOptCluster cluster, RelOptTable table, Prepare.CatalogReader catalogReader, RelNode child, TableModify.Operation operation, @Nullable List<String> updateColumnList, @Nullable List<RexNode> sourceExpressionList, boolean flattened) {
+        return LogicalTableModify.create(table, catalogReader, child, operation,
+                updateColumnList, sourceExpressionList, flattened);
     }
 }

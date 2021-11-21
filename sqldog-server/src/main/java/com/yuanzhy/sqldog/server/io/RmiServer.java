@@ -7,15 +7,20 @@ import com.yuanzhy.sqldog.core.rmi.RMIServer;
 import com.yuanzhy.sqldog.core.rmi.Response;
 import com.yuanzhy.sqldog.core.rmi.ResponseImpl;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
-import com.yuanzhy.sqldog.server.core.SqlCommand;
-import com.yuanzhy.sqldog.server.core.SqlParser;
+import com.yuanzhy.sqldog.server.sql.PreparedSqlCommand;
+import com.yuanzhy.sqldog.server.sql.SqlCommand;
+import com.yuanzhy.sqldog.server.sql.SqlParser;
 import com.yuanzhy.sqldog.server.sql.command.SetCommand;
 import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
+import com.yuanzhy.sqldog.server.sql.parser.PreparedSqlParser;
 import com.yuanzhy.sqldog.server.util.ConfigUtil;
+import com.yuanzhy.sqldog.server.util.Databases;
+import com.yuanzhy.sqldog.server.util.LRUCache;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.rmi.ConnectException;
 import java.rmi.NoSuchObjectException;
 import java.rmi.RemoteException;
@@ -35,6 +40,7 @@ public class RmiServer implements Server {
     private static final Logger log = LoggerFactory.getLogger(RmiServer.class);
 
     private final SqlParser sqlParser = new DefaultSqlParser();
+    private final PreparedSqlParser preparedSqlParser = new PreparedSqlParser();
     private final Map<String, Executor> executors = new HashMap<>();
     private final int maxConnections = ConfigUtil.getIntProperty("server.max-connections");
 
@@ -117,6 +123,7 @@ public class RmiServer implements Server {
         private final String clientHost;
         private final int serialNum;
         private final String version;
+        private final Map<String, PreparedSqlCommand> preparedSqlCache = new LRUCache<>(50);
         private String currentSchema;
         ExecutorImpl(String clientHost, int serialNum) {
             this.clientHost = clientHost;
@@ -157,7 +164,34 @@ public class RmiServer implements Server {
         }
 
         @Override
+        public Response prepare(String preparedSql) {
+            Databases.currSchema(currentSchema);
+            try {
+                PreparedSqlCommand sqlCommand = preparedSqlCache.computeIfAbsent(preparedSql, key -> preparedSqlParser.parse(preparedSql));
+                SqlResult result = sqlCommand.execute();
+                return new ResponseImpl(true, result);
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                return new ResponseImpl(false, e.getMessage());
+            }
+        }
+
+        @Override
+        public Response executePrepared(String preparedSql, Object[]... parameters) {
+            PreparedSqlCommand sqlCommand = preparedSqlCache.computeIfAbsent(preparedSql, key -> preparedSqlParser.parse(preparedSql));
+            return null;
+        }
+
+        @Override
         public void close() throws NoSuchObjectException {
+            for (PreparedSqlCommand sqlCommand : preparedSqlCache.values()) {
+                try {
+                    sqlCommand.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            preparedSqlCache.clear();
             removeExecutor(clientHost, serialNum);
             log.info("closeConnection: {}_{}", clientHost, serialNum);
         }

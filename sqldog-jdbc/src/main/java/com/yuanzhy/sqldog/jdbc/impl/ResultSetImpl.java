@@ -88,8 +88,7 @@ class ResultSetImpl extends AbstractResultSet implements ResultSet {
 
     @Override
     public String getString(int columnIndex) throws SQLException {
-        Object value = getObject(columnIndex);
-        return value == null ? null : Objects.toString(value);
+        return getObject(columnIndex, String.class);
     }
 
     @Override

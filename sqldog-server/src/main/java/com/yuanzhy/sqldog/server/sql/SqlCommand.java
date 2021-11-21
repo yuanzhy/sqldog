@@ -1,4 +1,4 @@
-package com.yuanzhy.sqldog.server.core;
+package com.yuanzhy.sqldog.server.sql;
 
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 

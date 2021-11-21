@@ -1,9 +1,7 @@
 package com.yuanzhy.sqldog.server.sql.parser;
 
-import com.yuanzhy.sqldog.core.constant.Consts;
-import com.yuanzhy.sqldog.core.util.SqlUtil;
-import com.yuanzhy.sqldog.server.core.SqlCommand;
-import com.yuanzhy.sqldog.server.core.SqlParser;
+import com.yuanzhy.sqldog.server.sql.SqlCommand;
+import com.yuanzhy.sqldog.server.sql.SqlParser;
 import com.yuanzhy.sqldog.server.sql.command.AlterTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.CommentCommand;
 import com.yuanzhy.sqldog.server.sql.command.CreateSchemaCommand;
@@ -28,13 +26,8 @@ import org.apache.commons.lang3.StringUtils;
 public class DefaultSqlParser implements SqlParser {
 
     @Override
-    public SqlCommand parse(String sql) {
-        sql = SqlUtil.stripComments(sql, "'\"", "'\"", true, false, true, true);
-        sql = this.upperCaseIgnoreValue(sql.trim());
-        if (sql.endsWith(";")) {
-            sql = sql.substring(0, sql.length() - 1);
-        }
-        sql = sql.replaceAll("[\n\r\t]", " ").replaceAll("\\s+", " ").trim();
+    public SqlCommand parse(String rawSql) {
+        String sql = pre(rawSql);
         String tmp = StringUtils.substringAfter(sql, " ").trim();
         if (sql.startsWith("SHOW")) {
             return new ShowCommand(sql);
@@ -74,31 +67,9 @@ public class DefaultSqlParser implements SqlParser {
             return new UpdateCommand(sql);
         } else if (sql.startsWith("DELETE")) {
             return new DeleteCommand(sql);
-        } else if (sql.startsWith("SELECT")) {
+        } else if (sql.startsWith("SELECT") /*|| sql.startsWith("WITH RECURSIVE")*/) {
             return new SelectCommand(sql);
         }
         throw new UnsupportedOperationException("operation not supported: " + sql);
-    }
-
-    private String upperCaseIgnoreValue(String str) {
-        StringBuilder sb = new StringBuilder();
-        boolean valueToken = false;
-        boolean escape = false;
-        for (char c : str.toCharArray()) {
-            // --- 转义处理 ---
-            if (c == Consts.SQL_ESCAPE) {
-                escape = true;
-                sb.append(c);
-                continue;
-            }
-            if (!escape && c == Consts.SQL_QUOTES) {
-                valueToken = !valueToken;
-                sb.append(c);
-            } else {
-                sb.append(valueToken ? c : Character.toUpperCase(c));
-            }
-            escape = false;
-        }
-        return sb.toString();
     }
 }

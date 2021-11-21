@@ -1,17 +1,20 @@
 package com.yuanzhy.sqldog.server.sql.adapter;
 
-import java.io.Reader;
-import java.util.Arrays;
-
 import org.apache.calcite.sql.SqlAsOperator;
 import org.apache.calcite.sql.SqlBasicCall;
+import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlJoin;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOrderBy;
 import org.apache.calcite.sql.SqlSelect;
+import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.parser.impl.SqlParserImpl;
+
+import java.io.Reader;
+import java.util.Arrays;
 
 /**
  * @author yuanzhy
@@ -28,25 +31,33 @@ public class CalciteSqlParser extends SqlParserImpl {
     @Override
     public SqlNode parseSqlStmtEof() throws Exception {
         SqlNode sqlNode = super.parseSqlStmtEof();
-        SqlSelect sqlSelect = null;
+        SqlNode targetTable = null;
         if (sqlNode.getKind() == SqlKind.ORDER_BY) {
             SqlOrderBy orderBy = (SqlOrderBy) sqlNode;
             SqlNode query = orderBy.query;
             if (query.getKind() == SqlKind.SELECT) {
-                sqlSelect = (SqlSelect) query;
+                SqlSelect sqlSelect = (SqlSelect) query;
+                targetTable = sqlSelect.getFrom();
             }
         }
+
         if (sqlNode.getKind() == SqlKind.SELECT) {
-            sqlSelect = (SqlSelect) sqlNode;
+            SqlSelect sqlSelect = (SqlSelect) sqlNode;
+            targetTable = sqlSelect.getFrom();
+        } else if (sqlNode.getKind() == SqlKind.INSERT) {
+            targetTable = ((SqlInsert) sqlNode).getTargetTable();
+        } else if (sqlNode.getKind() == SqlKind.UPDATE) {
+            targetTable = ((SqlUpdate) sqlNode).getTargetTable();
+        } else if (sqlNode.getKind() == SqlKind.DELETE) {
+            targetTable = ((SqlDelete) sqlNode).getTargetTable();
         }
-        if (sqlSelect != null) {
-            SqlNode sqlFrom = sqlSelect.getFrom();
-            if (sqlFrom instanceof SqlIdentifier) {
-                handleIdentifier((SqlIdentifier)sqlFrom);
-            } else if (sqlFrom instanceof SqlBasicCall) {
-                handleBasicCall((SqlBasicCall) sqlFrom);
-            } else if (sqlFrom instanceof SqlJoin) {
-                handleJoin((SqlJoin) sqlFrom);
+        if (targetTable != null) {
+            if (targetTable instanceof SqlIdentifier) {
+                handleIdentifier((SqlIdentifier)targetTable);
+            } else if (targetTable instanceof SqlBasicCall) {
+                handleBasicCall((SqlBasicCall) targetTable);
+            } else if (targetTable instanceof SqlJoin) {
+                handleJoin((SqlJoin) targetTable);
             }
         }
         return sqlNode;

@@ -14,5 +14,9 @@ public interface Executor extends Remote, AutoCloseable {
 
     Response execute(String... sqls) throws RemoteException;
 
+    Response prepare(String preparedSql) throws RemoteException;
+
+    Response executePrepared(String preparedSql, Object[]... parameters) throws RemoteException;
+
     void close() throws RemoteException;
 }

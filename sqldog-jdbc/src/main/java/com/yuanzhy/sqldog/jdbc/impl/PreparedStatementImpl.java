@@ -1,5 +1,6 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
+import com.yuanzhy.sqldog.core.util.SqlUtil;
 import com.yuanzhy.sqldog.jdbc.SqldogConnection;
 import org.apache.commons.io.IOUtils;
 
@@ -34,95 +35,124 @@ import java.util.Calendar;
 class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     private final int autoGenerateKey;
-    PreparedStatementImpl(SqldogConnection connection, String schema, int resultSetType,
-            int resultSetConcurrency) {
-        this(connection, schema, resultSetType, resultSetConcurrency, RETURN_GENERATED_KEYS);
+    private final String preparedSql;
+//    private final char firstStatementChar;
+    private final Object[] parameters;
+    private final boolean isDml;
+    PreparedStatementImpl(SqldogConnection connection, String schema, String preparedSql, int resultSetType,
+            int resultSetConcurrency) throws SQLException {
+        this(connection, schema, preparedSql, resultSetType, resultSetConcurrency, RETURN_GENERATED_KEYS);
     }
 
-    PreparedStatementImpl(SqldogConnection connection, String schema, int resultSetType,
-                          int resultSetConcurrency, int autoGenerateKey) {
+    PreparedStatementImpl(SqldogConnection connection, String schema, String preparedSql, int resultSetType,
+                          int resultSetConcurrency, int autoGenerateKey) throws SQLException {
         super(connection, schema, resultSetType, resultSetConcurrency);
+        checkNullOrEmpty(preparedSql);
+        this.preparedSql = preparedSql;
         this.autoGenerateKey = autoGenerateKey;
+        String noCommentSql = SqlUtil.stripComments(preparedSql, "'\"", "'\"", true, false, true, true).trim();
+        if (Util.startsWithIgnoreCaseAndWs(noCommentSql, "INSERT ")
+                || Util.startsWithIgnoreCaseAndWs(noCommentSql, "UPDATE ")
+                || Util.startsWithIgnoreCaseAndWs(noCommentSql, "DELETE ")) {
+            isDml = true;
+        } else if (Util.startsWithIgnoreCaseAndWs(noCommentSql, "SELECT ")
+//                || Util.startsWithIgnoreCaseAndWs(noCommentSql, "WITH RECURSIVE ")
+        ) {
+            isDml = false;
+        } else {
+            throw new SQLException("Not supported PreparedStatement: " + preparedSql);
+        }
+//        this.firstStatementChar = Util.firstAlphaCharUc(preparedSql, Util.findStartOfStatement(preparedSql));
+        this.parameters = new Object[SqlUtil.countQuestionMark(preparedSql)];
+//        this.connection.
+        // TODO
     }
 
     @Override
     public ResultSet executeQuery() throws SQLException {
+        checkClosed();
+        if (isDml) {
+            throw new SQLException("Can not issue data manipulation statements with executeQuery().");
+        }
+// TODO
         return null;
     }
 
     @Override
     public int executeUpdate() throws SQLException {
+        // TODO
         return 0;
     }
 
     @Override
     public void setNull(int parameterIndex, int sqlType) throws SQLException {
-
+        checkParamBounds(parameterIndex);
+        // noop
     }
 
     @Override
     public void setBoolean(int parameterIndex, boolean x) throws SQLException {
-
+        this.setObject(parameterIndex, x);
     }
 
     @Override
     public void setByte(int parameterIndex, byte x) throws SQLException {
-
+        this.setObject(parameterIndex, x);
     }
 
     @Override
     public void setShort(int parameterIndex, short x) throws SQLException {
-
+        this.setObject(parameterIndex, x);
     }
 
     @Override
     public void setInt(int parameterIndex, int x) throws SQLException {
-
+        this.setObject(parameterIndex, x);
     }
 
     @Override
     public void setLong(int parameterIndex, long x) throws SQLException {
-
+        this.setObject(parameterIndex, x);
     }
 
     @Override
     public void setFloat(int parameterIndex, float x) throws SQLException {
-
+        this.setObject(parameterIndex, x);
     }
 
     @Override
     public void setDouble(int parameterIndex, double x) throws SQLException {
-
+        this.setObject(parameterIndex, x);
     }
 
     @Override
     public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
-
+        this.setObject(parameterIndex, x);
     }
 
     @Override
     public void setString(int parameterIndex, String x) throws SQLException {
-
+        this.setObject(parameterIndex, x);
     }
 
     @Override
     public void setBytes(int parameterIndex, byte[] x) throws SQLException {
-
+        this.setObject(parameterIndex, x);
     }
 
     @Override
     public void setDate(int parameterIndex, Date x) throws SQLException {
-
+        this.setObject(parameterIndex, x);
     }
 
     @Override
     public void setTime(int parameterIndex, Time x) throws SQLException {
-
+        this.setObject(parameterIndex, x);
     }
 
     @Override
     public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
-
+        this.setObject(parameterIndex, x);
     }
 
     @Override
@@ -147,27 +177,40 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     @Override
     public void clearParameters() throws SQLException {
-
+        checkClosed();
+        for (int i = 0; i < this.parameters.length; i++) {
+            this.parameters[i] = null;
+        }
     }
 
     @Override
     public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
-
+// TODO
     }
 
     @Override
     public void setObject(int parameterIndex, Object x) throws SQLException {
+        checkParamBounds(parameterIndex);
+        this.parameters[parameterIndex - 1] = x;
+    }
 
+    private void checkParamBounds(int parameterIndex) throws SQLException {
+        checkClosed();
+        if (parameterIndex < 1) {
+            throw new SQLException("Column Index out of range, " + parameterIndex + " < 1.");
+        } else if (parameterIndex > parameters.length) {
+            throw new SQLException("Column Index out of range, " + parameterIndex + " > " + parameters.length + ".");
+        }
     }
 
     @Override
-    public boolean execute() throws SQLException {
+    public boolean execute() throws SQLException {// TODO
         return false;
     }
 
     @Override
     public void addBatch() throws SQLException {
-
+// TODO
     }
 
     @Override
@@ -198,27 +241,29 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
+        // TODO
         return null;
     }
 
     @Override
     public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
-
+        checkParamBounds(parameterIndex);
+        // noop
     }
 
     @Override
@@ -228,6 +273,7 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     @Override
     public ParameterMetaData getParameterMetaData() throws SQLException {
+        // TODO
         return null;
     }
 
@@ -276,7 +322,7 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
     @Override
     public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)
             throws SQLException {
-
+        // TODO
     }
 
     @Override
