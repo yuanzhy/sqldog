@@ -1,10 +1,9 @@
 package com.yuanzhy.sqldog.server.sql.parser;
 
-import org.apache.commons.lang3.StringUtils;
-
+import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.core.util.SqlUtil;
 import com.yuanzhy.sqldog.server.core.SqlCommand;
 import com.yuanzhy.sqldog.server.core.SqlParser;
-import com.yuanzhy.sqldog.core.constant.Consts;
 import com.yuanzhy.sqldog.server.sql.command.AlterTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.CommentCommand;
 import com.yuanzhy.sqldog.server.sql.command.CreateSchemaCommand;
@@ -19,6 +18,7 @@ import com.yuanzhy.sqldog.server.sql.command.SetCommand;
 import com.yuanzhy.sqldog.server.sql.command.ShowCommand;
 import com.yuanzhy.sqldog.server.sql.command.TruncateTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.UpdateCommand;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author yuanzhy
@@ -29,6 +29,7 @@ public class DefaultSqlParser implements SqlParser {
 
     @Override
     public SqlCommand parse(String sql) {
+        sql = SqlUtil.stripComments(sql, "'\"", "'\"", true, false, true, true);
         sql = this.upperCaseIgnoreValue(sql.trim());
         if (sql.endsWith(";")) {
             sql = sql.substring(0, sql.length() - 1);

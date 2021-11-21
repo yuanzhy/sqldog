@@ -2,6 +2,11 @@ package com.yuanzhy.sqldog.jdbc.impl;
 
 import com.yuanzhy.sqldog.jdbc.SqldogConnection;
 
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.NClob;
 import java.sql.PreparedStatement;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
@@ -19,11 +24,17 @@ import java.util.concurrent.Executor;
  * @version 1.0
  * @date 2021/11/16
  */
-abstract class UnsupportedConnection implements SqldogConnection {
+abstract class AbstractConnection extends AbstractWrapper implements SqldogConnection {
 
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType,
-                                              int resultSetConcurrency) throws SQLException {
+                                              int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+    @Override
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency,
+                                         int resultSetHoldability) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
@@ -110,6 +121,36 @@ abstract class UnsupportedConnection implements SqldogConnection {
 
     @Override
     public int getNetworkTimeout() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+    @Override
+    public Clob createClob() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+    @Override
+    public Blob createBlob() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+    @Override
+    public NClob createNClob() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+    @Override
+    public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+    @Override
+    public void setHoldability(int holdability) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+    @Override
+    public int getHoldability() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 }

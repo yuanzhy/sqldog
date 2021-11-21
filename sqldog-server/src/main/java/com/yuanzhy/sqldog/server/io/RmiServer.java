@@ -1,20 +1,7 @@
 package com.yuanzhy.sqldog.server.io;
 
-import java.rmi.ConnectException;
-import java.rmi.NoSuchObjectException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.ServerNotActiveException;
-import java.rmi.server.UnicastRemoteObject;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.yuanzhy.sqldog.core.SqldogVersion;
+import com.yuanzhy.sqldog.core.constant.Consts;
 import com.yuanzhy.sqldog.core.rmi.Executor;
 import com.yuanzhy.sqldog.core.rmi.RMIServer;
 import com.yuanzhy.sqldog.core.rmi.Response;
@@ -25,6 +12,19 @@ import com.yuanzhy.sqldog.server.core.SqlParser;
 import com.yuanzhy.sqldog.server.sql.command.SetCommand;
 import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
 import com.yuanzhy.sqldog.server.util.ConfigUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.rmi.ConnectException;
+import java.rmi.NoSuchObjectException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.ServerNotActiveException;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -57,7 +57,7 @@ public class RmiServer implements Server {
             // 利用stub代理就可以访问远程服务对象了。
             RMIServer remoteHandler = new RMIServerImpl();
             Registry registry = LocateRegistry.createRegistry(port);
-            registry.bind("rmiServer", remoteHandler);
+            registry.bind(Consts.SERVER_NAME, remoteHandler);
             log.info("Sqldog server ready");
             // 如果不想再让该对象被继续调用，使用下面一行
             // UnicastRemoteObject.unexportObject(remoteMath, false);
@@ -123,6 +123,7 @@ public class RmiServer implements Server {
             this.serialNum = serialNum;
             String version = SqldogVersion.getVersion();
             this.version = version == null ? "1.0.0" : version;
+            log.info("newConnection: {}_{}", clientHost, serialNum);
         }
 
         @Override
@@ -131,15 +132,24 @@ public class RmiServer implements Server {
         }
 
         @Override
-        public Response execute(String cmd) {
+        public Response execute(String... sqls) {
             try {
-                SqlCommand sqlCommand = sqlParser.parse(cmd);
-                sqlCommand.currentSchema(currentSchema);
-                SqlResult result = sqlCommand.execute();
-                if (sqlCommand instanceof SetCommand) {
-                    this.currentSchema = result.getSchema();
+                if (sqls.length == 1) {
+                    SqlCommand sqlCommand = sqlParser.parse(sqls[0]);
+                    sqlCommand.currentSchema(currentSchema);
+                    SqlResult result = sqlCommand.execute();
+                    if (sqlCommand instanceof SetCommand) {
+                        this.currentSchema = result.getSchema();
+                    }
+                    return new ResponseImpl(true, result);
                 }
-                return new ResponseImpl(true, result);
+                SqlResult[] results = new SqlResult[sqls.length];
+                for (int i = 0; i < sqls.length; i++) {
+                    SqlCommand sqlCommand = sqlParser.parse(sqls[i]);
+                    sqlCommand.currentSchema(currentSchema);
+                    results[i] = sqlCommand.execute();
+                }
+                return new ResponseImpl(true, results);
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
                 return new ResponseImpl(false, e.getMessage());
@@ -149,6 +159,7 @@ public class RmiServer implements Server {
         @Override
         public void close() throws NoSuchObjectException {
             removeExecutor(clientHost, serialNum);
+            log.info("closeConnection: {}_{}", clientHost, serialNum);
         }
     }
 }

@@ -44,7 +44,7 @@ public class Asserts {
         isTrue(!value, msg);
     }
 
-    public static void gteZero(int value, String msg) {
+    public static void gteZero(long value, String msg) {
         isTrue(value >= 0, msg);
     }
 }

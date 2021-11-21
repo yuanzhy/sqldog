@@ -1,5 +1,9 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
+import com.yuanzhy.sqldog.jdbc.SqldogConnection;
+import org.apache.commons.io.IOUtils;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -16,12 +20,11 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
-
-import com.yuanzhy.sqldog.jdbc.SqldogConnection;
 
 /**
  *
@@ -30,9 +33,16 @@ import com.yuanzhy.sqldog.jdbc.SqldogConnection;
  */
 class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
+    private final int autoGenerateKey;
     PreparedStatementImpl(SqldogConnection connection, String schema, int resultSetType,
             int resultSetConcurrency) {
+        this(connection, schema, resultSetType, resultSetConcurrency, RETURN_GENERATED_KEYS);
+    }
+
+    PreparedStatementImpl(SqldogConnection connection, String schema, int resultSetType,
+                          int resultSetConcurrency, int autoGenerateKey) {
         super(connection, schema, resultSetType, resultSetConcurrency);
+        this.autoGenerateKey = autoGenerateKey;
     }
 
     @Override
@@ -117,18 +127,22 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     @Override
     public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setUnicodeStream(int parameterIndex, InputStream x, int length)
             throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
-
+        try {
+            this.setBytes(parameterIndex, IOUtils.toByteArray(x, length));
+        } catch (IOException e) {
+            throw new SQLException(e);
+        }
     }
 
     @Override
@@ -159,27 +173,27 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
     @Override
     public void setCharacterStream(int parameterIndex, Reader reader, int length)
             throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setRef(int parameterIndex, Ref x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setBlob(int parameterIndex, Blob x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setClob(int parameterIndex, Clob x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setArray(int parameterIndex, Array x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
@@ -209,7 +223,7 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     @Override
     public void setURL(int parameterIndex, URL x) throws SQLException {
-
+        this.setString(parameterIndex, x.toString());
     }
 
     @Override
@@ -219,44 +233,44 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     @Override
     public void setRowId(int parameterIndex, RowId x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setNString(int parameterIndex, String value) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setNCharacterStream(int parameterIndex, Reader value, long length)
             throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setNClob(int parameterIndex, NClob value) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setBlob(int parameterIndex, InputStream inputStream, long length)
             throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
@@ -267,53 +281,57 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     @Override
     public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setBinaryStream(int parameterIndex, InputStream x, long length)
             throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setCharacterStream(int parameterIndex, Reader reader, long length)
             throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
-
+        try {
+            this.setBytes(parameterIndex, IOUtils.toByteArray(x));
+        } catch (IOException e) {
+            throw new SQLException(e);
+        }
     }
 
     @Override
     public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setClob(int parameterIndex, Reader reader) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setNClob(int parameterIndex, Reader reader) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 }

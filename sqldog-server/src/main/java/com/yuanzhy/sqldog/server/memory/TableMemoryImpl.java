@@ -1,5 +1,24 @@
 package com.yuanzhy.sqldog.server.memory;
 
+import com.google.common.collect.Sets;
+import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.core.Column;
+import com.yuanzhy.sqldog.server.core.Constraint;
+import com.yuanzhy.sqldog.server.core.DML;
+import com.yuanzhy.sqldog.server.core.Serial;
+import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
+import com.yuanzhy.sqldog.server.core.constant.DataType;
+import org.apache.calcite.sql.SqlBasicCall;
+import org.apache.calcite.sql.SqlDelete;
+import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlLiteral;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlUpdate;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,26 +32,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import org.apache.calcite.sql.SqlBasicCall;
-import org.apache.calcite.sql.SqlDelete;
-import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlLiteral;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.SqlUpdate;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import com.google.common.collect.Sets;
-import com.yuanzhy.sqldog.core.util.Asserts;
-import com.yuanzhy.sqldog.server.core.Column;
-import com.yuanzhy.sqldog.server.core.Constraint;
-import com.yuanzhy.sqldog.server.core.DML;
-import com.yuanzhy.sqldog.server.core.Serial;
-import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
-import com.yuanzhy.sqldog.server.core.constant.DataType;
 
 /**
  * @author yuanzhy
@@ -79,7 +78,8 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
         this.data.clear();
     }
 
-    private String getPkName() {
+    @Override
+    public String getPkName() {
         return primaryKey.getColumnNames()[0]; // TODO 暂不支持联合主键
     }
 

@@ -11,5 +11,11 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>sqldog-jdbc</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.yuanzhy.sqldog</groupId>
+            <artifactId>sqldog-core</artifactId>
+        </dependency>
 
+    </dependencies>
 </project>

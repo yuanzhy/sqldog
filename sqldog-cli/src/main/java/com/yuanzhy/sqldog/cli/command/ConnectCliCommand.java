@@ -1,12 +1,11 @@
 package com.yuanzhy.sqldog.cli.command;
 
-import java.rmi.RemoteException;
-import java.util.Scanner;
-
-import org.apache.commons.lang3.StringUtils;
-
 import com.yuanzhy.sqldog.core.constant.Consts;
 import com.yuanzhy.sqldog.core.rmi.Response;
+import org.apache.commons.lang3.StringUtils;
+
+import java.rmi.RemoteException;
+import java.util.Scanner;
 
 /**
  * @author yuanzhy
@@ -35,7 +34,6 @@ public class ConnectCliCommand extends RemoteCliCommand {
                 printResponse(response);
             } catch (RemoteException e) {
                 printError(e);
-                //log.error("command execute error: {}", command, e);
             }
         }
     }

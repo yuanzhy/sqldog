@@ -13,7 +13,7 @@ public class ResponseImpl implements Response {
 
     private final boolean success;
     private final String message;
-    private final SqlResult result;
+    private final SqlResult[] results;
 
     public ResponseImpl(boolean success) {
         this(success, (String) null);
@@ -23,14 +23,14 @@ public class ResponseImpl implements Response {
         this(success, message, null);
     }
 
-    public ResponseImpl(boolean success, SqlResult result) {
-        this(success, null, result);
+    public ResponseImpl(boolean success, SqlResult... results) {
+        this(success, null, results);
     }
 
-    public ResponseImpl(boolean success, String message, SqlResult result) {
+    public ResponseImpl(boolean success, String message, SqlResult... results) {
         this.success = success;
         this.message = message == null ? "" : message;
-        this.result = result;
+        this.results = results;
     }
 
     @Override
@@ -45,6 +45,11 @@ public class ResponseImpl implements Response {
 
     @Override
     public SqlResult getResult() {
-        return result;
+        return results == null ? null : results[0];
+    }
+
+    @Override
+    public SqlResult[] getResults() {
+        return results;
     }
 }

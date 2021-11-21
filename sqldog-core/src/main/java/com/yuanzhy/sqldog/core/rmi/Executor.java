@@ -12,7 +12,7 @@ public interface Executor extends Remote, AutoCloseable {
 
     String getVersion() throws RemoteException;
 
-    Response execute(String cmd) throws RemoteException;
+    Response execute(String... sqls) throws RemoteException;
 
     void close() throws RemoteException;
 }

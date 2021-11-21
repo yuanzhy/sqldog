@@ -2,6 +2,7 @@ package com.yuanzhy.sqldog.core.sql;
 
 import com.yuanzhy.sqldog.core.constant.StatementType;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -15,22 +16,22 @@ public class SqlResultImpl implements SqlResult {
     /** sql分类 */
     private final StatementType type;
     /** 影响行数 */
-    private final int rows;
+    private final long rows;
     /** 模式名 */
     private final String schema;
     /** 表名 */
     private final String table;
-    /** sql分类 */
-    private final String[] headers;
+    /** 列信息 */
+    private final ColumnMetaData[] columns;
     /** sql分类 */
     private final List<Object[]> data;
 
-    public SqlResultImpl(StatementType type, int rows, String schema, String table, String[] headers, List<Object[]> data) {
+    public SqlResultImpl(StatementType type, long rows, String schema, String table, ColumnMetaData[] columns, List<Object[]> data) {
         this.type = type;
         this.rows = rows;
         this.schema = schema;
         this.table = table;
-        this.headers = headers;
+        this.columns = columns;
         this.data = data;
     }
 
@@ -40,7 +41,7 @@ public class SqlResultImpl implements SqlResult {
     }
 
     @Override
-    public int getRows() {
+    public long getRows() {
         return rows;
     }
 
@@ -55,8 +56,16 @@ public class SqlResultImpl implements SqlResult {
     }
 
     @Override
-    public String[] getHeaders() {
-        return headers;
+    public String[] getLabels() {
+        if (columns == null) {
+            return null;
+        }
+        return Arrays.stream(columns).map(ColumnMetaData::getLabel).toArray(String[]::new);
+    }
+
+    @Override
+    public ColumnMetaData[] getColumns() {
+        return columns;
     }
 
     @Override

@@ -1,5 +1,15 @@
 package com.yuanzhy.sqldog.cli.command;
 
+import com.yuanzhy.sqldog.cli.util.FormatterUtil;
+import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.rmi.Executor;
+import com.yuanzhy.sqldog.core.rmi.RMIServer;
+import com.yuanzhy.sqldog.core.rmi.Response;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.util.DateUtil;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.Closeable;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -13,25 +23,12 @@ import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.yuanzhy.sqldog.cli.util.FormatterUtil;
-import com.yuanzhy.sqldog.core.constant.StatementType;
-import com.yuanzhy.sqldog.core.rmi.Executor;
-import com.yuanzhy.sqldog.core.rmi.RMIServer;
-import com.yuanzhy.sqldog.core.rmi.Response;
-import com.yuanzhy.sqldog.core.sql.SqlResult;
-import com.yuanzhy.sqldog.core.util.DateUtil;
-
 /**
  * @author yuanzhy
  * @version 1.0
  * @date 2021/11/6
  */
 public abstract class RemoteCliCommand implements CliCommand, Closeable {
-    protected final Logger log = LoggerFactory.getLogger(this.getClass());
     protected final Executor executor;
 
     public RemoteCliCommand(String host, int port, String username, String password) {
@@ -39,7 +36,7 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
         Executor executor;
         try {
             Registry registry = LocateRegistry.getRegistry(host, port);
-            RMIServer rmiServer = (RMIServer) registry.lookup("rmiServer");
+            RMIServer rmiServer = (RMIServer) registry.lookup(Consts.SERVER_NAME);
             executor = rmiServer.connect(username, password);
             System.out.println("Welcome to sqldog " + executor.getVersion());
         } catch (RemoteException | NotBoundException e) {
@@ -81,7 +78,7 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
             System.out.println();
         } else if (result.getType() == StatementType.DQL) {
             // TODO 优化大数据量分页展示功能
-            String[] headers = result.getHeaders();
+            String[] headers = result.getLabels();
             List<Object[]> data = result.getData();
             final int LEN = 20;
             String out = FormatterUtil.joinByVLine(LEN, headers) + "\n" +
@@ -90,7 +87,7 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
                     "(" + result.getRows() + " rows)";
             System.out.println(out);
         } else { // other
-            String[] headers = result.getHeaders();
+            String[] headers = result.getLabels();
             List<Object[]> data = result.getData();
             if (data == null) {
                 String out = result.getSchema();
@@ -181,7 +178,7 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
         try {
             executor.close();
         } catch (RemoteException e) {
-            log.warn(e.getMessage(), e);
+            printError(e);
         }
     }
 

@@ -78,6 +78,9 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
                 case VARCHAR:
                     builder.add(entry.getKey(), SqlTypeName.VARCHAR, column.getPrecision());
                     break;
+                case TEXT: // TODO text
+                    builder.add(entry.getKey(), SqlTypeName.VARCHAR, Integer.MAX_VALUE);
+                    break;
                 case DATE:
                     builder.add(entry.getKey(), SqlTypeName.DATE);
                     break;
@@ -96,7 +99,6 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
                 //case JSON:
                 //    builder.add(entry.getKey(), SqlTypeName.MAP));
                 //    break;
-                case TEXT:
                 case BYTEA:
                     builder.add(entry.getKey(), SqlTypeName.BINARY);
                     break;

@@ -26,6 +26,9 @@ abstract class UnregisteredDriver implements Driver {
     public static final String PORT_PROPERTY_KEY = "PORT";
     public static final String SCHEMA_PROPERTY_KEY = "SCHEMA";
 
+    public static final String VERSION = "1.0.0";
+    public static final String NAME = "Sqldog Connector Java";
+
     private static final String DEFAULT_PORT = "2345";
 
     private static final Pattern URL_PTN = Pattern.compile("jdbc:sqldog://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})(:\\d{1,5})?(/[\\w\\d-_]+)?");
@@ -42,11 +45,7 @@ abstract class UnregisteredDriver implements Driver {
         String host = props.getProperty(HOST_PROPERTY_KEY);
         int port = Integer.parseInt(props.getProperty(PORT_PROPERTY_KEY));
         String schema = props.getProperty(SCHEMA_PROPERTY_KEY);
-        try {
-            return new ConnectionImpl(host, port, schema, info);
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+        return new ConnectionImpl(host, port, schema, info);
     }
 
     @Override
@@ -117,7 +116,7 @@ abstract class UnregisteredDriver implements Driver {
         String host, port, schema;
         if (m.find()) {
             host = m.group(1);
-            port = m.group(2);
+            port = m.group(2).substring(1);
             schema = m.group(3);
         } else {
             return null;

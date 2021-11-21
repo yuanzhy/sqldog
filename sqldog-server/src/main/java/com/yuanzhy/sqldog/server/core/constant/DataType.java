@@ -4,6 +4,7 @@ import com.yuanzhy.sqldog.core.util.DateUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
+import java.sql.Array;
 import java.sql.Timestamp;
 
 /**
@@ -19,7 +20,7 @@ public enum DataType {
     TEXT(String.class), BYTEA(byte[].class), // 大字段，二进制
     DATE(java.sql.Date.class), TIMESTAMP(Timestamp.class), TIME(java.sql.Time.class), // 日期时间
     BOOLEAN(Boolean.class), //
-    ARRAY(Object[].class), //
+    ARRAY(Array.class), //
     JSON(Object.class) //
     ;
 

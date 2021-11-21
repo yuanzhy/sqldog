@@ -1,13 +1,13 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
-import java.util.stream.Collectors;
-
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.core.Table;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Databases;
+
+import java.util.stream.Collectors;
 
 /**
  * @author yuanzhy
@@ -27,7 +27,7 @@ public class ShowCommand extends AbstractSqlCommand {
         if ("DATABASES".equals(sqlSuffix)) {
             return builder.data(dbName).build();
         } else if ("SCHEMAS".equals(sqlSuffix)) {
-            return builder.headers("Database", "Name", "Description")
+            return builder.labels("Database", "Name", "Description")
                     .data(Databases.getDefault().getSchemaNames().stream().map(s -> {
                         Schema schema = Databases.getDefault().getSchema(s);
                         return new Object[]{dbName, schema.getName(), schema.getDescription()}; }).collect(
@@ -35,7 +35,7 @@ public class ShowCommand extends AbstractSqlCommand {
                     .build();
         } else if ("TABLES".equals(sqlSuffix)) {
             checkSchema();
-            return builder.headers("Schema", "Name", "Type", "Description")
+            return builder.labels("Schema", "Name", "Type", "Description")
                     .schema(schema.getName())
                     .data(schema.getTableNames().stream().map(t -> {
                         Table table = schema.getTable(t);

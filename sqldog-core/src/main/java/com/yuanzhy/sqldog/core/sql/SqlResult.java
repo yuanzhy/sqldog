@@ -14,13 +14,15 @@ public interface SqlResult extends Serializable {
 
     StatementType getType();
 
-    int getRows();
+    long getRows();
 
     String getSchema();
 
     String getTable();
 
-    String[] getHeaders();
+    String[] getLabels();
+
+    ColumnMetaData[] getColumns();
 
     List<Object[]> getData();
 }

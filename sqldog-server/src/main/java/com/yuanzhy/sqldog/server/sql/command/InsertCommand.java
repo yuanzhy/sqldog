@@ -51,6 +51,7 @@ public class InsertCommand extends AbstractSqlCommand {
         }
         Object pk = table.getDML().insert(values);
         return new SqlResultBuilder(StatementType.DML).schema(schema.getName()).table(table.getName()).rows(1)
+                .labels(table.getPkName())
                 .data(pk).build();
     }
 }

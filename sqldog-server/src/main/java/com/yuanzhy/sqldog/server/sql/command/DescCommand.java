@@ -22,7 +22,7 @@ public class DescCommand extends AbstractSqlCommand {
         String sqlSuffix = sql.startsWith("\\D") ? sql.substring("\\D ".length()) : sql.substring("DESC ".length());
         super.parseSchemaTable(sqlSuffix);
         return new SqlResultBuilder(StatementType.OTHER).schema(schema.getName()).table(table.getName())
-                .headers("Column", "Type", "Nullable", "Default", "Description")
+                .labels("Column", "Type", "Nullable", "Default", "Description")
                 .data(table.getColumns().values().stream().map(c -> new Object[]{c.getName(), c.getDataType().name(), c.isNullable() ? "NULL" : "NOT NULL", c.defaultValue(), c.getDescription()}).collect(Collectors.toList()))
                 .build();
     }

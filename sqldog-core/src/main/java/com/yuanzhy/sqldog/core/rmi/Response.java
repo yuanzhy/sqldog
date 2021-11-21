@@ -1,8 +1,8 @@
 package com.yuanzhy.sqldog.core.rmi;
 
-import java.io.Serializable;
-
 import com.yuanzhy.sqldog.core.sql.SqlResult;
+
+import java.io.Serializable;
 
 /**
  *
@@ -16,4 +16,6 @@ public interface Response extends Serializable {
     String getMessage();
 
     SqlResult getResult();
+
+    SqlResult[] getResults();
 }

@@ -14,4 +14,6 @@ public final class Consts {
 
     public static final char SQL_ESCAPE = '\\';
     public static final char SQL_QUOTES = '\'';
+
+    public static final String SERVER_NAME = "rmiServer";
 }
