@@ -4,6 +4,7 @@ import com.yuanzhy.sqldog.core.sql.SqlResult;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -39,4 +40,19 @@ public interface SqldogConnection extends Connection {
      * @throws SQLException
      */
     SqlResult execute(String sql, int timeoutSecond) throws SQLException;
+
+    /**
+     * prepared
+     * @param preparedSql
+     * @return
+     * @throws SQLException
+     */
+    SqlResult prepareExecute(String preparedSql) throws SQLException;
+
+    default SqlResult executePrepared(String preparedSql, Object[] parameter) throws SQLException {
+        SqlResult[] results = executePrepared(preparedSql, Collections.singletonList(parameter));
+        return results == null ? null : results[0];
+    }
+
+    SqlResult[] executePrepared(String preparedSql, List<Object[]> parameterList) throws SQLException;
 }

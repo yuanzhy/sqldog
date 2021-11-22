@@ -328,6 +328,33 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
         }
     }
 
+    @Override
+    public SqlResult prepareExecute(String preparedSql) throws SQLException {
+        try {
+            Response response = executor.prepare(preparedSql);
+            if (response.isSuccess()) {
+                return response.getResult();
+            }
+            throw new SQLException(response.getMessage());
+        } catch (RemoteException e) {
+            throw SQLError.wrapEx(e);
+        }
+    }
+
+    @Override
+    public SqlResult[] executePrepared(String preparedSql, List<Object[]> parameterList) throws SQLException {
+        // TODO timeout
+        try {
+            Response response = executor.executePrepared(preparedSql, parameterList.toArray(new Object[0][]));
+            if (response.isSuccess()) {
+                return response.getResults();
+            }
+            throw new SQLException(response.getMessage());
+        } catch (RemoteException e) {
+            throw SQLError.wrapEx(e);
+        }
+    }
+
     private SqlResult[] executeInternal(List<String> sqls) {
         try {
             Response response = executor.execute(sqls.toArray(new String[0]));

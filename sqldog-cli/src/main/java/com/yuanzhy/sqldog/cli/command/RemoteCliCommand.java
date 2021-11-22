@@ -19,7 +19,6 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -153,7 +152,7 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
             } else if (value instanceof Timestamp) {
                 result[i] = DateUtil.formatTimestamp((Timestamp) value);
             } else if (value instanceof byte[]) {
-                result[i] = Base64.getEncoder().encodeToString((byte[]) value);
+                result[i] = new String((byte[]) value);
             } else if (value instanceof Object[]) {
                 result[i] = Arrays.toString((Object[]) value);
             } else {

@@ -14,8 +14,6 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 
-import javax.management.relation.RoleUnresolved;
-
 /**
  * @author yuanzhy
  * @version 1.0
@@ -158,7 +156,8 @@ public class SqlResultBuilder {
                             pmd.getParameterType(index),
                             pmd.getParameterTypeName(index),
                             pmd.getParameterClassName(index),
-                            pmd.getParameterMode(index)
+                            pmd.getParameterMode(index),
+                            pmd.isNullable(index)
                     );
                 }
             } catch (Exception e) {

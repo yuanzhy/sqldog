@@ -15,9 +15,10 @@ public class ParamMetaDataImpl implements ParamMetaData {
     private final String typeName;
     private final String className;
     private final int mode;
+    private final int nullable;
 
     public ParamMetaDataImpl(boolean signed, int precision, int scale, int parameterType,
-            String typeName, String className, int mode) {
+            String typeName, String className, int mode, int nullable) {
         this.signed = signed;
         this.precision = precision;
         this.scale = scale;
@@ -25,6 +26,7 @@ public class ParamMetaDataImpl implements ParamMetaData {
         this.typeName = typeName;
         this.className = className;
         this.mode = mode;
+        this.nullable = nullable;
     }
 
     public boolean isSigned() {
@@ -53,5 +55,9 @@ public class ParamMetaDataImpl implements ParamMetaData {
 
     public int getMode() {
         return mode;
+    }
+
+    public int getNullable() {
+        return nullable;
     }
 }

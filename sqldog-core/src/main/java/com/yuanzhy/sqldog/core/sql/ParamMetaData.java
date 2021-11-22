@@ -22,4 +22,6 @@ public interface ParamMetaData extends Serializable {
     String getClassName();
 
     int getMode();
+
+    int getNullable();
 }

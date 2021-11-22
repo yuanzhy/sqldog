@@ -160,6 +160,7 @@ class StatementImpl extends AbstractStatement implements Statement {
         }
         this.closed = true;
         this.sqlList.clear();
+        this.clearWarnings();
         this.closeAllResultSets();
     }
 
@@ -270,10 +271,10 @@ class StatementImpl extends AbstractStatement implements Statement {
     @Override
     public int[] executeBatch() throws SQLException {
         checkClosed();
-        SqlResult[] results = this.connection.execute(sqlList, queryTimeout);
-        int[] r = new int[results.length];
-        for (int i = 0; i < results.length; i++) {
-            r[i] = (int)results[i].getRows();
+        long[] longArr = executeLargeBatch();
+        int[] r = new int[longArr.length];
+        for (int i = 0; i < longArr.length; i++) {
+            r[i] = (int)longArr[i];
         }
         return r;
     }

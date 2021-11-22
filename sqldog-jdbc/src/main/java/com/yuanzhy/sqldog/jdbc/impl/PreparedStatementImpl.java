@@ -1,5 +1,7 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.core.util.SqlUtil;
 import com.yuanzhy.sqldog.jdbc.SqldogConnection;
 import org.apache.commons.io.IOUtils;
@@ -25,7 +27,10 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 /**
  *
@@ -36,9 +41,13 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     private final int autoGenerateKey;
     private final String preparedSql;
+    private final ResultSetMetaData rsmd;
+    private final ParameterMetaData pmd;
+    private final int parameterCount;
 //    private final char firstStatementChar;
-    private final Object[] parameters;
+    private final Object[] parameter;
     private final boolean isDml;
+    private final List<Object[]> parameterList = new ArrayList<>();
     PreparedStatementImpl(SqldogConnection connection, String schema, String preparedSql, int resultSetType,
             int resultSetConcurrency) throws SQLException {
         this(connection, schema, preparedSql, resultSetType, resultSetConcurrency, RETURN_GENERATED_KEYS);
@@ -63,9 +72,21 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
             throw new SQLException("Not supported PreparedStatement: " + preparedSql);
         }
 //        this.firstStatementChar = Util.firstAlphaCharUc(preparedSql, Util.findStartOfStatement(preparedSql));
-        this.parameters = new Object[SqlUtil.countQuestionMark(preparedSql)];
-//        this.connection.
-        // TODO
+        SqlResult result = this.connection.prepareExecute(preparedSql);
+        this.rsmd = new ResultSetMetaDataImpl(result.getColumns());
+        this.pmd = new ParameterMetaDataImpl(result.getParams());
+        this.parameterCount = this.pmd.getParameterCount();
+        parameter = new Object[this.parameterCount];
+    }
+
+    private void executeInternal() throws SQLException {
+        beforeExecute();
+        try {
+            SqlResult sqlResult = connection.executePrepared(preparedSql, parameter);
+            this.handleResult(sqlResult);
+        } finally {
+            afterExecute();
+        }
     }
 
     @Override
@@ -74,20 +95,25 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
         if (isDml) {
             throw new SQLException("Can not issue data manipulation statements with executeQuery().");
         }
-// TODO
-        return null;
+        this.executeInternal();
+        return rs;
     }
 
     @Override
     public int executeUpdate() throws SQLException {
-        // TODO
-        return 0;
+        return (int)executeLargeUpdate();
+    }
+
+    @Override
+    public long executeLargeUpdate() throws SQLException {
+        checkClosed();
+        this.executeInternal();
+        return rows;
     }
 
     @Override
     public void setNull(int parameterIndex, int sqlType) throws SQLException {
-        checkParamBounds(parameterIndex);
-        // noop
+        this.setObject(parameterIndex, null);
     }
 
     @Override
@@ -178,39 +204,146 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
     @Override
     public void clearParameters() throws SQLException {
         checkClosed();
-        for (int i = 0; i < this.parameters.length; i++) {
-            this.parameters[i] = null;
+        this.parameterList.clear();
+        for (int i = 0; i < this.parameter.length; i++) {
+            this.parameter[i] = null;
         }
     }
 
     @Override
     public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
-// TODO
+        if (x == null) {
+            setNull(parameterIndex, targetSqlType);
+        }
+        switch (targetSqlType) {
+            case Types.CLOB:
+            case Types.DATALINK:
+            case Types.NCLOB:
+            case Types.OTHER:
+            case Types.REF:
+            case Types.SQLXML:
+            case Types.STRUCT:
+                throw SqlUtil.notImplemented();
+            case Types.ARRAY:
+                setArray(parameterIndex, SqlUtil.toArray(x));
+                break;
+            case Types.BIGINT:
+                setLong(parameterIndex, SqlUtil.toLong(x));
+                break;
+            case Types.BINARY:
+            case Types.LONGVARBINARY:
+            case Types.VARBINARY:
+                setBytes(parameterIndex, SqlUtil.toBytes(x));
+                break;
+            case Types.BIT:
+            case Types.BOOLEAN:
+                setBoolean(parameterIndex, SqlUtil.toBoolean(x));
+                break;
+            case Types.BLOB:
+                if (x instanceof Blob) {
+                    setBlob(parameterIndex, (Blob) x);
+                    break;
+                } else if (x instanceof InputStream) {
+                    setBlob(parameterIndex, (InputStream) x);
+                }
+                throw SqlUtil.unsupportedCast(x.getClass(), Blob.class);
+            case Types.DATE:
+                setDate(parameterIndex, SqlUtil.toDate(x));
+                break;
+            case Types.DECIMAL:
+            case Types.NUMERIC:
+                setBigDecimal(parameterIndex, SqlUtil.toBigDecimal(x));
+                break;
+            case Types.DISTINCT:
+                throw SqlUtil.notImplemented();
+            case Types.DOUBLE:
+            case Types.FLOAT: // yes really; SQL FLOAT is up to 8 bytes
+                setDouble(parameterIndex, SqlUtil.toDouble(x));
+                break;
+            case Types.INTEGER:
+                setInt(parameterIndex, SqlUtil.toInt(x));
+                break;
+            case Types.JAVA_OBJECT:
+                setObject(parameterIndex, x);
+                break;
+            case Types.LONGNVARCHAR:
+            case Types.LONGVARCHAR:
+            case Types.NVARCHAR:
+            case Types.VARCHAR:
+            case Types.CHAR:
+            case Types.NCHAR:
+                String v = SqlUtil.toString(x);
+                Asserts.isTrue(v.length() <= pmd.getPrecision(parameterIndex), "Exceeding maximum limit length: " + v.length());
+                setString(parameterIndex, v);
+                break;
+            case Types.REAL:
+                setFloat(parameterIndex, SqlUtil.toFloat(x));
+                break;
+            case Types.ROWID:
+                if (x instanceof RowId) {
+                    setRowId(parameterIndex, (RowId) x);
+                    break;
+                }
+                throw SqlUtil.unsupportedCast(x.getClass(), RowId.class);
+            case Types.SMALLINT:
+                setShort(parameterIndex, SqlUtil.toShort(x));
+                break;
+            case Types.TIME:
+                setTime(parameterIndex, SqlUtil.toTime(x));
+                break;
+            case Types.TIMESTAMP:
+                setTimestamp(parameterIndex, SqlUtil.toTimestamp(x));
+                break;
+            case Types.TINYINT:
+                setByte(parameterIndex, SqlUtil.toByte(x));
+                break;
+            default:
+                throw SqlUtil.notImplemented();
+        }
     }
 
     @Override
     public void setObject(int parameterIndex, Object x) throws SQLException {
         checkParamBounds(parameterIndex);
-        this.parameters[parameterIndex - 1] = x;
+        this.parameter[parameterIndex - 1] = x;
     }
 
     private void checkParamBounds(int parameterIndex) throws SQLException {
         checkClosed();
         if (parameterIndex < 1) {
             throw new SQLException("Column Index out of range, " + parameterIndex + " < 1.");
-        } else if (parameterIndex > parameters.length) {
-            throw new SQLException("Column Index out of range, " + parameterIndex + " > " + parameters.length + ".");
+        } else if (parameterIndex > parameterCount) {
+            throw new SQLException("Column Index out of range, " + parameterIndex + " > " + parameterCount + ".");
         }
     }
 
     @Override
-    public boolean execute() throws SQLException {// TODO
-        return false;
+    public boolean execute() throws SQLException {
+        checkClosed();
+        this.executeInternal();
+        return this.rs != null;
     }
 
     @Override
     public void addBatch() throws SQLException {
-// TODO
+        checkClosed();
+        parameterList.add(parameter.clone());
+    }
+
+    @Override
+    public long[] executeLargeBatch() throws SQLException {
+        checkClosed();
+        SqlResult[] results = this.connection.executePrepared(preparedSql, parameterList);
+        long[] r = new long[results.length];
+        for (int i = 0; i < results.length; i++) {
+            r[i] = results[i].getRows();
+        }
+        return r;
+    }
+
+    @Override
+    public void clearBatch() throws SQLException {
+        this.clearParameters();
     }
 
     @Override
@@ -241,8 +374,8 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
-        // TODO
-        return null;
+        checkClosed();
+        return rsmd;
     }
 
     @Override
@@ -273,8 +406,21 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     @Override
     public ParameterMetaData getParameterMetaData() throws SQLException {
-        // TODO
-        return null;
+        checkClosed();
+        return pmd;
+    }
+
+    @Override
+    public void close() throws SQLException {
+        if (isClosed()) {
+            return;
+        }
+        try {
+            this.clearParameters();
+        } catch (SQLException e) {
+            // ignore
+        }
+        super.close();
     }
 
     @Override
@@ -322,7 +468,8 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
     @Override
     public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)
             throws SQLException {
-        // TODO
+        // TODO 未实现 scaleOrLength
+        this.setObject(parameterIndex, x, targetSqlType);
     }
 
     @Override

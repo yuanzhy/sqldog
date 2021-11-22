@@ -17,8 +17,8 @@ import java.sql.Statement;
  */
 public class StatementTest {
 
-    private Connection conn;
-    private Statement stat;
+    protected Connection conn;
+    protected Statement stat;
     @Before
     public void before() throws Exception {
         Class.forName("com.yuanzhy.sqldog.jdbc.Driver");
@@ -33,22 +33,22 @@ public class StatementTest {
 
     protected void prepareData() throws SQLException {
         ResultSet rs;
-        stat.execute("create table tt (id int primary key, name varchar(20))");
+        stat.execute("create table test.tt (id int primary key, name varchar(20))");
 
-        stat.execute("insert into tt values(1, 'zs')");
+        stat.execute("insert into test.tt values(1, 'zs')");
         rs = stat.getResultSet();
         rs.next();
         assert rs.getInt(1) == 1;
 
-        stat.execute("insert into tt values(2, '李四')");
+        stat.execute("insert into test.tt values(2, '李四')");
         rs = stat.getResultSet();
         rs.next();
         assert rs.getInt(1) == 2;
 
-        stat.execute("insert into tt values(3, null)");
+        stat.execute("insert into test.tt values(3, null)");
 
-        stat.execute("alter table tt add birth date");
-        int c = stat.executeUpdate("update tt set birth = '2021-11-21'");
+        stat.execute("alter table test.tt add birth date");
+        int c = stat.executeUpdate("update test.tt set birth = '2021-11-21'");
         assert c == 3;
 
     }
@@ -58,6 +58,10 @@ public class StatementTest {
         conn.setSchema("test");
         prepareData();
         ResultSet rs = stat.executeQuery("select * from tt");
+        printRs(rs);
+    }
+
+    protected void printRs(ResultSet rs) throws SQLException {
         System.out.println("---------- iterate by label");
         while (rs.next()) {
             String s = String.format("id: %s, name: %s, birth: %s", rs.getInt("id"), rs.getString("name"), rs.getDate("birth"));
@@ -73,6 +77,11 @@ public class StatementTest {
 
     @After
     public void after() throws SQLException {
+//        try {
+//            stat.execute("drop table tt");
+//        } catch (Exception e) {
+//
+//        }
         conn.close();
     }
 }
