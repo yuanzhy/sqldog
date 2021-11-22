@@ -1,19 +1,17 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
-import com.yuanzhy.sqldog.core.constant.StatementType;
-import com.yuanzhy.sqldog.core.sql.ColumnMetaData;
-import com.yuanzhy.sqldog.core.sql.SqlResult;
-import com.yuanzhy.sqldog.server.sql.result.ColumnMetaDataBuilder;
-import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
-import com.yuanzhy.sqldog.server.util.Calcites;
-import com.yuanzhy.sqldog.server.util.Databases;
-
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
+import com.yuanzhy.sqldog.server.util.Calcites;
+import com.yuanzhy.sqldog.server.util.Databases;
 
 /**
  * @author yuanzhy
@@ -36,33 +34,11 @@ public class SelectCommand extends AbstractSqlCommand {
             ResultSet rs = stat.executeQuery(sql);
             ResultSetMetaData rsmd = rs.getMetaData();
             String[] columnLabels = new String[rsmd.getColumnCount()];
-            ColumnMetaData[] columns = new ColumnMetaData[rsmd.getColumnCount()];
             for (int i = 0; i < rsmd.getColumnCount(); i++) {
                 final int index = i + 1;
                 //String columnName = rsmd.getColumnName(index);
                 String columnLabel = rsmd.getColumnLabel(index); // 别名
                 columnLabels[i] = columnLabel;
-                columns[i] = new ColumnMetaDataBuilder()
-                        .columnClassName(rsmd.getColumnClassName(index))
-                        .columnName(rsmd.getColumnName(index))
-                        .autoIncrement(rsmd.isAutoIncrement(index))
-                        .caseSensitive(rsmd.isCaseSensitive(index))
-                        .catalogName(rsmd.getCatalogName(index))
-                        .currency(rsmd.isCurrency(index))
-                        .definitelyWritable(rsmd.isDefinitelyWritable(index))
-                        .displaySize(rsmd.getColumnDisplaySize(index))
-                        .searchable(rsmd.isSearchable(index))
-                        .nullable(rsmd.isNullable(index))
-                        .precision(rsmd.getPrecision(index))
-                        .scale(rsmd.getScale(index))
-                        .signed(rsmd.isSigned(index))
-                        .label(rsmd.getColumnLabel(index))
-                        .ordinal(i)
-                        .readOnly(rsmd.isReadOnly(index))
-                        .schemaName(rsmd.getSchemaName(index))
-                        .tableName(rsmd.getTableName(index))
-                        .writable(rsmd.isWritable(index))
-                        .build();
             }
             // TODO 返回太多卡死内存占用过大问题
             List<Object[]> data = new ArrayList<>();
@@ -74,7 +50,7 @@ public class SelectCommand extends AbstractSqlCommand {
                 }
                 data.add(values);
             }
-            return new SqlResultBuilder(StatementType.DQL).rows(data.size()).columns(columns).data(data).build();
+            return new SqlResultBuilder(StatementType.DQL).rows(data.size()).columns(rsmd).data(data).build();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

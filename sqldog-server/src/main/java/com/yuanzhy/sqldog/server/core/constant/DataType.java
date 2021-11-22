@@ -14,7 +14,7 @@ import java.sql.Timestamp;
  */
 public enum DataType {
 
-    INT(Integer.class), SMALLINT(Short.class), BIGINT(Long.class), NUMERIC(BigDecimal.class, true), // 数字
+    INT(Integer.class), SMALLINT(Short.class), TINYINT(Byte.class), BIGINT(Long.class), NUMERIC(BigDecimal.class, true), // 数字
     SERIAL(Integer.class), SMALLSERIAL(Short.class), BIGSERIAL(Long.class), // 序列
     CHAR(String.class, true), VARCHAR(String.class, true),  // 字符串
     TEXT(String.class), BYTEA(byte[].class), // 大字段，二进制

@@ -11,5 +11,5 @@ import java.io.Closeable;
  */
 public interface PreparedSqlCommand extends SqlCommand, Closeable {
 
-    SqlResult execute(Object[] parameters);
+    SqlResult execute(Object[] parameter);
 }

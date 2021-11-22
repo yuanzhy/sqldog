@@ -44,11 +44,6 @@ public class ResponseImpl implements Response {
     }
 
     @Override
-    public SqlResult getResult() {
-        return results == null ? null : results[0];
-    }
-
-    @Override
     public SqlResult[] getResults() {
         return results;
     }

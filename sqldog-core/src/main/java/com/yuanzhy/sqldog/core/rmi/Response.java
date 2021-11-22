@@ -15,7 +15,10 @@ public interface Response extends Serializable {
 
     String getMessage();
 
-    SqlResult getResult();
-
     SqlResult[] getResults();
+
+    default SqlResult getResult() {
+        SqlResult[] results = getResults();
+        return results == null ? null : results[0];
+    }
 }

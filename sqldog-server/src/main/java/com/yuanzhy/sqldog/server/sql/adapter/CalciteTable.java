@@ -26,7 +26,6 @@ import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.impl.AbstractTableQueryable;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,6 +78,9 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
                 case BIGSERIAL:
                     builder.add(entry.getKey(), SqlTypeName.BIGINT);
                     break;
+                case TINYINT:
+                    builder.add(entry.getKey(), SqlTypeName.TINYINT);
+                    break;
                 case NUMERIC:
                     builder.add(entry.getKey(), SqlTypeName.DECIMAL, column.getPrecision(), column.getScale());
                     break;
@@ -112,7 +114,11 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
                 case BYTEA:
                     builder.add(entry.getKey(), SqlTypeName.BINARY);
                     break;
+                default:
+                    //builder.add(entry.getKey(), SqlTypeName.ANY);
+                    throw new IllegalArgumentException("unknown data type");
             }
+            builder.nullable(column.isNullable());
         }
         return builder.build();
     }
@@ -158,18 +164,18 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
         };
     }
 
-//    @Override
-//    public @Nullable Collection getModifiableCollection() {
-//        LOG.info("getModifiableCollection");
-//        return getData();
-//    }
-//
-//    @Override
-//    public TableModify toModificationRel(RelOptCluster cluster, RelOptTable table, Prepare.CatalogReader catalogReader, RelNode child, TableModify.Operation operation, @Nullable List<String> updateColumnList, @Nullable List<RexNode> sourceExpressionList, boolean flattened) {
-//        LOG.info("toModificationRel");
-//        return LogicalTableModify.create(table, catalogReader, child, operation,
-//                updateColumnList, sourceExpressionList, flattened);
-//    }
+    @Override
+    public Collection getModifiableCollection() {
+        LOG.info("getModifiableCollection");
+        return getData();
+    }
+
+    @Override
+    public TableModify toModificationRel(RelOptCluster cluster, RelOptTable table, Prepare.CatalogReader catalogReader, RelNode child, TableModify.Operation operation, List<String> updateColumnList, List<RexNode> sourceExpressionList, boolean flattened) {
+        LOG.info("toModificationRel");
+        return LogicalTableModify.create(table, catalogReader, child, operation,
+                updateColumnList, sourceExpressionList, flattened);
+    }
 
     @Override
     public <T> Queryable<T> asQueryable(QueryProvider queryProvider, SchemaPlus schema, String tableName) {
@@ -186,14 +192,4 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
         return table.getData();
     }
 
-    @Override
-    public @Nullable Collection getModifiableCollection() {
-        return getData();
-    }
-
-    @Override
-    public TableModify toModificationRel(RelOptCluster cluster, RelOptTable table, Prepare.CatalogReader catalogReader, RelNode child, TableModify.Operation operation, @Nullable List<String> updateColumnList, @Nullable List<RexNode> sourceExpressionList, boolean flattened) {
-        return LogicalTableModify.create(table, catalogReader, child, operation,
-                updateColumnList, sourceExpressionList, flattened);
-    }
 }

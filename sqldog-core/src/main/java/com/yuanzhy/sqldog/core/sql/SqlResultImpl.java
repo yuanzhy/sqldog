@@ -21,16 +21,19 @@ public class SqlResultImpl implements SqlResult {
     private final String schema;
     /** 表名 */
     private final String table;
+    /** 参数信息 preparedStatement */
+    private final ParamMetaData[] params;
     /** 列信息 */
     private final ColumnMetaData[] columns;
     /** sql分类 */
     private final List<Object[]> data;
 
-    public SqlResultImpl(StatementType type, long rows, String schema, String table, ColumnMetaData[] columns, List<Object[]> data) {
+    public SqlResultImpl(StatementType type, long rows, String schema, String table, ParamMetaData[] params, ColumnMetaData[] columns, List<Object[]> data) {
         this.type = type;
         this.rows = rows;
         this.schema = schema;
         this.table = table;
+        this.params = params;
         this.columns = columns;
         this.data = data;
     }
@@ -56,11 +59,8 @@ public class SqlResultImpl implements SqlResult {
     }
 
     @Override
-    public String[] getLabels() {
-        if (columns == null) {
-            return null;
-        }
-        return Arrays.stream(columns).map(ColumnMetaData::getLabel).toArray(String[]::new);
+    public ParamMetaData[] getParams() {
+        return this.params;
     }
 
     @Override

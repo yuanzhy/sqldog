@@ -168,6 +168,7 @@ public class RmiServer implements Server {
             Databases.currSchema(currentSchema);
             try {
                 PreparedSqlCommand sqlCommand = preparedSqlCache.computeIfAbsent(preparedSql, key -> preparedSqlParser.parse(preparedSql));
+                //sqlCommand.currentSchema(currentSchema);
                 SqlResult result = sqlCommand.execute();
                 return new ResponseImpl(true, result);
             } catch (Exception e) {
@@ -178,8 +179,19 @@ public class RmiServer implements Server {
 
         @Override
         public Response executePrepared(String preparedSql, Object[]... parameters) {
-            PreparedSqlCommand sqlCommand = preparedSqlCache.computeIfAbsent(preparedSql, key -> preparedSqlParser.parse(preparedSql));
-            return null;
+            Databases.currSchema(currentSchema);
+            try {
+                PreparedSqlCommand sqlCommand = preparedSqlCache.computeIfAbsent(preparedSql, key -> preparedSqlParser.parse(preparedSql));
+                //sqlCommand.currentSchema(currentSchema);
+                SqlResult[] results = new SqlResult[parameters.length];
+                for (int i = 0; i < parameters.length; i++) {
+                    results[i] = sqlCommand.execute(parameters[i]);
+                }
+                return new ResponseImpl(true, results);
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                return new ResponseImpl(false, e.getMessage());
+            }
         }
 
         @Override

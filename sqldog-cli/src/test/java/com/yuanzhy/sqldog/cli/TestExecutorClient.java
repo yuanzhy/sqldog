@@ -28,16 +28,32 @@ public class TestExecutorClient {
         RMIServer rmiServer = (RMIServer) registry.lookup(Consts.SERVER_NAME);
         executor = rmiServer.connect(U, PW);
         System.out.println("Welcome to sqldog " + executor.getVersion());
-        executor.execute("create schema test");
-        executor.execute("use test");
-        executor.execute("create table tt (id int primary key, name varchar(20), birth date)");
+        try {
+            executor.execute("create schema test");
+            executor.execute("create table test.tt (id int primary key, name varchar(20), birth date)");
+        } catch (Exception e) {
+            // ignore
+        }
     }
 
     @Test
-    public void run() throws Exception {
+    public void dml() throws Exception {
+        executor.execute("use test");
 //        executor.execute("insert into test.tt values(2, 'cc', '2021-11-21')");
 //        Response response = executor.execute("select * from test.tt");
-        Response response = executor.prepare("insert into test.tt values(?,?,?)");
+        String sql = "insert into test.tt values(?,?,?)";
+        Response response = executor.prepare(sql);
+        executor.executePrepared(sql, new Object[]{1, "lisi", null});
+        //executor.execute("insert into test.tt values(1,'2',null)");
+        System.out.println(response);
+    }
+
+    @Test
+    public void dql() throws Exception {
+        executor.execute("use test");
+        String sql = "select * from test.tt where id=? and name = ? and birth = ?";
+        Response response = executor.prepare(sql);
+        executor.executePrepared(sql, new Object[]{1, "lisi", "2021-11-21"});
         System.out.println(response);
     }
 

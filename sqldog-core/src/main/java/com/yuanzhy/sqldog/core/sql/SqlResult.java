@@ -3,6 +3,7 @@ package com.yuanzhy.sqldog.core.sql;
 import com.yuanzhy.sqldog.core.constant.StatementType;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -20,9 +21,17 @@ public interface SqlResult extends Serializable {
 
     String getTable();
 
-    String[] getLabels();
+    ParamMetaData[] getParams();
 
     ColumnMetaData[] getColumns();
 
     List<Object[]> getData();
+
+    default String[] getLabels() {
+        ColumnMetaData[] columns = getColumns();
+        if (columns == null) {
+            return null;
+        }
+        return Arrays.stream(columns).map(ColumnMetaData::getLabel).toArray(String[]::new);
+    }
 }
