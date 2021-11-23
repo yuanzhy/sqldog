@@ -22,7 +22,7 @@ public class ConnectCliCommand extends RemoteCliCommand {
     public void execute() {
         Scanner scanner = new Scanner(System.in);
         while (true) {
-            System.out.print(">>> ");
+            System.out.print("sqldog> ");
             String command = this.waitCommand(scanner);
             try {
                 if (StringUtils.startsWithAny(command, "quit", "\\q", "exit")) {

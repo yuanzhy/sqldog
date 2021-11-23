@@ -18,18 +18,21 @@ public class DropTableCommand extends AbstractSqlCommand {
     public SqlResult execute() {
         // drop table schema.table_name
         String sqlSuffix = sql.substring("DROP TABLE ".length());
+        String tableName = null;
         if (sqlSuffix.startsWith("IF EXISTS ")) {
             try {
                 sqlSuffix = sqlSuffix.substring("IF EXISTS ".length());
                 super.parseSchemaTable(sqlSuffix);
                 schema.dropTable(table.getName());
+                tableName = table.getName();
             } catch (Exception e) {
                 // ignore
             }
         } else {
             super.parseSchemaTable(sqlSuffix);
             schema.dropTable(table.getName());
+            tableName = table.getName();
         }
-        return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(table.getName()).build();
+        return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(tableName).build();
     }
 }

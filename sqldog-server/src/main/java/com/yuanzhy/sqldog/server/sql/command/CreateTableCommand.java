@@ -32,6 +32,9 @@ public class CreateTableCommand extends AbstractSqlCommand {
         main = main.substring(0, main.length() - 1);
         for (String rawColInfo : main.split(",")) {
             rawColInfo = rawColInfo.trim();
+            if (rawColInfo.isEmpty()) {
+                continue;
+            }
             if (rawColInfo.startsWith("PRIMARY KEY")) {
                 this.handlePK(tb, rawColInfo, null);
             } else if (rawColInfo.startsWith("UNIQUE")) {

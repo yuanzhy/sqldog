@@ -34,14 +34,20 @@ public class InsertCommand extends AbstractSqlCommand {
         String[] colArr, valArr;
         if (sqlSuffix.startsWith("(")) {
             // 说明包含 列明
-            String[] arr = StringUtils.substringsBetween(sqlSuffix, "(", ")");
-            colArr = arr[0].split(",");
-            valArr = SqlUtil.parseLine(arr[1].trim());
+            String colStr = StringUtils.substringBetween(sqlSuffix, "(", ")");
+            colArr = colStr.trim().split(",");
+            sqlSuffix = StringUtils.substringAfter(sqlSuffix, ")").trim();
+            Asserts.isTrue(sqlSuffix.startsWith("VALUES"), "Illegal sql: " + sql);
+            sqlSuffix = StringUtils.substringAfter(sqlSuffix, "(");
+            sqlSuffix = StringUtils.substringBeforeLast(sqlSuffix, ")");
+            valArr = SqlUtil.parseLine(sqlSuffix.trim());
         } else {
             colArr = table.getColumns().keySet().toArray(new String[0]);
-            valArr = SqlUtil.parseLine(StringUtils.substringBetween(sqlSuffix, "(", ")").trim());
+            sqlSuffix = StringUtils.substringAfter(sqlSuffix, "(");
+            sqlSuffix = StringUtils.substringBeforeLast(sqlSuffix, ")");
+            valArr = SqlUtil.parseLine(sqlSuffix.trim());
         }
-        Asserts.isTrue(colArr.length == valArr.length, "sql不合法");
+        Asserts.isTrue(colArr.length == valArr.length, "illegal sql: " + sql);
         Map<String, Column> columnMap = table.getColumns();
         Map<String, Object> values = new HashMap<>();
         for (int i = 0; i < colArr.length; i++) {

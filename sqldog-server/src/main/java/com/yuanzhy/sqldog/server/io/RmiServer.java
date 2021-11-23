@@ -28,7 +28,9 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -142,13 +144,21 @@ public class RmiServer implements Server {
         public Response execute(String... sqls) {
             try {
                 if (sqls.length == 1) {
-                    SqlCommand sqlCommand = sqlParser.parse(sqls[0]);
-                    sqlCommand.currentSchema(currentSchema);
-                    SqlResult result = sqlCommand.execute();
-                    if (sqlCommand instanceof SetCommand) {
-                        this.currentSchema = result.getSchema();
+                    String[] arr = StringUtils.splitByWholeSeparator(sqls[0], ";\n");
+                    List<SqlResult> results = new ArrayList<>();
+                    for (String sql : arr) {
+                        if (StringUtils.isBlank(sql)) {
+                            continue;
+                        }
+                        SqlCommand sqlCommand = sqlParser.parse(sql);
+                        sqlCommand.currentSchema(currentSchema);
+                        SqlResult result = sqlCommand.execute();
+                        if (sqlCommand instanceof SetCommand && result.getSchema() != null) {
+                            this.currentSchema = result.getSchema();
+                        }
+                        results.add(result);
                     }
-                    return new ResponseImpl(true, result);
+                    return new ResponseImpl(true, results.toArray(new SqlResult[0]));
                 }
                 SqlResult[] results = new SqlResult[sqls.length];
                 for (int i = 0; i < sqls.length; i++) {

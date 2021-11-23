@@ -35,7 +35,7 @@ public class StatementTest {
         ResultSet rs;
         stat.execute("create table test.tt (id int primary key, name varchar(20))");
 
-        stat.execute("insert into test.tt values(1, 'zs')");
+        stat.execute("insert into test.tt values(1, 'z(s)')"); // TODO 引号中的括号影响程序处理
         rs = stat.getResultSet();
         rs.next();
         assert rs.getInt(1) == 1;
