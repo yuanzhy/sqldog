@@ -25,8 +25,12 @@ public class FileCliCommand extends RemoteCliCommand {
     @Override
     public void execute() {
         try {
-            String sql = FileUtils.readFileToString(file, "UTF-8").trim();
-            executeAndExit(sql);
+            String text = FileUtils.readFileToString(file, "UTF-8").trim();
+            if (text.contains("\r")) {
+                text = text.replace("\r", "");
+            }
+            String[] sqls = text.split(";\n");
+            executeAndExit(sqls);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

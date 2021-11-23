@@ -23,6 +23,9 @@ public class SetCommand extends AbstractSqlCommand {
             schemaName = sql.substring("SET SEARCH_PATH TO ".length());
         } else if (sql.startsWith("USE ")) {
             schemaName = sql.substring("USE ".length());
+        } else if (sql.startsWith("SET CLIENT_ENCODING")) {
+            // 默认都使用UTF-8
+            return new SqlResultBuilder(StatementType.OTHER).build();
         } else {
             throw new UnsupportedOperationException("not supported: " + sql);
         }

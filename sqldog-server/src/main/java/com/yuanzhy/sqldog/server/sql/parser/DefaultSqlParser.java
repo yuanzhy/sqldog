@@ -4,6 +4,7 @@ import com.yuanzhy.sqldog.server.sql.SqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlParser;
 import com.yuanzhy.sqldog.server.sql.command.AlterTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.CommentCommand;
+import com.yuanzhy.sqldog.server.sql.command.CommitCommand;
 import com.yuanzhy.sqldog.server.sql.command.CreateSchemaCommand;
 import com.yuanzhy.sqldog.server.sql.command.CreateTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.DeleteCommand;
@@ -69,6 +70,8 @@ public class DefaultSqlParser implements SqlParser {
             return new DeleteCommand(sql);
         } else if (sql.startsWith("SELECT") /*|| sql.startsWith("WITH RECURSIVE")*/) {
             return new SelectCommand(sql);
+        } else if (sql.equals("COMMIT")) {
+            return new CommitCommand(sql);
         }
         throw new UnsupportedOperationException("operation not supported: " + sql);
     }

@@ -6,6 +6,8 @@ import org.apache.commons.lang3.StringUtils;
 import java.math.BigDecimal;
 import java.sql.Array;
 import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.Date;
 
 /**
  * @author yuanzhy
@@ -14,26 +16,29 @@ import java.sql.Timestamp;
  */
 public enum DataType {
 
-    INT(Integer.class), SMALLINT(Short.class), TINYINT(Byte.class), BIGINT(Long.class), NUMERIC(BigDecimal.class, true), // 数字
-    SERIAL(Integer.class), SMALLSERIAL(Short.class), BIGSERIAL(Long.class), // 序列
-    CHAR(String.class, true), VARCHAR(String.class, true),  // 字符串
-    TEXT(String.class), BYTEA(byte[].class), // 大字段，二进制
-    DATE(java.sql.Date.class), TIMESTAMP(Timestamp.class), TIME(java.sql.Time.class), // 日期时间
-    BOOLEAN(Boolean.class), //
-    ARRAY(Array.class), //
-    JSON(Object.class) //
+    INT(Integer.class, Types.INTEGER), SMALLINT(Short.class, Types.SMALLINT), TINYINT(Byte.class, Types.TINYINT), BIGINT(Long.class, Types.BIGINT),
+    NUMERIC(BigDecimal.class, Types.NUMERIC, true), DECIMAL(BigDecimal.class, Types.DECIMAL, true), // 数字
+    SERIAL(Integer.class, Types.INTEGER), SMALLSERIAL(Short.class, Types.SMALLINT), BIGSERIAL(Long.class, Types.BIGINT), // 序列
+    CHAR(String.class, Types.CHAR, true), VARCHAR(String.class, Types.VARCHAR, true),  // 字符串
+    TEXT(String.class, Types.LONGVARCHAR), BYTEA(byte[].class, Types.BINARY), // 大字段，二进制
+    DATE(Long.class, Types.DATE), TIMESTAMP(Long.class, Types.TIMESTAMP), TIME(java.sql.Time.class, Types.TIME), // 日期时间
+    BOOLEAN(Boolean.class, Types.BOOLEAN), //
+    ARRAY(Array.class, Types.ARRAY), //
+    JSON(Object.class, Types.JAVA_OBJECT) //
     ;
 
 //    private final int precision;
     private final Class<?> clazz;
+    private final int sqlType;
     private final boolean hasLength;
 
-    DataType(Class<?> clazz) {
-        this(clazz, false);
+    DataType(Class<?> clazz, int sqlType) {
+        this(clazz, sqlType, false);
     }
 
-    DataType(Class<?> clazz, boolean hasLength) {
+    DataType(Class<?> clazz, int sqlType, boolean hasLength) {
         this.clazz = clazz;
+        this.sqlType = sqlType;
         this.hasLength = hasLength;
     }
 
@@ -53,6 +58,10 @@ public enum DataType {
         return clazz;
     }
 
+    public int getSqlType() {
+        return sqlType;
+    }
+
     public Object parseRawValue(String rawValue) {
         if (rawValue == null) {
             return null;
@@ -63,11 +72,11 @@ public enum DataType {
         if (rawValue.startsWith("'")) {
             String defaultValue = StringUtils.substringBetween(rawValue, "'");
             if (this == DataType.DATE) {
-                return DateUtil.parseSqlDate(defaultValue);
+                return DateUtil.parseSqlDate(defaultValue).getTime();
             } else if (this == DataType.TIME) {
                 return DateUtil.parseSqlTime(defaultValue);
             } else if (this == DataType.TIMESTAMP) {
-                return DateUtil.parseTimestamp(defaultValue);
+                return DateUtil.parse(defaultValue).getTime();
             } else if (this.getClazz() == String.class) {
                 return defaultValue;
             } else {
@@ -103,11 +112,11 @@ public enum DataType {
             return null;
         }
         if (this == DataType.DATE) {
-            return DateUtil.parseSqlDate(value);
+            return DateUtil.parseSqlDate(value).getTime();
         } else if (this == DataType.TIME) {
             return DateUtil.parseSqlTime(value);
         } else if (this == DataType.TIMESTAMP) {
-            return DateUtil.parseTimestamp(value);
+            return DateUtil.parse(value).getTime();
         }
 //        } else if (rawValue.startsWith("[")) {
 //            throw new UnsupportedOperationException(rawValue + " not supported");

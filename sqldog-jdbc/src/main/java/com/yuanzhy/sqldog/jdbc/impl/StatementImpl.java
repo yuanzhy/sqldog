@@ -25,6 +25,7 @@ class StatementImpl extends AbstractStatement implements Statement {
     protected final String schema;
     private final int resultSetType;
     private final int resultSetConcurrency;
+    private final int resultSetHoldability;
     private final Set<ResultSet> openResultSets = new HashSet<>();
     private final List<String> sqlList = new ArrayList<>();
     private int maxFieldSize = Integer.MAX_VALUE;
@@ -38,11 +39,12 @@ class StatementImpl extends AbstractStatement implements Statement {
     protected volatile ResultSet rs;
     protected volatile long rows = -1;
 
-    StatementImpl(SqldogConnection connection, String schema, int resultSetType, int resultSetConcurrency) {
+    StatementImpl(SqldogConnection connection, String schema, int resultSetType, int resultSetConcurrency, int resultSetHoldability) {
         super(connection);
         this.schema = schema;
         this.resultSetType = resultSetType;
         this.resultSetConcurrency = resultSetConcurrency;
+        this.resultSetHoldability = resultSetHoldability;
     }
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {

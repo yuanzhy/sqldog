@@ -14,6 +14,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -190,12 +191,14 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
 
     @Override
     public void setTransactionIsolation(int level) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        checkClosed();
+        // TODO 未实现
     }
 
     @Override
     public int getTransactionIsolation() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        checkClosed();
+        return Connection.TRANSACTION_NONE; // TODO
     }
 
     @Override
@@ -210,16 +213,28 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency)
             throws SQLException {
+        return createStatement(resultSetType, resultSetConcurrency, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+    }
+
+    @Override
+    public Statement createStatement(int resultSetType, int resultSetConcurrency,
+            int resultSetHoldability) throws SQLException {
         checkClosed();
-        StatementImpl stmt = new StatementImpl(this, this.schema, resultSetType, resultSetConcurrency);
+        StatementImpl stmt = new StatementImpl(this, this.schema, resultSetType, resultSetConcurrency, resultSetHoldability);
         openStatements.add(stmt);
         return stmt;
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+        return prepareStatement(sql, resultSetType, resultSetConcurrency, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String sql, int resultSetType,
+            int resultSetConcurrency, int resultSetHoldability) throws SQLException {
         checkClosed();
-        PreparedStatementImpl ps = new PreparedStatementImpl(this, this.schema, sql, resultSetType, resultSetConcurrency);
+        PreparedStatementImpl ps = new PreparedStatementImpl(this, this.schema, sql, resultSetType, resultSetConcurrency, resultSetHoldability);
         openStatements.add(ps);
         return ps;
     }
@@ -266,6 +281,17 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     public String getSchema() throws SQLException {
         checkClosed();
         return this.schema;
+    }
+
+    @Override
+    public void setHoldability(int holdability) throws SQLException {
+        checkClosed();
+        // TODO
+    }
+
+    @Override
+    public int getHoldability() throws SQLException {
+        return ResultSet.HOLD_CURSORS_OVER_COMMIT;
     }
 
     @Override

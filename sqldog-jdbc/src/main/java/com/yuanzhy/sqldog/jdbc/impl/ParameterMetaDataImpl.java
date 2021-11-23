@@ -1,9 +1,9 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
-import com.yuanzhy.sqldog.core.sql.ParamMetaData;
-
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
+
+import com.yuanzhy.sqldog.core.sql.ParamMetaData;
 
 /**
  * @author yuanzhy
@@ -14,6 +14,9 @@ public class ParameterMetaDataImpl extends AbstractWrapper implements ParameterM
 
     private final ParamMetaData[] params;
     public ParameterMetaDataImpl(ParamMetaData[] params) {
+        if (params == null) {
+            params = new ParamMetaData[0];
+        }
         this.params = params;
     }
 

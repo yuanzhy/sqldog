@@ -15,6 +15,9 @@ class ResultSetMetaDataImpl extends AbstractWrapper implements ResultSetMetaData
     private final ColumnMetaData[] columns;
 
     ResultSetMetaDataImpl(ColumnMetaData[] columns) {
+        if (columns == null) {
+            columns = new ColumnMetaData[0];
+        }
         this.columns = columns;
     }
 

@@ -55,7 +55,7 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     PreparedStatementImpl(SqldogConnection connection, String schema, String preparedSql, int resultSetType,
                           int resultSetConcurrency, int autoGenerateKey) throws SQLException {
-        super(connection, schema, resultSetType, resultSetConcurrency);
+        super(connection, schema, resultSetType, resultSetConcurrency, ResultSet.HOLD_CURSORS_OVER_COMMIT);
         checkNullOrEmpty(preparedSql);
         this.preparedSql = preparedSql;
         this.autoGenerateKey = autoGenerateKey;

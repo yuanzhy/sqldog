@@ -1,6 +1,9 @@
 package com.yuanzhy.sqldog.cli;
 
+import java.io.File;
+
 import com.yuanzhy.sqldog.cli.command.CommandCliCommand;
+import com.yuanzhy.sqldog.cli.command.FileCliCommand;
 import com.yuanzhy.sqldog.cli.command.ListCliCommand;
 
 /**
@@ -17,7 +20,6 @@ public class TestCommand {
         new CommandCliCommand(H, P, U, PW, "desc test.t").execute();
         new CommandCliCommand(H, P, U, PW, "create schema haha").execute();
         new CommandCliCommand(H, P, U, PW, "create schema hehe").execute();
-        new ListCliCommand(H, P, U, PW).execute();
 //        new ConnectCliCommand(H, P, U, PW).execute();
     }
 }

@@ -45,9 +45,9 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
         this.executor = executor;
     }
 
-    protected final void executeAndExit(String cmd) {
+    protected final void executeAndExit(String... sql) {
         try {
-            Response response = executor.execute(cmd);
+            Response response = executor.execute(sql);
             printResponse(response);
         } catch (RemoteException e) {
             printError(e);
@@ -60,11 +60,17 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
         if (StringUtils.isNotEmpty(response.getMessage())) {
             System.out.println(response.getMessage());
         }
-        SqlResult result = response.getResult();
-        if (result == null) {
+        SqlResult[] results = response.getResults();
+        if (results == null) {
             return;
         }
-        // print result
+        for (SqlResult result : results) {
+            printResult(result);
+        }
+
+    }
+
+    private void printResult(SqlResult result) {
         if (result.getType() == StatementType.DDL) {
             System.out.println("SUCCESS");
         } else if (result.getType() == StatementType.DML) {

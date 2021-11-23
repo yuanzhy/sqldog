@@ -3,6 +3,7 @@ package com.yuanzhy.sqldog.server.sql.command;
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.SqlUtil;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 import org.apache.commons.lang3.StringUtils;
@@ -27,7 +28,7 @@ public class InsertCommand extends AbstractSqlCommand {
         String sqlSuffix = sql.substring("insert into ".length());
         super.parseSchemaTable(sqlSuffix);
         sqlSuffix = StringUtils.substringAfter(sqlSuffix, table.getName()).trim();
-        if (!sqlSuffix.startsWith("VALUES")) {
+        if (!sqlSuffix.startsWith("VALUES") && !sqlSuffix.startsWith("(")) {
             throw new IllegalArgumentException("Illegal sql: " + sql);
         }
         String[] colArr, valArr;
@@ -35,10 +36,10 @@ public class InsertCommand extends AbstractSqlCommand {
             // 说明包含 列明
             String[] arr = StringUtils.substringsBetween(sqlSuffix, "(", ")");
             colArr = arr[0].split(",");
-            valArr = arr[1].split(",");
+            valArr = SqlUtil.parseLine(arr[1].trim());
         } else {
             colArr = table.getColumns().keySet().toArray(new String[0]);
-            valArr = StringUtils.substringBetween(sqlSuffix, "(", ")").split(",");
+            valArr = SqlUtil.parseLine(StringUtils.substringBetween(sqlSuffix, "(", ")").trim());
         }
         Asserts.isTrue(colArr.length == valArr.length, "sql不合法");
         Map<String, Column> columnMap = table.getColumns();
@@ -46,7 +47,7 @@ public class InsertCommand extends AbstractSqlCommand {
         for (int i = 0; i < colArr.length; i++) {
             final String colName = colArr[i].trim();
             final String rawValue = valArr[i].trim();
-            final Object value = columnMap.get(colName).getDataType().parseRawValue(rawValue);
+            final Object value = columnMap.get(colName).getDataType().parseValue(rawValue);
             values.put(colName, value);
         }
         Object pk = table.getDML().insert(values);

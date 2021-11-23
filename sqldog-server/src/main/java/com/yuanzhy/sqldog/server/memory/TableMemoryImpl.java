@@ -145,7 +145,7 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
             if (value == null) {
                 continue;
             }
-            Asserts.isTrue(column.getDataType().isAssignable(value), "DataType mismatch, " + column.getName() + ":" + value);
+            //Asserts.isTrue(column.getDataType().getClazz().isInstance(value), "DataType mismatch, " + column.getName() + ":" + value);
             if (column.getDataType().isHasLength()) {
                 Asserts.isTrue(value.toString().length() <= column.getPrecision(), "Data length over range, " + column.getName() + "(" + column.getPrecision() + "): " + value);
             }
