@@ -9,20 +9,26 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>sqldog-jdbc</artifactId>
+    <artifactId>sqldog-dialect</artifactId>
 
     <dependencies>
+
         <dependency>
-            <groupId>com.yuanzhy.sqldog</groupId>
-            <artifactId>sqldog-core</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>5.4.12.Final</version>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
-            <groupId>com.yuanzhy.sqldog</groupId>
-            <artifactId>sqldog-dialect</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.github.pagehelper</groupId>
+            <artifactId>pagehelper</artifactId>
+            <version>5.3.0</version>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
 
     </dependencies>
+
 </project>

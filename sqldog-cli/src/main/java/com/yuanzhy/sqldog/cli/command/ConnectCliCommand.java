@@ -16,6 +16,11 @@ public class ConnectCliCommand extends RemoteCliCommand {
 
     public ConnectCliCommand(String host, int port, String username, String password) {
         super(host, port, username, password);
+        try {
+            System.out.println("Welcome to sqldog " + executor.getVersion());
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

@@ -1,7 +1,5 @@
 package com.yuanzhy.sqldog.core.util;
 
-import com.yuanzhy.sqldog.core.constant.Consts;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
@@ -114,48 +112,6 @@ public class SqlUtil {
         }
 
         return strBuilder.toString();
-    }
-
-    public static String upperCaseIgnoreValue(String str) {
-        StringBuilder sb = new StringBuilder();
-        boolean valueToken = false;
-        boolean escape = false;
-        for (char c : str.toCharArray()) {
-            // --- 转义处理 ---
-            if (c == Consts.SQL_ESCAPE) {
-                escape = true;
-                sb.append(c);
-                continue;
-            }
-            if (!escape && c == Consts.SQL_QUOTES) {
-                valueToken = !valueToken;
-                sb.append(c);
-            } else {
-                sb.append(valueToken ? c : Character.toUpperCase(c));
-            }
-            escape = false;
-        }
-        return sb.toString();
-    }
-
-    public static int countQuestionMark(String sql) {
-        boolean valueToken = false;
-        boolean escape = false;
-        int count = 0;
-        for (char c : sql.toCharArray()) {
-            // --- 转义处理 ---
-            if (c == Consts.SQL_ESCAPE) {
-                escape = true;
-                continue;
-            }
-            if (!escape && c == Consts.SQL_QUOTES) {
-                valueToken = !valueToken;
-            } else if (!valueToken && c == Consts.SQL_QUESTION_MARK) {
-                count++;
-            }
-            escape = false;
-        }
-        return count;
     }
 
     public static Array toArray(Object x) {

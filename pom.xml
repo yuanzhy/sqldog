@@ -22,6 +22,7 @@
         <module>sqldog-core</module>
         <module>sqldog-cli</module>
         <module>sqldog-server</module>
+        <module>sqldog-dialect</module>
         <module>sqldog-jdbc</module>
     </modules>
     <dependencies>
@@ -50,6 +51,11 @@
             <dependency>
                 <groupId>com.yuanzhy.sqldog</groupId>
                 <artifactId>sqldog-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.yuanzhy.sqldog</groupId>
+                <artifactId>sqldog-dialect</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

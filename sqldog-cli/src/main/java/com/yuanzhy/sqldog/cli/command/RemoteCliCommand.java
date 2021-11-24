@@ -37,7 +37,6 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
             Registry registry = LocateRegistry.getRegistry(host, port);
             RMIServer rmiServer = (RMIServer) registry.lookup(Consts.SERVER_NAME);
             executor = rmiServer.connect(username, password);
-            System.out.println("Welcome to sqldog " + executor.getVersion());
         } catch (RemoteException | NotBoundException e) {
             printError(e);
             throw new RuntimeException("");

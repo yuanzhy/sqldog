@@ -143,9 +143,9 @@ public class RmiServer implements Server {
         @Override
         public Response execute(String... sqls) {
             try {
-                if (sqls.length == 1) {
-                    String[] arr = StringUtils.splitByWholeSeparator(sqls[0], ";\n");
-                    List<SqlResult> results = new ArrayList<>();
+                List<SqlResult> results = new ArrayList<>();
+                for (int i = 0; i < sqls.length; i++) {
+                    String[] arr = sqls[i].split("(;\\s+\n)");
                     for (String sql : arr) {
                         if (StringUtils.isBlank(sql)) {
                             continue;
@@ -158,15 +158,8 @@ public class RmiServer implements Server {
                         }
                         results.add(result);
                     }
-                    return new ResponseImpl(true, results.toArray(new SqlResult[0]));
                 }
-                SqlResult[] results = new SqlResult[sqls.length];
-                for (int i = 0; i < sqls.length; i++) {
-                    SqlCommand sqlCommand = sqlParser.parse(sqls[i]);
-                    sqlCommand.currentSchema(currentSchema);
-                    results[i] = sqlCommand.execute();
-                }
-                return new ResponseImpl(true, results);
+                return new ResponseImpl(true, results.toArray(new SqlResult[0]));
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
                 return new ResponseImpl(false, e.getMessage());
