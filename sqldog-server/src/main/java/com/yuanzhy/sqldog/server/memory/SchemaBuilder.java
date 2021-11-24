@@ -18,6 +18,6 @@ public class SchemaBuilder extends BaseBuilder<SchemaBuilder> {
 
     public Schema build() {
         Asserts.hasText(name, "模式名称不能为空");
-        return new SchemaMemoryImpl(name);
+        return new SchemaMemoryImpl(name, description);
     }
 }

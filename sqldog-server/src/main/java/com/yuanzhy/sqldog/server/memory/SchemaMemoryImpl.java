@@ -1,12 +1,12 @@
 package com.yuanzhy.sqldog.server.memory;
 
+import com.yuanzhy.sqldog.server.core.Schema;
+import com.yuanzhy.sqldog.server.core.Table;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import com.yuanzhy.sqldog.server.core.Schema;
-import com.yuanzhy.sqldog.server.core.Table;
 
 /**
  * @author yuanzhy
@@ -17,8 +17,9 @@ public class SchemaMemoryImpl extends MemoryBase implements Schema {
     /** 表 */
     private final Map<String, Table> tables = new HashMap<>();
 
-    SchemaMemoryImpl(String name) {
+    SchemaMemoryImpl(String name, String description) {
         super(name.toUpperCase());
+        setDescription(description);
     }
 
     @Override

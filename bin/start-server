@@ -1,0 +1,5 @@
+#!/bin/sh
+
+DIR="$( cd "$( dirname "$0"  )" && pwd  )"
+
+nohup java -jar ${DIR}/../server/sqldog-server-1.0-SNAPSHOT.jar > /dev/null &

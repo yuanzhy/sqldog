@@ -126,7 +126,7 @@ public class RmiServer implements Server {
         private final int serialNum;
         private final String version;
         private final Map<String, PreparedSqlCommand> preparedSqlCache = new LRUCache<>(50);
-        private String currentSchema;
+        private String currentSchema = Databases.DEFAULT_SCHEMA;
         ExecutorImpl(String clientHost, int serialNum) {
             this.clientHost = clientHost;
             this.serialNum = serialNum;
