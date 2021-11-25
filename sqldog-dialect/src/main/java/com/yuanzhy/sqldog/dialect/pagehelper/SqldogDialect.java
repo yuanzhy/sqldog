@@ -10,7 +10,14 @@ import com.github.pagehelper.page.PageAutoDialect;
  */
 public class SqldogDialect extends PostgreSqlDialect {
 
-    public SqldogDialect() {
-        PageAutoDialect.registerDialectAlias("sqldog", SqldogDialect.class);
+    static {
+        try {
+            Class<?> cls = Class.forName("com.github.pagehelper.page.PageAutoDialect");
+            if (cls != null) {
+                PageAutoDialect.registerDialectAlias("sqldog", SqldogDialect.class);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
