@@ -52,13 +52,11 @@ public class QueryTest {
 
         SqlNode fetch = sqlOrderBy.fetch;
         SqlNode offset = sqlOrderBy.offset;
-        // TODO limit offset
     }
 
 
     private void handleSelect(SqlNode select) {
         SqlSelect sqlSelect = (SqlSelect) select;
-        //TODO 改写SELECT的字段信息
         SqlNodeList selectList = sqlSelect.getSelectList();
         //字段信息
         selectList.getList().forEach(list -> {
@@ -85,7 +83,6 @@ public class QueryTest {
 
         SqlNode fetch = sqlSelect.getFetch();
         if (fetch != null) {
-            //TODO limit
         }
 
     }
@@ -97,7 +94,6 @@ public class QueryTest {
             case IDENTIFIER:
                 //最终的表名
                 SqlIdentifier sqlIdentifier = (SqlIdentifier) from;
-                //TODO 表名的替换，所以在此之前就需要获取到模型的信息
                 System.out.println("==tablename===" + sqlIdentifier.toString());
                 break;
             case AS:

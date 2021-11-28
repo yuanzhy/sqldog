@@ -82,7 +82,7 @@ public class DmlPreparedSqlCommand extends AbstractPreparedSqlCommand implements
             return "'" + DateUtil.formatTime((Time) value) + "'";
         } else if (value instanceof Timestamp) {
             return "'" + DateUtil.formatTimestamp((Timestamp) value) + "'";
-        } else if (value instanceof byte[]) { // TODO 二进制处理
+        } else if (value instanceof byte[]) {
             return "'" + new String((byte[]) value) + "'";
         } else if (value instanceof Object[]) {
             return Arrays.toString((Object[]) value);

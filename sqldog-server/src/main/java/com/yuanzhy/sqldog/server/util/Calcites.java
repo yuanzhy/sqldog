@@ -1,7 +1,11 @@
 package com.yuanzhy.sqldog.server.util;
 
+import com.yuanzhy.sqldog.server.sql.function.ScalarFunctions;
+import com.yuanzhy.sqldog.server.sql.function.agg.StringAggFunction;
 import org.apache.calcite.jdbc.CalciteConnection;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.schema.impl.AggregateFunctionImpl;
+import org.apache.calcite.schema.impl.ScalarFunctionImpl;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.impl.SqlParserImpl;
 import org.apache.calcite.tools.FrameworkConfig;
@@ -9,6 +13,8 @@ import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
 import org.apache.calcite.util.ConversionUtil;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -39,6 +45,8 @@ public class Calcites {
             throw new RuntimeException(e);
         }
         SCHEMA_PLUS = CONNECTION.getRootSchema();
+        registerFn();
+
         FRAMEWORK_CONFIG = Frameworks.newConfigBuilder()
                 .defaultSchema(SCHEMA_PLUS)
                 .parserConfig(SqlParser.config()
@@ -48,7 +56,9 @@ public class Calcites {
                         //.withQuotedCasing(Casing.TO_UPPER)
                         //.withUnquotedCasing(Casing.TO_UPPER)
                         //.withConformance(SqlConformanceEnum.ORACLE_12)
-                ).build();
+                )
+//                .operatorTable(sqlStdOperatorTable)
+                .build();
     }
 
     public static Planner getPanner() {
@@ -61,5 +71,19 @@ public class Calcites {
 
     public static SchemaPlus getRootSchema() {
         return SCHEMA_PLUS;
+    }
+
+    private static void registerFn() {
+        // 1. scalar function
+        Method[] methods = ScalarFunctions.class.getDeclaredMethods();
+        for (Method method : methods) {
+            String name = method.getName();
+            if (Modifier.isPrivate(method.getModifiers())) {
+                continue;
+            }
+            SCHEMA_PLUS.add(name.toUpperCase(), ScalarFunctionImpl.create(ScalarFunctions.class, name));
+        }
+        // 2. agg function
+        SCHEMA_PLUS.add("STRING_AGG", AggregateFunctionImpl.create(StringAggFunction.class));
     }
 }

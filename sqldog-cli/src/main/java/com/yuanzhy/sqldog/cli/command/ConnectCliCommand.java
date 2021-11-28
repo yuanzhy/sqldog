@@ -52,7 +52,7 @@ public class ConnectCliCommand extends RemoteCliCommand {
                 break;
             }
             sb.append("\n");
-            System.out.print("> ");
+            System.out.print("......> ");
         }
         return sb.toString();
     }
