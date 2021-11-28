@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -67,6 +66,14 @@ public class ScalarFunctions {
     public static final String to_char(Object raw, String formatter) {
         if (raw instanceof Number) {
             DecimalFormat nf = (DecimalFormat) DecimalFormat.getInstance();
+            if (formatter.contains(".")) {
+                nf.setDecimalSeparatorAlwaysShown(true);
+                String[] arr = formatter.split("\\.");
+                formatter = arr[0].replaceAll("\\d", "#") + "." + arr[1];
+            } else {
+                formatter = formatter.replaceAll("\\d", "#");
+                nf.setDecimalSeparatorAlwaysShown(false);
+            }
             nf.applyPattern(formatter);
             return nf.format(((Number) raw).longValue());
         } else if (raw instanceof java.util.Date) {
@@ -144,9 +151,8 @@ public class ScalarFunctions {
         return DigestUtils.md5Hex(raw);
     }
 
-    public static final BigDecimal to_number(String str, double d) {
-        DecimalFormat df = (DecimalFormat)DecimalFormat.getInstance();
-        df.applyPattern(Objects.toString(d));
-        return new BigDecimal(df.format(Double.parseDouble(str)));
+    public static final Number to_number(String str, String formatter) {
+        String r = to_char(new BigDecimal(str.replace(",", "").replace(" ", "")), formatter.replace(",", ""));
+        return new BigDecimal(r);
     }
 }
