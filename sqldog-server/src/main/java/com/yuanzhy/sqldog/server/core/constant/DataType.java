@@ -77,7 +77,7 @@ public enum DataType {
                 return DateUtil.parseSqlTime(defaultValue);
             } else if (this == DataType.TIMESTAMP) {
                 return DateUtil.parse(defaultValue).getTime();
-            } else if (this.getClazz() == String.class) {
+            } else if (Number.class.isAssignableFrom(this.getClazz()) || this.getClazz() == String.class) {
                 return defaultValue;
             } else {
                 throw new UnsupportedOperationException(rawValue + " not supported");

@@ -50,7 +50,7 @@ public class TableBuilder extends BaseBuilder<TableBuilder> {
     @Override
     public Table build() {
         Asserts.hasText(name, "table name must not be null");
-        Asserts.notNull(primaryKey, "primaryKey must not be null");
+        //Asserts.notNull(primaryKey, "primaryKey must not be null");
         Asserts.hasEle(columnMap, "table must has column");
         Column pkColumn = columnMap.get(primaryKey.getColumnNames()[0]);
         Asserts.notNull(pkColumn, "primaryKey column '"+primaryKey.getColumnNames()[0]+"' not exists");

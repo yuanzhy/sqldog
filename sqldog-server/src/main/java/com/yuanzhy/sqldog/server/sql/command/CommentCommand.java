@@ -2,7 +2,10 @@ package com.yuanzhy.sqldog.server.sql.command;
 
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
+import com.yuanzhy.sqldog.server.util.Databases;
+
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -21,7 +24,13 @@ public class CommentCommand extends AbstractSqlCommand {
         // comment on table schema.table is '一个神奇的表';
         // comment on column schema.table.column is '一个神奇的列';
         String type = sql.substring("COMMENT ON ".length());
-        if (type.startsWith("TABLE")) {
+        if (type.startsWith("SCHEMA")) {
+            String sqlSuffix = type.substring("SCHEMA ".length());
+            String schemaName = StringUtils.substringBefore(sqlSuffix, " ").trim();
+            schema = Databases.getDefault().getSchema(schemaName);
+            Asserts.notNull(schema, schemaName + " not found");
+            schema.setDescription(StringUtils.substringBetween(sqlSuffix, "'"));
+        } else if (type.startsWith("TABLE")) {
             String sqlSuffix = type.substring("TABLE ".length());
             super.parseSchemaTable(sqlSuffix);
             table.setDescription(StringUtils.substringBetween(sqlSuffix, "'"));
@@ -35,6 +44,6 @@ public class CommentCommand extends AbstractSqlCommand {
         } else {
             throw new UnsupportedOperationException("not supported: " + sql);
         }
-        return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(table.getName()).build();
+        return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(table == null ? null : table.getName()).build();
     }
 }

@@ -14,7 +14,7 @@ public interface Table extends Base {
 
     Map<String, Column> getColumns();
 
-    String getPkName();
+    String[] getPkNames();
 
     List<Object[]> getData();
 

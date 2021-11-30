@@ -27,7 +27,7 @@ public abstract class AbstractPreparedSqlCommand implements PreparedSqlCommand {
         this.preparedSql = preparedSql;
         try {
             ps = Calcites.getConnection().prepareStatement(preparedSql);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

@@ -39,7 +39,7 @@ public class ShowCommand extends AbstractSqlCommand {
                     .schema(schema.getName())
                     .data(schema.getTableNames().stream().map(t -> {
                         Table table = schema.getTable(t);
-                        return new Object[]{schema.getName(), table.getName(), "table", schema.getDescription()}; }).collect(Collectors.toList())
+                        return new Object[]{schema.getName(), table.getName(), "table", table.getDescription()}; }).collect(Collectors.toList())
                     ).build();
             // TODO 显示约束信息
             //"Constraint:\n" +

@@ -30,7 +30,7 @@ public final class CliUtil {
         //OptionGroup generalOptions = new OptionGroup();
         OPTIONS.addOption(Option.builder("c").hasArg(true).longOpt("command").type(String.class).desc("run only single command (SQL or internal) and exit").build());
         OPTIONS.addOption(Option.builder("d").hasArg(true).longOpt("dbname").type(String.class).desc("database name to connect to").build());
-        OPTIONS.addOption(Option.builder("f").hasArg(true).longOpt("file").type(String.class).desc("execute commands from file, then exit").build());
+        OPTIONS.addOption(Option.builder("f").hasArg(true).longOpt("file").type(String.class).desc("execute commands from file or directory, then exit").build());
         OPTIONS.addOption(Option.builder("l").longOpt("list").type(String.class).desc("list available schemas, then exit").build());
         OPTIONS.addOption(Option.builder("V").longOpt("version").type(String.class).desc("output version information, then exit").build());
         OPTIONS.addOption(Option.builder("H").longOpt("help").type(String.class).desc("show this help, then exit").build());

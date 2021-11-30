@@ -1,8 +1,13 @@
 package com.yuanzhy.sqldog.cli.command;
 
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
+import java.util.Arrays;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.comparator.NameFileComparator;
+import org.apache.commons.lang3.ArrayUtils;
+
+import com.yuanzhy.sqldog.core.rmi.Response;
 
 /**
  * @author yuanzhy
@@ -17,22 +22,36 @@ public class FileCliCommand extends RemoteCliCommand {
         if (!file.exists()) {
             throw new IllegalArgumentException(filename + " not exists");
         }
-        if (!file.isFile()) {
-            throw new IllegalArgumentException(filename + " not file");
-        }
     }
 
     @Override
     public void execute() {
         try {
+            recursiveExec(file);
+        } catch (Exception e) {
+            printError(e);
+        } finally {
+            close();
+        }
+    }
+
+    private void recursiveExec(File file) throws Exception {
+        if (file.isDirectory()) {
+            File[] files = file.listFiles((dir, name) -> name.endsWith(".sql"));
+            if (ArrayUtils.isNotEmpty(files)) {
+                Arrays.sort(files, NameFileComparator.NAME_COMPARATOR);
+                for (File subFile : files) {
+                    recursiveExec(subFile);
+                }
+            }
+        } else {
             String text = FileUtils.readFileToString(file, "UTF-8").trim();
             if (text.contains("\r")) {
                 text = text.replace("\r", "");
             }
             String[] sqls = text.split(";\n");
-            executeAndExit(sqls);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            Response response = executor.execute(sqls);
+            printResponse(response);
         }
     }
 }

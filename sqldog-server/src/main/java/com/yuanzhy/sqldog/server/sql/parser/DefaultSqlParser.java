@@ -1,14 +1,18 @@
 package com.yuanzhy.sqldog.server.sql.parser;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.yuanzhy.sqldog.server.sql.SqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlParser;
 import com.yuanzhy.sqldog.server.sql.command.AlterTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.CommentCommand;
 import com.yuanzhy.sqldog.server.sql.command.CommitCommand;
+import com.yuanzhy.sqldog.server.sql.command.CreateIndexCommand;
 import com.yuanzhy.sqldog.server.sql.command.CreateSchemaCommand;
 import com.yuanzhy.sqldog.server.sql.command.CreateTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.DeleteCommand;
 import com.yuanzhy.sqldog.server.sql.command.DescCommand;
+import com.yuanzhy.sqldog.server.sql.command.DropIndexCommand;
 import com.yuanzhy.sqldog.server.sql.command.DropSchemaCommand;
 import com.yuanzhy.sqldog.server.sql.command.DropTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.InsertCommand;
@@ -17,7 +21,6 @@ import com.yuanzhy.sqldog.server.sql.command.SetCommand;
 import com.yuanzhy.sqldog.server.sql.command.ShowCommand;
 import com.yuanzhy.sqldog.server.sql.command.TruncateTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.UpdateCommand;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author yuanzhy
@@ -43,6 +46,8 @@ public class DefaultSqlParser implements SqlParser {
                 return new CreateSchemaCommand(sql);
             } else if (tmp.startsWith("TABLE")) {
                 return new CreateTableCommand(sql);
+            } else if (tmp.startsWith("INDEX")) {
+                return new CreateIndexCommand(sql);
             }
         } else if (sql.startsWith("ALTER")) {
             if (tmp.startsWith("TABLE")) {
@@ -55,6 +60,8 @@ public class DefaultSqlParser implements SqlParser {
                 return new DropTableCommand(sql);
             } else if (tmp.startsWith("SCHEMA")) {
                 return new DropSchemaCommand(sql);
+            } else if (tmp.startsWith("INDEX")) {
+                return new DropIndexCommand(sql);
             }
         } else if (sql.startsWith("TRUNCATE")) {
             if (tmp.startsWith("TABLE")) {

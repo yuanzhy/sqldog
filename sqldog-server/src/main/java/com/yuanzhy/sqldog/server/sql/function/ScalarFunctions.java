@@ -65,6 +65,9 @@ public class ScalarFunctions {
 
     public static final String to_char(Object raw, String formatter) {
         if (raw instanceof Number) {
+            if (StringUtils.containsAny(formatter, "y", "M", "d", "H", "h", "m", "s", "S")) {
+                return DateFormatUtils.format(new java.util.Date(((Number) raw).longValue()), formatter);
+            }
             DecimalFormat nf = (DecimalFormat) DecimalFormat.getInstance();
             if (formatter.contains(".")) {
                 nf.setDecimalSeparatorAlwaysShown(true);
@@ -83,20 +86,29 @@ public class ScalarFunctions {
         }
     }
 
-    public static final String concat(Object... strings) {
-        return concat_ws("", strings);
+    public static final String concat(Object o1, Object o2) {
+        return concat(o1, o2, "");
     }
 
-    public static final String concat_ws(String seq, Object... strings) {
-        if (strings == null) {
-            return null;
+    public static final String concat_ws(String seq, Object o1, Object o2) {
+        return concat_ws(seq, o1, o2, "");
+    }
+
+    public static final String concat(Object o1, Object o2, Object o3) {
+        return concat_ws("", o1, o2, o3);
+    }
+
+    public static final String concat_ws(String seq, Object o1, Object o2, Object o3) {
+        if (o1 == null) {
+            o1 = "";
         }
-        return Arrays.stream(strings).map(s -> {
-            if (s == null) {
-                return "";
-            }
-            return s.toString();
-        }).collect(Collectors.joining(seq));
+        if (o2 == null) {
+            o2 = "";
+        }
+        if (o3 == null) {
+            o3 = "";
+        }
+        return o1 + seq + o2 + seq + o3;
     }
 
     public static final Integer length(String str) {

@@ -9,11 +9,12 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @date 2021/11/28
  */
-public class StringAggFunction {
+public class StringAggFunction implements AggFunction<StringAggFunction> {
 
     private final List<String> values = new ArrayList<>();
     private String delimiter = "";
 
+    @Override
     public StringAggFunction init() {
         StringAggFunction fn = new StringAggFunction();
         return fn;
@@ -25,6 +26,7 @@ public class StringAggFunction {
         return fn;
     }
 
+    @Override
     public String result(StringAggFunction fn) {
         return values.stream().collect(Collectors.joining(delimiter));
     }

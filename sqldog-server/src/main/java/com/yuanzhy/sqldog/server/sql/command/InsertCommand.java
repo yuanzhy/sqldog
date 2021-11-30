@@ -1,15 +1,16 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.core.util.SqlUtil;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author yuanzhy
@@ -56,9 +57,9 @@ public class InsertCommand extends AbstractSqlCommand {
             final Object value = columnMap.get(colName).getDataType().parseValue(rawValue);
             values.put(colName, value);
         }
-        Object pk = table.getDML().insert(values);
+        Object[] pkValues = table.getDML().insert(values);
         return new SqlResultBuilder(StatementType.DML).schema(schema.getName()).table(table.getName()).rows(1)
-                .labels(table.getPkName())
-                .data(pk).build();
+                .labels(table.getPkNames())
+                .data(pkValues).build();
     }
 }

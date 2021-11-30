@@ -1,24 +1,5 @@
 package com.yuanzhy.sqldog.server.memory;
 
-import com.google.common.collect.Sets;
-import com.yuanzhy.sqldog.core.util.Asserts;
-import com.yuanzhy.sqldog.server.core.Column;
-import com.yuanzhy.sqldog.server.core.Constraint;
-import com.yuanzhy.sqldog.server.core.DML;
-import com.yuanzhy.sqldog.server.core.Serial;
-import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
-import com.yuanzhy.sqldog.server.core.constant.DataType;
-import org.apache.calcite.sql.SqlBasicCall;
-import org.apache.calcite.sql.SqlDelete;
-import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlLiteral;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.SqlUpdate;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +13,27 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import org.apache.calcite.sql.SqlBasicCall;
+import org.apache.calcite.sql.SqlDelete;
+import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlLiteral;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlUpdate;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import com.google.common.collect.Sets;
+import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.core.Column;
+import com.yuanzhy.sqldog.server.core.Constraint;
+import com.yuanzhy.sqldog.server.core.DML;
+import com.yuanzhy.sqldog.server.core.Serial;
+import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
+import com.yuanzhy.sqldog.server.core.constant.DataType;
 
 /**
  * @author yuanzhy
@@ -53,7 +55,7 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
      *    rowMap: key = colName
      *             value = row
      */
-    private final Map<Object, Map<String, Object>> data = new HashMap<>();
+    private final Map<String, Map<String, Object>> data = new HashMap<>();
 
     /**
      * 唯一索引
@@ -79,27 +81,33 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
     }
 
     @Override
-    public String getPkName() {
-        return primaryKey.getColumnNames()[0]; // TODO 暂不支持联合主键
+    public String[] getPkNames() {
+        return primaryKey.getColumnNames();
     }
 
     @Override
-    public Object insert(Map<String, Object> values) {
+    public Object[] insert(Map<String, Object> values) {
         // check
         this.checkData(values);
         // generate pk
-        Object pkValue;
-        String pkName = getPkName();
-        if (values.containsKey(pkName)) {
-            pkValue = values.get(pkName);
-            // check pk
-            Asserts.isFalse(data.containsKey(pkValue), "Primary key conflict：" + pkValue);
-        } else if (columnMap.get(pkName).getDataType().isSerial()) {
-            pkValue = this.serial.next();
-            values.put(pkName, pkValue);
-        } else {
-            throw new IllegalArgumentException("Primary key must be not null");
+        String[] pkNames = primaryKey.getColumnNames();
+        Object[] pkValues = new Object[pkNames.length];
+        for (int i = 0; i < pkNames.length; i++) {
+            String pkName = pkNames[i];
+            Object onePkValue;
+            if (values.containsKey(pkName)) {
+                onePkValue = values.get(pkName);
+            } else if (columnMap.get(pkName).getDataType().isSerial()) {
+                onePkValue = this.serial.next();
+                values.put(pkName, onePkValue);
+            } else {
+                throw new IllegalArgumentException("Primary key must be not null");
+            }
+            pkValues[i] = onePkValue;
         }
+        String pkValueKey = Arrays.stream(pkValues).map(Object::toString).collect(Collectors.joining(Consts.SQL_PK_SEP));
+        // check pk
+        Asserts.isFalse(data.containsKey(pkValueKey), "Primary key conflict：" + Arrays.stream(pkValues).map(Object::toString).collect(Collectors.joining(", ")));
         // check constraint
         this.checkConstraint(values);
         // add data
@@ -128,12 +136,12 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
                 String[] columnNames = c.getColumnNames();
                 if (c.getType() == ConstraintType.UNIQUE) {
                     String uniColValue = Arrays.stream(columnNames).map(cn -> values.get(cn).toString()).collect(Collectors.joining("_"));
-                    uniqueMap.put(uniColValue, pkValue);
+                    uniqueMap.put(uniColValue, pkValueKey);
                 }
             }
-            this.data.put(pkValue, row);
+            this.data.put(pkValueKey, row);
         }
-        return pkValue;
+        return pkValues;
     }
 
     private void checkData(Map<String, Object> values) {
@@ -206,9 +214,11 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
             this.truncate();
         } else if (condition instanceof SqlBasicCall) {
             Set<Map<String, Object>> dataList = handleWhere(data.values(), (SqlBasicCall)condition);
-            String pkName = getPkName();
+            String[] pkNames = primaryKey.getColumnNames();
             for (Map<String, Object> row : dataList) {
-                Map<String, Object> deletedRow = data.remove(row.get(pkName));
+                String pkValueKey = Arrays.stream(pkNames).map(n -> String.valueOf(data.get(n))).collect(
+                        Collectors.joining(Consts.SQL_PK_SEP));
+                Map<String, Object> deletedRow = data.remove(pkValueKey);
                 if (deletedRow == null) {
                     continue;
                 }
@@ -231,7 +241,9 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
     @Override
     public synchronized int updateBy(SqlUpdate sqlUpdate) {
         List<String> colList = sqlUpdate.getTargetColumnList().stream().map(SqlNode::toString).collect(Collectors.toList());
-        Asserts.isFalse(colList.contains(getPkName()), "Temporary unsupported update primary key");
+        for (String columnName : primaryKey.getColumnNames()) {
+            Asserts.isFalse(colList.contains(columnName), "Temporary unsupported update primary key");
+        }
         List<Object> valList = new ArrayList<>(colList.size());
         for (int i = 0; i < colList.size(); i++) {
             DataType dt = columnMap.get(colList.get(i)).getDataType();

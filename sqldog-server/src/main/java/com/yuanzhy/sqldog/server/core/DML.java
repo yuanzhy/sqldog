@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public interface DML {
 
-    Object insert(Map<String, Object> values);
+    Object[] insert(Map<String, Object> values);
 
 //    int delete(Object id);
 

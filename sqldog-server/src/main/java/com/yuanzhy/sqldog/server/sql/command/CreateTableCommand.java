@@ -1,5 +1,7 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
@@ -8,7 +10,6 @@ import com.yuanzhy.sqldog.server.memory.ColumnBuilder;
 import com.yuanzhy.sqldog.server.memory.ConstraintBuilder;
 import com.yuanzhy.sqldog.server.memory.TableBuilder;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author yuanzhy
@@ -29,11 +30,18 @@ public class CreateTableCommand extends AbstractSqlCommand {
         TableBuilder tb = new TableBuilder();
         tb.name(tableName);
         String main = StringUtils.substringAfter(sqlSuffix, "(").trim();
-        main = main.substring(0, main.length() - 1);
-        for (String rawColInfo : main.split(",")) {
+        String colInfoStr = StringUtils.substringBeforeLast(main, ")").trim();
+        String halfLine = null;
+        for (String rawColInfo : colInfoStr.split(",")) {
             rawColInfo = rawColInfo.trim();
             if (rawColInfo.isEmpty()) {
                 continue;
+            } else if (rawColInfo.contains("(") && !rawColInfo.contains(")")) {
+                halfLine = rawColInfo;
+                continue;
+            }
+            if (halfLine != null) {
+                rawColInfo = halfLine + "," + rawColInfo;
             }
             if (rawColInfo.startsWith("PRIMARY KEY")) {
                 this.handlePK(tb, rawColInfo, null);
@@ -53,7 +61,15 @@ public class CreateTableCommand extends AbstractSqlCommand {
                 ColumnBuilder cb = this.handleCol(tb, rawColInfo);
                 tb.addColumn(cb.build());
             }
+            halfLine = null;
         }
+        //String optional = StringUtils.substringAfterLast(main, ")").trim();
+        // TODO handle optional
+        //if (optional.startsWith("COMMENT")) {
+        //    String comment = StringUtils.substringAfter(optional, "=").trim();
+        //    comment = StringUtils.strip(comment, "'");
+        //    tb.description(comment);
+        //}
         schema.addTable(tb.build());
         return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(tableName).build();
     }
@@ -106,9 +122,10 @@ public class CreateTableCommand extends AbstractSqlCommand {
 
     private void handlePK(TableBuilder tb, String rawColInfo, String consName) {
         String consColName = StringUtils.substringBetween(rawColInfo, "(", ")").trim();
-        if (consColName.contains(",")) {
-            throw new UnsupportedOperationException("暂不支持联合主键");
+        ConstraintBuilder cb = new ConstraintBuilder().name(consName).type(ConstraintType.PRIMARY_KEY);
+        for (String s : consColName.split(",")) {
+            cb.addColumnName(s.trim());
         }
-        tb.addConstraint(new ConstraintBuilder().name(consName).type(ConstraintType.PRIMARY_KEY).addColumnName(consColName).build());
+        tb.addConstraint(cb.build());
     }
 }

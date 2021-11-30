@@ -1,5 +1,10 @@
 package com.yuanzhy.sqldog.server.sql.adapter;
 
+import java.io.Reader;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.calcite.sql.SqlAsOperator;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDelete;
@@ -7,14 +12,14 @@ import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlJoin;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOrderBy;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
+import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.parser.impl.SqlParserImpl;
-
-import java.io.Reader;
-import java.util.Arrays;
 
 /**
  * @author yuanzhy
@@ -32,18 +37,24 @@ public class CalciteSqlParser extends SqlParserImpl {
     public SqlNode parseSqlStmtEof() throws Exception {
         SqlNode sqlNode = super.parseSqlStmtEof();
         SqlNode targetTable = null;
+        SqlNodeList groupBy = null;
+        SqlNodeList selectList = null;
         if (sqlNode.getKind() == SqlKind.ORDER_BY) {
             SqlOrderBy orderBy = (SqlOrderBy) sqlNode;
             SqlNode query = orderBy.query;
             if (query.getKind() == SqlKind.SELECT) {
                 SqlSelect sqlSelect = (SqlSelect) query;
                 targetTable = sqlSelect.getFrom();
+                groupBy = sqlSelect.getGroup();
+                selectList = sqlSelect.getSelectList();
             }
         }
 
         if (sqlNode.getKind() == SqlKind.SELECT) {
             SqlSelect sqlSelect = (SqlSelect) sqlNode;
             targetTable = sqlSelect.getFrom();
+            groupBy = sqlSelect.getGroup();
+            selectList = sqlSelect.getSelectList();
         } else if (sqlNode.getKind() == SqlKind.INSERT) {
             targetTable = ((SqlInsert) sqlNode).getTargetTable();
         } else if (sqlNode.getKind() == SqlKind.UPDATE) {
@@ -51,13 +62,40 @@ public class CalciteSqlParser extends SqlParserImpl {
         } else if (sqlNode.getKind() == SqlKind.DELETE) {
             targetTable = ((SqlDelete) sqlNode).getTargetTable();
         }
-        if (targetTable != null) {
+        // 自动拼接上 schema
+        if (targetTable != null && schema != null) {
             if (targetTable instanceof SqlIdentifier) {
                 handleIdentifier((SqlIdentifier)targetTable);
             } else if (targetTable instanceof SqlBasicCall) {
                 handleBasicCall((SqlBasicCall) targetTable);
             } else if (targetTable instanceof SqlJoin) {
                 handleJoin((SqlJoin) targetTable);
+            }
+        }
+        // group by alias 转换为 group by ordinal
+        if (groupBy != null && selectList != null && selectList.size() > 0) {
+            Map<String, Integer> nameOrdinal = new HashMap<>();
+            for (int i = 0; i < selectList.size(); i++) {
+                SqlNode select = selectList.get(i);
+                if (select instanceof SqlBasicCall
+                        && ((SqlBasicCall) select).getOperator().getKind() == SqlKind.AS
+                        && ((SqlBasicCall) select).getOperandList().size() == 2) {
+                    SqlNode selectAs = ((SqlBasicCall) select).getOperandList().get(1);
+                    if (selectAs instanceof SqlIdentifier) {
+                        nameOrdinal.put(((SqlIdentifier) selectAs).names.get(0), i);
+                    }
+                }
+            }
+            for (int i = 0; i < groupBy.size(); i++) {
+                if (groupBy.get(i) instanceof SqlIdentifier) {
+                    SqlIdentifier groupByIdty = (SqlIdentifier) groupBy.get(i);
+                    if (groupByIdty.names.size() == 1) {
+                        Integer ordinal = nameOrdinal.get(groupByIdty.names.get(0));
+                        if (ordinal != null) {
+                            groupBy.set(i, SqlLiteral.createExactNumeric(ordinal.toString(), SqlParserPos.ZERO));
+                        }
+                    }
+                }
             }
         }
         return sqlNode;
