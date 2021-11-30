@@ -9,11 +9,14 @@ import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 
 import java.io.InputStream;
 import java.sql.Blob;
+import java.sql.Date;
 import java.sql.ParameterMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -137,7 +140,28 @@ public class SelectPreparedSqlCommand extends AbstractPreparedSqlCommand impleme
             while (rs.next()) {
                 Object[] values = new Object[rsmd.getColumnCount()];
                 for (int i = 0; i < rsmd.getColumnCount(); i++) {
-                    Object value = rs.getObject(rsmd.getColumnLabel(i+1));
+                    final int index = i + 1;
+                    String columnLabel = rsmd.getColumnLabel(index); // 别名
+                    String className = rsmd.getColumnClassName(index);
+                    Object value = null;
+                    if ("java.sql.Date".equals(className)) {
+                        Long date = rs.getLong(columnLabel);
+                        if (date != null) {
+                            value = new Date(date.longValue());
+                        }
+                    } else if ("java.sql.Time".equals(className)) {
+                        Long time = rs.getLong(columnLabel);
+                        if (time != null) {
+                            value = new Time(time.longValue());
+                        }
+                    } else if ("java.sql.Timestamp".equals(className)) {
+                        Long timestamp = rs.getLong(columnLabel);
+                        if (timestamp != null) {
+                            value = new Timestamp(timestamp.longValue());
+                        }
+                    } else {
+                        value = rs.getObject(columnLabel);
+                    }
                     values[i] = value;
                 }
                 data.add(values);

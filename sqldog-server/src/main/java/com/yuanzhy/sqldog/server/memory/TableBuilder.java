@@ -52,11 +52,13 @@ public class TableBuilder extends BaseBuilder<TableBuilder> {
         Asserts.hasText(name, "table name must not be null");
         //Asserts.notNull(primaryKey, "primaryKey must not be null");
         Asserts.hasEle(columnMap, "table must has column");
-        Column pkColumn = columnMap.get(primaryKey.getColumnNames()[0]);
-        Asserts.notNull(pkColumn, "primaryKey column '"+primaryKey.getColumnNames()[0]+"' not exists");
-        // setSerial
-        if (this.serial == null && pkColumn.getDataType().isSerial()) {
-            this.serial = new SerialMemoryImpl(0, 1); // 默认步长
+        if (primaryKey != null) {
+            Column pkColumn = columnMap.get(primaryKey.getColumnNames()[0]);
+            Asserts.notNull(pkColumn, "primaryKey column '"+primaryKey.getColumnNames()[0]+"' not exists");
+            // setSerial
+            if (this.serial == null && pkColumn.getDataType().isSerial()) {
+                this.serial = new SerialMemoryImpl(0, 1); // 默认步长
+            }
         }
         return new TableMemoryImpl(name, columnMap, primaryKey, constraint, serial);
     }
