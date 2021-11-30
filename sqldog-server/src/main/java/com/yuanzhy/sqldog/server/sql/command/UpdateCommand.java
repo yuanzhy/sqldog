@@ -23,7 +23,6 @@ public class UpdateCommand extends AbstractSqlCommand {
         // update scheme.table_name set name='zs', age=15 where id = 1
         try {
             SqlNode sqlNode = Calcites.getPanner().parse(sql);
-//            Calcites.getPanner().validate(sqlNode); // TODO validate
             SqlUpdate update = (SqlUpdate) sqlNode;
             super.parseSchemaTable(update.getTargetTable().toString());
             int rows = table.getDML().updateBy(update);
