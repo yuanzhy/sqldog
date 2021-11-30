@@ -27,6 +27,8 @@ public interface SqlResult extends Serializable {
 
     List<Object[]> getData();
 
+    Constraint[] getConstraints();
+
     default String[] getLabels() {
         ColumnMetaData[] columns = getColumns();
         if (columns == null) {

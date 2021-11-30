@@ -6,6 +6,7 @@ import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.rmi.Executor;
 import com.yuanzhy.sqldog.core.rmi.RMIServer;
 import com.yuanzhy.sqldog.core.rmi.Response;
+import com.yuanzhy.sqldog.core.sql.Constraint;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.DateUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -106,12 +107,15 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
                 String out = FormatterUtil.joinByVLine(LEN, headers) + "\n" +
                         FormatterUtil.genHLine(LEN, headers.length) + "\n" +
                         data.stream().map(o -> toString(o, LEN)).collect(Collectors.joining("\n")) + "\n";
+                Constraint[] constraints = result.getConstraints();
+                if (constraints != null) {
+                    out += "Constraint:\n";
+                    for (Constraint c : constraints) {
+                        out += "    \"" + c.getName() + "\" " + c.getType() + " (" + FormatterUtil.join(c.getColumnNames(), ",") + ")\n";
+                    }
+                }
                 System.out.println(out);
-                // TODO 显示约束信息
-                //"Constraint:\n" +
-                //        "    " + primaryKey.toPrettyString() + "\n" +
-                //        constraint.stream().map(Constraint::toPrettyString).map(s -> "    " + s).collect(
-                //                Collectors.joining("\n"))
+
             }
 
             /*

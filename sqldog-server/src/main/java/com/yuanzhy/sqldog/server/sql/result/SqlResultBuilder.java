@@ -7,6 +7,7 @@ import com.yuanzhy.sqldog.core.sql.ParamMetaDataImpl;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.sql.SqlResultImpl;
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.core.Constraint;
 
 import java.sql.ParameterMetaData;
 import java.sql.ResultSetMetaData;
@@ -41,6 +42,8 @@ public class SqlResultBuilder {
     private ResultSetMetaData rsmd;
     /** 数据 */
     private List<Object[]> data;
+    /** 约束信息 */
+    private List<Constraint> constraintList;
 
     public SqlResultBuilder(StatementType type) {
         Asserts.notNull(type, "StatementType can not be null");
@@ -100,6 +103,11 @@ public class SqlResultBuilder {
 
     public SqlResultBuilder data(Object data) {
         this.data = Collections.singletonList(new Object[]{data});
+        return this;
+    }
+
+    public SqlResultBuilder constraints(List<Constraint> constraintList) {
+        this.constraintList = constraintList;
         return this;
     }
 
@@ -164,6 +172,12 @@ public class SqlResultBuilder {
                 throw new RuntimeException(e);
             }
         }
-        return new SqlResultImpl(type, rows, schema, table, params, columns, data);
+        com.yuanzhy.sqldog.core.sql.Constraint[] constraints = null;
+        if (constraintList != null && !constraintList.isEmpty()) {
+            constraints = constraintList.stream()
+                    .map(c -> new com.yuanzhy.sqldog.core.sql.Constraint(c.getName(), c.getType().name(), c.getColumnNames()))
+                    .toArray(com.yuanzhy.sqldog.core.sql.Constraint[]::new);
+        }
+        return new SqlResultImpl(type, rows, schema, table, params, columns, data, constraints);
     }
 }

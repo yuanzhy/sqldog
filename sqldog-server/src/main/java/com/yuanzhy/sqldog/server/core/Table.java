@@ -16,6 +16,8 @@ public interface Table extends Base {
 
     String[] getPkNames();
 
+    List<Constraint> getConstraints();
+
     List<Object[]> getData();
 
     DML getDML();

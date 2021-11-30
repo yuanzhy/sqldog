@@ -86,6 +86,18 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
     }
 
     @Override
+    public List<Constraint> getConstraints() {
+        List<Constraint> r = new ArrayList<>();
+        if (primaryKey != null) {
+            r.add(primaryKey);
+        }
+        if (constraint != null) {
+            r.addAll(constraint);
+        }
+        return r.isEmpty() ? null : r;
+    }
+
+    @Override
     public synchronized Object[] insert(Map<String, Object> values) {
         // check
         this.checkData(values);

@@ -40,12 +40,8 @@ public class ShowCommand extends AbstractSqlCommand {
                     .data(schema.getTableNames().stream().map(t -> {
                         Table table = schema.getTable(t);
                         return new Object[]{schema.getName(), table.getName(), "table", table.getDescription()}; }).collect(Collectors.toList())
-                    ).build();
-            // TODO 显示约束信息
-            //"Constraint:\n" +
-            //        "    " + primaryKey.toPrettyString() + "\n" +
-            //        constraint.stream().map(Constraint::toPrettyString).map(s -> "    " + s).collect(
-            //                Collectors.joining("\n"))
+                    )
+                    .build();
         } else if ("SEARCH_PATH".equals(sqlSuffix)) {
             checkSchema();
             return builder.schema(schema.getName()).build();

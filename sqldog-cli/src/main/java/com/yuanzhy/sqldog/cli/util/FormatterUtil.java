@@ -1,9 +1,10 @@
 package com.yuanzhy.sqldog.cli.util;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Arrays;
 import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -36,5 +37,15 @@ public final class FormatterUtil {
         }
         sb.deleteCharAt(sb.length() - 1);
         return sb.toString();
+    }
+
+    public static String join(String[] strings, String delimiter) {
+        if (ArrayUtils.isEmpty(strings)) {
+            return "";
+        }
+        if (strings.length == 1) {
+            return strings[0];
+        }
+        return Arrays.stream(strings).collect(Collectors.joining(","));
     }
 }

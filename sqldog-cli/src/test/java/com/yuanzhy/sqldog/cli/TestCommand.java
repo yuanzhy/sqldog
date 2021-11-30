@@ -1,10 +1,6 @@
 package com.yuanzhy.sqldog.cli;
 
-import java.io.File;
-
 import com.yuanzhy.sqldog.cli.command.CommandCliCommand;
-import com.yuanzhy.sqldog.cli.command.FileCliCommand;
-import com.yuanzhy.sqldog.cli.command.ListCliCommand;
 
 /**
  * @author yuanzhy

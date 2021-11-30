@@ -2,7 +2,6 @@ package com.yuanzhy.sqldog.core.sql;
 
 import com.yuanzhy.sqldog.core.constant.StatementType;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -27,8 +26,10 @@ public class SqlResultImpl implements SqlResult {
     private final ColumnMetaData[] columns;
     /** sql分类 */
     private final List<Object[]> data;
+    /** 约束信息 */
+    private final Constraint[] constraints;
 
-    public SqlResultImpl(StatementType type, long rows, String schema, String table, ParamMetaData[] params, ColumnMetaData[] columns, List<Object[]> data) {
+    public SqlResultImpl(StatementType type, long rows, String schema, String table, ParamMetaData[] params, ColumnMetaData[] columns, List<Object[]> data, Constraint[] constraints) {
         this.type = type;
         this.rows = rows;
         this.schema = schema;
@@ -36,6 +37,7 @@ public class SqlResultImpl implements SqlResult {
         this.params = params;
         this.columns = columns;
         this.data = data;
+        this.constraints = constraints;
     }
 
     @Override
@@ -71,5 +73,10 @@ public class SqlResultImpl implements SqlResult {
     @Override
     public List<Object[]> getData() {
         return data;
+    }
+
+    @Override
+    public Constraint[] getConstraints() {
+        return constraints;
     }
 }
