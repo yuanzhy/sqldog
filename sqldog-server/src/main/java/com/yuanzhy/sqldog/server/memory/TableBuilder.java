@@ -38,7 +38,7 @@ public class TableBuilder extends BaseBuilder<TableBuilder> {
     }
 
     public TableBuilder serial(long initValue, int step) {
-        this.serial = new SerialMemoryImpl(0, 1);
+        this.serial = new SerialMemoryImpl(initValue, step);
         return this;
     }
 

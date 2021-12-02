@@ -109,7 +109,7 @@ public class CreateTableCommand extends AbstractSqlCommand {
 
     private void handleUK(TableBuilder tb, String rawColInfo, String consName) {
         String consColName = StringUtils.substringBetween(rawColInfo, "(", ")").trim();
-        ConstraintBuilder cb = new ConstraintBuilder().type(ConstraintType.UNIQUE);
+        ConstraintBuilder cb = new ConstraintBuilder().type(ConstraintType.UNIQUE).name(consName);
         if (consColName.contains(",")) {
             for (String cn : consColName.split(",")) {
                 cb.addColumnName(cn.trim());

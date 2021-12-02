@@ -6,6 +6,7 @@ import java.util.Arrays;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.comparator.NameFileComparator;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.yuanzhy.sqldog.core.rmi.Response;
 
@@ -45,10 +46,39 @@ public class FileCliCommand extends RemoteCliCommand {
                 }
             }
         } else {
-            String text = FileUtils.readFileToString(file, "UTF-8").trim();
-            if (text.contains("\r")) {
-                text = text.replace("\r", "");
+            execFile(file);
+        }
+    }
+
+    private void execFile(File file) throws Exception {
+        String text = FileUtils.readFileToString(file, "UTF-8").trim();
+        if (text.contains("\r")) {
+            text = text.replace("\r", "");
+        }
+        if (text.startsWith("\\i ")) {
+            // init sql
+            String[] lines = text.split("\n");
+            for (String line : lines) {
+                line = line.trim();
+                if (StringUtils.isEmpty(line)) {
+                    continue;
+                }
+                if (!line.startsWith("\\i ")) {
+                    System.out.println("unsupported, skip : " + line);
+                    continue;
+                }
+                String path = line.substring("\\i ".length()).trim();
+                File sqlFile = new File(file.getParent(), path);
+                if (!sqlFile.exists()) {
+                    System.out.println("not exists : " + sqlFile.getAbsolutePath());
+                    continue;
+                } else if (sqlFile.isDirectory() || !path.endsWith(".sql")) {
+                    System.out.println("not a sql file : " + sqlFile.getAbsolutePath());
+                    continue;
+                }
+                execFile(sqlFile);
             }
+        } else {
             String[] sqls = text.split(";\n");
             Response response = executor.execute(sqls);
             printResponse(response);

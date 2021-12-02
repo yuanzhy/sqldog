@@ -8,7 +8,11 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * @author yuanzhy
@@ -16,6 +20,53 @@ import java.util.Properties;
  * @date 2021/11/21
  */
 class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
+
+    // SQL:92 reserved words from 'ANSI X3.135-1992, January 4, 1993'
+    //private static final String[] SQL92_KEYWORDS = new String[] { "ABSOLUTE", "ACTION", "ADD", "ALL", "ALLOCATE", "ALTER", "AND", "ANY", "ARE", "AS", "ASC",
+    //        "ASSERTION", "AT", "AUTHORIZATION", "AVG", "BEGIN", "BETWEEN", "BIT", "BIT_LENGTH", "BOTH", "BY", "CASCADE", "CASCADED", "CASE", "CAST", "CATALOG",
+    //        "CHAR", "CHARACTER", "CHARACTER_LENGTH", "CHAR_LENGTH", "CHECK", "CLOSE", "COALESCE", "COLLATE", "COLLATION", "COLUMN", "COMMIT", "CONNECT",
+    //        "CONNECTION", "CONSTRAINT", "CONSTRAINTS", "CONTINUE", "CONVERT", "CORRESPONDING", "COUNT", "CREATE", "CROSS", "CURRENT", "CURRENT_DATE",
+    //        "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "CURSOR", "DATE", "DAY", "DEALLOCATE", "DEC", "DECIMAL", "DECLARE", "DEFAULT", "DEFERRABLE",
+    //        "DEFERRED", "DELETE", "DESC", "DESCRIBE", "DESCRIPTOR", "DIAGNOSTICS", "DISCONNECT", "DISTINCT", "DOMAIN", "DOUBLE", "DROP", "ELSE", "END",
+    //        "END-EXEC", "ESCAPE", "EXCEPT", "EXCEPTION", "EXEC", "EXECUTE", "EXISTS", "EXTERNAL", "EXTRACT", "FALSE", "FETCH", "FIRST", "FLOAT", "FOR",
+    //        "FOREIGN", "FOUND", "FROM", "FULL", "GET", "GLOBAL", "GO", "GOTO", "GRANT", "GROUP", "HAVING", "HOUR", "IDENTITY", "IMMEDIATE", "IN", "INDICATOR",
+    //        "INITIALLY", "INNER", "INPUT", "INSENSITIVE", "INSERT", "INT", "INTEGER", "INTERSECT", "INTERVAL", "INTO", "IS", "ISOLATION", "JOIN", "KEY",
+    //        "LANGUAGE", "LAST", "LEADING", "LEFT", "LEVEL", "LIKE", "LOCAL", "LOWER", "MATCH", "MAX", "MIN", "MINUTE", "MODULE", "MONTH", "NAMES", "NATIONAL",
+    //        "NATURAL", "NCHAR", "NEXT", "NO", "NOT", "NULL", "NULLIF", "NUMERIC", "OCTET_LENGTH", "OF", "ON", "ONLY", "OPEN", "OPTION", "OR", "ORDER", "OUTER",
+    //        "OUTPUT", "OVERLAPS", "PAD", "PARTIAL", "POSITION", "PRECISION", "PREPARE", "PRESERVE", "PRIMARY", "PRIOR", "PRIVILEGES", "PROCEDURE", "PUBLIC",
+    //        "READ", "REAL", "REFERENCES", "RELATIVE", "RESTRICT", "REVOKE", "RIGHT", "ROLLBACK", "ROWS", "SCHEMA", "SCROLL", "SECOND", "SECTION", "SELECT",
+    //        "SESSION", "SESSION_USER", "SET", "SIZE", "SMALLINT", "SOME", "SPACE", "SQL", "SQLCODE", "SQLERROR", "SQLSTATE", "SUBSTRING", "SUM", "SYSTEM_USER",
+    //        "TABLE", "TEMPORARY", "THEN", "TIME", "TIMESTAMP", "TIMEZONE_HOUR", "TIMEZONE_MINUTE", "TO", "TRAILING", "TRANSACTION", "TRANSLATE", "TRANSLATION",
+    //        "TRIM", "TRUE", "UNION", "UNIQUE", "UNKNOWN", "UPDATE", "UPPER", "USAGE", "USER", "USING", "VALUE", "VALUES", "VARCHAR", "VARYING", "VIEW", "WHEN",
+    //        "WHENEVER", "WHERE", "WITH", "WORK", "WRITE", "YEAR", "ZONE" };
+
+    // SQL:2003 reserved words from 'ISO/IEC 9075-2:2003 (E), 2003-07-25'
+    private static final String[] SQL2003_KEYWORDS = new String[] { "ABS", "ALL", "ALLOCATE", "ALTER", "AND", "ANY", "ARE", "ARRAY", "AS", "ASENSITIVE",
+            "ASYMMETRIC", "AT", "ATOMIC", "AUTHORIZATION", "AVG", "BEGIN", "BETWEEN", "BIGINT", "BINARY", "BLOB", "BOOLEAN", "BOTH", "BY", "CALL", "CALLED",
+            "CARDINALITY", "CASCADED", "CASE", "CAST", "CEIL", "CEILING", "CHAR", "CHARACTER", "CHARACTER_LENGTH", "CHAR_LENGTH", "CHECK", "CLOB", "CLOSE",
+            "COALESCE", "COLLATE", "COLLECT", "COLUMN", "COMMIT", "CONDITION", "CONNECT", "CONSTRAINT", "CONVERT", "CORR", "CORRESPONDING", "COUNT",
+            "COVAR_POP", "COVAR_SAMP", "CREATE", "CROSS", "CUBE", "CUME_DIST", "CURRENT", "CURRENT_DATE", "CURRENT_DEFAULT_TRANSFORM_GROUP", "CURRENT_PATH",
+            "CURRENT_ROLE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_TRANSFORM_GROUP_FOR_TYPE", "CURRENT_USER", "CURSOR", "CYCLE", "DATE", "DAY",
+            "DEALLOCATE", "DEC", "DECIMAL", "DECLARE", "DEFAULT", "DELETE", "DENSE_RANK", "DEREF", "DESCRIBE", "DETERMINISTIC", "DISCONNECT", "DISTINCT",
+            "DOUBLE", "DROP", "DYNAMIC", "EACH", "ELEMENT", "ELSE", "END", "END-EXEC", "ESCAPE", "EVERY", "EXCEPT", "EXEC", "EXECUTE", "EXISTS", "EXP",
+            "EXTERNAL", "EXTRACT", "FALSE", "FETCH", "FILTER", "FLOAT", "FLOOR", "FOR", "FOREIGN", "FREE", "FROM", "FULL", "FUNCTION", "FUSION", "GET",
+            "GLOBAL", "GRANT", "GROUP", "GROUPING", "HAVING", "HOLD", "HOUR", "IDENTITY", "IN", "INDICATOR", "INNER", "INOUT", "INSENSITIVE", "INSERT", "INT",
+            "INTEGER", "INTERSECT", "INTERSECTION", "INTERVAL", "INTO", "IS", "JOIN", "LANGUAGE", "LARGE", "LATERAL", "LEADING", "LEFT", "LIKE", "LN", "LOCAL",
+            "LOCALTIME", "LOCALTIMESTAMP", "LOWER", "MATCH", "MAX", "MEMBER", "MERGE", "METHOD", "MIN", "MINUTE", "MOD", "MODIFIES", "MODULE", "MONTH",
+            "MULTISET", "NATIONAL", "NATURAL", "NCHAR", "NCLOB", "NEW", "NO", "NONE", "NORMALIZE", "NOT", "NULL", "NULLIF", "NUMERIC", "OCTET_LENGTH", "OF",
+            "OLD", "ON", "ONLY", "OPEN", "OR", "ORDER", "OUT", "OUTER", "OVER", "OVERLAPS", "OVERLAY", "PARAMETER", "PARTITION", "PERCENTILE_CONT",
+            "PERCENTILE_DISC", "PERCENT_RANK", "POSITION", "POWER", "PRECISION", "PREPARE", "PRIMARY", "PROCEDURE", "RANGE", "RANK", "READS", "REAL",
+            "RECURSIVE", "REF", "REFERENCES", "REFERENCING", "REGR_AVGX", "REGR_AVGY", "REGR_COUNT", "REGR_INTERCEPT", "REGR_R2", "REGR_SLOPE", "REGR_SXX",
+            "REGR_SXY", "REGR_SYY", "RELEASE", "RESULT", "RETURN", "RETURNS", "REVOKE", "RIGHT", "ROLLBACK", "ROLLUP", "ROW", "ROWS", "ROW_NUMBER", "SAVEPOINT",
+            "SCOPE", "SCROLL", "SEARCH", "SECOND", "SELECT", "SENSITIVE", "SESSION_USER", "SET", "SIMILAR", "SMALLINT", "SOME", "SPECIFIC", "SPECIFICTYPE",
+            "SQL", "SQLEXCEPTION", "SQLSTATE", "SQLWARNING", "SQRT", "START", "STATIC", "STDDEV_POP", "STDDEV_SAMP", "SUBMULTISET", "SUBSTRING", "SUM",
+            "SYMMETRIC", "SYSTEM", "SYSTEM_USER", "TABLE", "TABLESAMPLE", "THEN", "TIME", "TIMESTAMP", "TIMEZONE_HOUR", "TIMEZONE_MINUTE", "TO", "TRAILING",
+            "TRANSLATE", "TRANSLATION", "TREAT", "TRIGGER", "TRIM", "TRUE", "UESCAPE", "UNION", "UNIQUE", "UNKNOWN", "UNNEST", "UPDATE", "UPPER", "USER",
+            "USING", "VALUE", "VALUES", "VARCHAR", "VARYING", "VAR_POP", "VAR_SAMP", "WHEN", "WHENEVER", "WHERE", "WIDTH_BUCKET", "WINDOW", "WITH", "WITHIN",
+            "WITHOUT", "YEAR" };
+
+    private static final String[] SQLDOG_KEYWORDS = new String[] {"TINYINT", "TEXT", "JSON", "BYTEA", "SERIAL", "SEARCH_PATH", "USE"};
+
     private final String host;
     private final int port;
     private final String schema;
@@ -59,7 +110,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean nullsAreSortedHigh() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -163,22 +214,26 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public String getIdentifierQuoteString() throws SQLException {
-        return null;
+        return "\"";
     }
 
     @Override
     public String getSQLKeywords() throws SQLException {
-        return null;
+        Set<String> set = new TreeSet<>();
+        Collections.addAll(set, SQL2003_KEYWORDS);
+        Collections.addAll(set, SQLDOG_KEYWORDS);
+        return set.stream().collect(Collectors.joining(","));
     }
 
     @Override
     public String getNumericFunctions() throws SQLException {
-        return null;
+        return "ABS,ACOS,ASIN,ATAN,ATAN2,BIT_COUNT,CEILING,COS,COT,DEGREES,EXP,FLOOR,LOG,LOG10,MAX,MIN,MOD,PI,POW,"
+                + "POWER,RADIANS,RAND,ROUND,SIN,SQRT,TAN,TRUNCATE";
     }
 
     @Override
     public String getStringFunctions() throws SQLException {
-        return null;
+        return "LENGTH,CHAR_LENGTH,CONCAT,CONCAT_WS,TO_CHAR,OCTET_LENGTH,BTRIM,LTRIM,RTRIM,REVERSE,REPEAT,CHR,MD5,UPPER,LOWER,SUBSTRING";
     }
 
     @Override
@@ -188,12 +243,12 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public String getTimeDateFunctions() throws SQLException {
-        return null;
+        return "NOW,CURRENT_DATE,CURRENT_TIME,CURRENT_TIMESTAMP,DATE_TRUNC,DAYOFWEEK,WEEKDAY,DAYOFMONTH,DAYOFYEAR,MONTH,DAYNAME,MONTHNAME,QUARTER,WEEK,YEAR,HOUR,MINUTE,SECOND";
     }
 
     @Override
     public String getSearchStringEscape() throws SQLException {
-        return null;
+        return "\\";
     }
 
     @Override
@@ -203,22 +258,22 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean supportsAlterTableWithAddColumn() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsAlterTableWithDropColumn() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsColumnAliasing() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean nullPlusNonNullIsNull() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -233,17 +288,17 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean supportsTableCorrelationNames() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsDifferentTableCorrelationNames() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsExpressionsInOrderBy() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -253,7 +308,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean supportsGroupBy() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -263,12 +318,12 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean supportsGroupByBeyondSelect() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsLikeEscapeClause() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -283,7 +338,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean supportsNonNullableColumns() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -293,7 +348,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean supportsCoreSQLGrammar() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -303,7 +358,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean supportsANSI92EntryLevelSQL() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -323,37 +378,37 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean supportsOuterJoins() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsFullOuterJoins() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsLimitedOuterJoins() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public String getSchemaTerm() throws SQLException {
-        return null;
+        return "schema";
     }
 
     @Override
     public String getProcedureTerm() throws SQLException {
-        return null;
+        return "procedure";
     }
 
     @Override
     public String getCatalogTerm() throws SQLException {
-        return null;
+        return "database";
     }
 
     @Override
     public boolean isCatalogAtStart() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -363,27 +418,27 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean supportsSchemasInDataManipulation() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsSchemasInProcedureCalls() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsSchemasInTableDefinitions() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsSchemasInIndexDefinitions() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -438,12 +493,12 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean supportsSubqueriesInExists() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsSubqueriesInIns() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -458,12 +513,12 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean supportsUnion() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsUnionAll() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -488,42 +543,42 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public int getMaxBinaryLiteralLength() throws SQLException {
-        return 0;
+        return 16777208;
     }
 
     @Override
     public int getMaxCharLiteralLength() throws SQLException {
-        return 0;
+        return 16777208;
     }
 
     @Override
     public int getMaxColumnNameLength() throws SQLException {
-        return 0;
+        return 64;
     }
 
     @Override
     public int getMaxColumnsInGroupBy() throws SQLException {
-        return 0;
+        return 64;
     }
 
     @Override
     public int getMaxColumnsInIndex() throws SQLException {
-        return 0;
+        return 16;
     }
 
     @Override
     public int getMaxColumnsInOrderBy() throws SQLException {
-        return 0;
+        return 64;
     }
 
     @Override
     public int getMaxColumnsInSelect() throws SQLException {
-        return 0;
+        return 256;
     }
 
     @Override
     public int getMaxColumnsInTable() throws SQLException {
-        return 0;
+        return 512;
     }
 
     @Override
@@ -533,42 +588,42 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public int getMaxCursorNameLength() throws SQLException {
-        return 0;
+        return 64;
     }
 
     @Override
     public int getMaxIndexLength() throws SQLException {
-        return 0;
+        return 256;
     }
 
     @Override
     public int getMaxSchemaNameLength() throws SQLException {
-        return 0;
+        return 64;
     }
 
     @Override
     public int getMaxProcedureNameLength() throws SQLException {
-        return 0;
+        return 64;
     }
 
     @Override
     public int getMaxCatalogNameLength() throws SQLException {
-        return 0;
+        return 64;
     }
 
     @Override
     public int getMaxRowSize() throws SQLException {
-        return 0;
+        return Integer.MAX_VALUE - 8;
     }
 
     @Override
     public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public int getMaxStatementLength() throws SQLException {
-        return 0;
+        return 65531;
     }
 
     @Override
@@ -578,22 +633,22 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public int getMaxTableNameLength() throws SQLException {
-        return 0;
+        return 64;
     }
 
     @Override
     public int getMaxTablesInSelect() throws SQLException {
-        return 0;
+        return 256;
     }
 
     @Override
     public int getMaxUserNameLength() throws SQLException {
-        return 0;
+        return 64;
     }
 
     @Override
     public int getDefaultTransactionIsolation() throws SQLException {
-        return 0;
+        return Connection.TRANSACTION_NONE;
     }
 
     @Override
@@ -848,7 +903,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public int getSQLStateType() throws SQLException {
-        return 0;
+        return sqlStateSQL;
     }
 
     @Override
@@ -863,7 +918,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public RowIdLifetime getRowIdLifetime() throws SQLException {
-        return null;
+        return RowIdLifetime.ROWID_UNSUPPORTED;
     }
 
     @Override

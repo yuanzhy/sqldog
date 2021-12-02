@@ -62,7 +62,10 @@ public class CalciteSqlParser extends SqlParserImpl {
         } else if (sqlNode.getKind() == SqlKind.DELETE) {
             targetTable = ((SqlDelete) sqlNode).getTargetTable();
         }
-        // 自动拼接上 schema
+        // 自动拼接上 schema // TODO union, unionall, exists, sub select
+        // select * from test union all select * from schema.test;
+        // select * from test where exists(select id from schema.test where id=4);
+        // select id, (select name from schema.test tt where tt.id = id) from test where id=1;
         if (targetTable != null && schema != null) {
             if (targetTable instanceof SqlIdentifier) {
                 handleIdentifier((SqlIdentifier)targetTable);
