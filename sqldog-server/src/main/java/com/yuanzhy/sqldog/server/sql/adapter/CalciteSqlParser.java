@@ -1,10 +1,5 @@
 package com.yuanzhy.sqldog.server.sql.adapter;
 
-import java.io.Reader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.calcite.sql.SqlAsOperator;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDelete;
@@ -21,6 +16,11 @@ import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.parser.impl.SqlParserImpl;
 
+import java.io.Reader;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author yuanzhy
  * @version 1.0
@@ -36,46 +36,34 @@ public class CalciteSqlParser extends SqlParserImpl {
     @Override
     public SqlNode parseSqlStmtEof() throws Exception {
         SqlNode sqlNode = super.parseSqlStmtEof();
-        SqlNode targetTable = null;
-        SqlNodeList groupBy = null;
-        SqlNodeList selectList = null;
         if (sqlNode.getKind() == SqlKind.ORDER_BY) {
             SqlOrderBy orderBy = (SqlOrderBy) sqlNode;
             SqlNode query = orderBy.query;
             if (query.getKind() == SqlKind.SELECT) {
-                SqlSelect sqlSelect = (SqlSelect) query;
-                targetTable = sqlSelect.getFrom();
-                groupBy = sqlSelect.getGroup();
-                selectList = sqlSelect.getSelectList();
+                handleSelect((SqlSelect) query);
             }
-        }
-
-        if (sqlNode.getKind() == SqlKind.SELECT) {
-            SqlSelect sqlSelect = (SqlSelect) sqlNode;
-            targetTable = sqlSelect.getFrom();
-            groupBy = sqlSelect.getGroup();
-            selectList = sqlSelect.getSelectList();
+        } else if (sqlNode.getKind() == SqlKind.UNION) {
+            SqlBasicCall basicCall = (SqlBasicCall) sqlNode;
+            for (SqlNode oper : basicCall.getOperandList()) {
+                if (oper.getKind() == SqlKind.SELECT) {
+                    handleSelect((SqlSelect) oper);
+                }
+            }
+        } else if (sqlNode.getKind() == SqlKind.SELECT) {
+            handleSelect((SqlSelect) sqlNode);
         } else if (sqlNode.getKind() == SqlKind.INSERT) {
-            targetTable = ((SqlInsert) sqlNode).getTargetTable();
+            handleTargetTable(((SqlInsert) sqlNode).getTargetTable());
         } else if (sqlNode.getKind() == SqlKind.UPDATE) {
-            targetTable = ((SqlUpdate) sqlNode).getTargetTable();
+            handleTargetTable(((SqlUpdate) sqlNode).getTargetTable());
         } else if (sqlNode.getKind() == SqlKind.DELETE) {
-            targetTable = ((SqlDelete) sqlNode).getTargetTable();
+            handleTargetTable(((SqlDelete) sqlNode).getTargetTable());
         }
-        // 自动拼接上 schema // TODO union, unionall, exists, sub select
-        // select * from test union all select * from schema.test;
-        // select * from test where exists(select id from schema.test where id=4);
-        // select id, (select name from schema.test tt where tt.id = id) from test where id=1;
-        if (targetTable != null && schema != null) {
-            if (targetTable instanceof SqlIdentifier) {
-                handleIdentifier((SqlIdentifier)targetTable);
-            } else if (targetTable instanceof SqlBasicCall) {
-                handleBasicCall((SqlBasicCall) targetTable);
-            } else if (targetTable instanceof SqlJoin) {
-                handleJoin((SqlJoin) targetTable);
-            }
-        }
-        // group by alias 转换为 group by ordinal
+        return sqlNode;
+    }
+
+    private void replaceGroupByAlias(SqlSelect sqlSelect) {
+        SqlNodeList groupBy = sqlSelect.getGroup();
+        SqlNodeList selectList = sqlSelect.getSelectList();
         if (groupBy != null && selectList != null && selectList.size() > 0) {
             Map<String, Integer> nameOrdinal = new HashMap<>();
             for (int i = 0; i < selectList.size(); i++) {
@@ -101,7 +89,34 @@ public class CalciteSqlParser extends SqlParserImpl {
                 }
             }
         }
-        return sqlNode;
+    }
+
+    /**
+     * 自动拼接schema
+     * @param targetTable targetTable
+     */
+    private void handleTargetTable(SqlNode targetTable) {
+        if (targetTable != null && schema != null) {
+            if (targetTable instanceof SqlIdentifier) {
+                handleIdentifier((SqlIdentifier)targetTable);
+            } else if (targetTable instanceof SqlBasicCall) {
+                handleBasicCall((SqlBasicCall) targetTable);
+            } else if (targetTable instanceof SqlJoin) {
+                handleJoin((SqlJoin) targetTable);
+            }
+        }
+    }
+
+    /**
+     * 自动拼接上 schema
+     * @param sqlSelect sqlSelect
+     */
+    private void handleSelect(SqlSelect sqlSelect) {
+        handleTargetTable(sqlSelect.getFrom());
+        if (sqlSelect.getWhere() instanceof SqlBasicCall) {
+            handleBasicCall((SqlBasicCall) sqlSelect.getWhere());
+        }
+        replaceGroupByAlias(sqlSelect);
     }
 
     private void handleJoin(SqlJoin sqlJoin) {
@@ -122,6 +137,12 @@ public class CalciteSqlParser extends SqlParserImpl {
             SqlNode o1 = sqlBasicCall.getOperandList().get(0);
             if (o1 instanceof SqlIdentifier) {
                 handleIdentifier((SqlIdentifier)o1);
+            }
+        } else {
+            for (SqlNode sqlNode : sqlBasicCall.getOperandList()) {
+                if (sqlNode.getKind() == SqlKind.SELECT) {
+                    handleSelect((SqlSelect) sqlNode);
+                }
             }
         }
     }

@@ -48,4 +48,20 @@ public final class FormatterUtil {
         }
         return Arrays.stream(strings).collect(Collectors.joining(","));
     }
+
+    public static void translateLabel(String[] headers) {
+        for (int i = 0; i < headers.length; i++) {
+            if (headers[i].equals("TABLE_CATALOG")) {
+                headers[i] = "Database";
+            } else if (headers[i].equals("TABLE_SCHEM")) {
+                headers[i] = "Schema";
+            } else if (headers[i].equals("TABLE_NAME")) {
+                headers[i] = "Name";
+            } else if (headers[i].equals("TABLE_TYPE")) {
+                headers[i] = "Type";
+            } else if (headers[i].equals("REMARKS")) {
+                headers[i] = "Description";
+            }
+        }
+    }
 }

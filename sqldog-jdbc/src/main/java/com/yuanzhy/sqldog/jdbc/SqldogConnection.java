@@ -4,6 +4,7 @@ import com.yuanzhy.sqldog.core.sql.SqlResult;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Collections;
 import java.util.List;
 
@@ -16,6 +17,7 @@ public interface SqldogConnection extends Connection {
 
     void checkClosed() throws SQLException;
 
+    void close(Statement statement);
     /**
      * 执行sql
      * @param sql  sql

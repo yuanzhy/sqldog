@@ -176,18 +176,8 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
             if (!column.isNullable() && value == null && column.defaultValue() == null) {
                 throw new IllegalArgumentException("'" + column.getName() + "' is not null");
             }
-            if (value == null) {
-                continue;
-            }
-            //Asserts.isTrue(column.getDataType().getClazz().isInstance(value), "DataType mismatch, " + column.getName() + ":" + value);
-            if (column.getDataType().isHasLength()) {
-                Asserts.isTrue(value.toString().length() <= column.getPrecision(), "Data length over range, " + column.getName() + "(" + column.getPrecision() + "): " + value);
-            }
-            if (column.getScale() > 0) {
-                BigDecimal d = (BigDecimal) value;
-                d = d.setScale(column.getScale(), BigDecimal.ROUND_HALF_UP);
-                values.put(column.getName(), d);
-            }
+            value = checkVal(column, value);
+            values.put(column.getName(), value);
         }
     }
 
@@ -247,12 +237,17 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
         }
         List<Object> valList = new ArrayList<>(colList.size());
         for (int i = 0; i < colList.size(); i++) {
-            DataType dt = columnMap.get(colList.get(i)).getDataType();
+            Column column = columnMap.get(colList.get(i));
             SqlNode s = sqlUpdate.getSourceExpressionList().get(i);
             if (!(s instanceof SqlLiteral)) {
                 throw new UnsupportedOperationException("not supported: " + s.toString());
             }
-            valList.add(parseValue(s, dt));
+            Object val = parseValue(s, column.getDataType());
+            if (!column.isNullable() && val == null) {
+                throw new IllegalArgumentException("'" + column.getName() + "' is not null");
+            }
+            val = checkVal(column, val);
+            valList.add(val);
         }
         // checkConstraint TODO
 //        for (Constraint c : constraint) {
@@ -280,6 +275,21 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
             }
         }
         return dataList.size();
+    }
+
+    private Object checkVal(Column column, Object val) {
+        if (val != null) {
+            //Asserts.isTrue(column.getDataType().getClazz().isInstance(value), "DataType mismatch, " + column.getName() + ":" + value);
+            if (column.getDataType().isHasLength()) {
+                Asserts.isTrue(val.toString().length() <= column.getPrecision(), "Data length over range, " + column.getName() + "(" + column.getPrecision() + "): " + val);
+            }
+            if (column.getScale() > 0) {
+                BigDecimal d = (BigDecimal) val;
+                d = d.setScale(column.getScale(), BigDecimal.ROUND_HALF_UP);
+                val = d;
+            }
+        }
+        return val;
     }
 
     private Set<Map<String, Object>> handleWhere(Collection<Map<String, Object>> sources, SqlBasicCall condition) {

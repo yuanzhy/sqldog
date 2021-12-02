@@ -148,7 +148,7 @@ public class SqlResultBuilder {
                 ColumnMetaDataBuilder columnBuilder = new ColumnMetaDataBuilder();
                 for (int i = 0; i < this.labels.length; i++) {
                     String label = this.labels[i];
-                    this.columns[i] = columnBuilder.ordinal(i).label(label).columnName(label).build();
+                    this.columns[i] = columnBuilder.ordinal(i).label(label).columnName(label).columnClassName(String.class.getName()).build();
                 }
             }
         }

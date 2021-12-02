@@ -1,6 +1,5 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
-import java.sql.ResultSet;
 import java.sql.Statement;
 
 /**
@@ -160,7 +159,4 @@ class Util {
         return array != null && array.length > 0 ? Statement.RETURN_GENERATED_KEYS : Statement.NO_GENERATED_KEYS;
     }
 
-    //static ResultSet emptyResultSet() {
-        //return new ResultSetImpl();
-    //}
 }

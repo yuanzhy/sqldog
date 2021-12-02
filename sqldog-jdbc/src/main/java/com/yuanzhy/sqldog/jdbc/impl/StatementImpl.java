@@ -164,6 +164,7 @@ class StatementImpl extends AbstractStatement implements Statement {
         this.sqlList.clear();
         this.clearWarnings();
         this.closeAllResultSets();
+        this.connection.close(this);
     }
 
     protected void closeAllResultSets() throws SQLException {

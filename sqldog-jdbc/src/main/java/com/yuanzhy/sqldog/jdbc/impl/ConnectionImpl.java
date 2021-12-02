@@ -162,7 +162,7 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
         } catch (RemoteException e) {
             version = Driver.VERSION;
         }
-        return new DatabaseMetaDataImpl(host, port, schema, info, version);
+        return new DatabaseMetaDataImpl(this, host, port, schema, info, version);
     }
 
     @Override
@@ -299,6 +299,11 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
         if (isClosed) {
             throw new SQLException("No operations allowed after connection closed.");
         }
+    }
+
+    @Override
+    public void close(Statement statement) {
+        this.openStatements.remove(statement);
     }
 
     @Override

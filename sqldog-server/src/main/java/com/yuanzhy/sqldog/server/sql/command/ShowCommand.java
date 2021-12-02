@@ -25,9 +25,11 @@ public class ShowCommand extends AbstractSqlCommand {
         SqlResultBuilder builder = new SqlResultBuilder(StatementType.OTHER);
         String dbName = Databases.getDefault().getName();
         if ("DATABASES".equals(sqlSuffix)) {
-            return builder.data(dbName).build();
+            return builder.labels("TABLE_CAT").data(dbName).build();
         } else if ("SCHEMAS".equals(sqlSuffix)) {
-            return builder.labels("Database", "Name", "Description")
+            // TODO 支持多库的情况
+            return builder
+                    .labels("TABLE_CATALOG", "TABLE_SCHEM", "Description")
                     .data(Databases.getDefault().getSchemaNames().stream().map(s -> {
                         Schema schema = Databases.getDefault().getSchema(s);
                         return new Object[]{dbName, schema.getName(), schema.getDescription()}; }).collect(
@@ -35,12 +37,31 @@ public class ShowCommand extends AbstractSqlCommand {
                     .build();
         } else if ("TABLES".equals(sqlSuffix)) {
             checkSchema();
-            return builder.labels("Schema", "Name", "Type", "Description")
+            return builder.labels("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "TABLE_TYPE", "REMARKS")
                     .schema(schema.getName())
                     .data(schema.getTableNames().stream().map(t -> {
                         Table table = schema.getTable(t);
-                        return new Object[]{schema.getName(), table.getName(), "table", table.getDescription()}; }).collect(Collectors.toList())
+                        return new Object[]{dbName, schema.getName(), table.getName(), "table", table.getDescription()}; }).collect(Collectors.toList())
                     )
+                    .build();
+        } else if ("TABLETYPES".equals(sqlSuffix)) {
+            /**
+             * Retrieves the table types available in this database.  The results
+             * are ordered by table type.
+             *
+             * <P>The table type is:
+             *  <OL>
+             *  <LI><B>TABLE_TYPE</B> String {@code =>} table type.  Typical types are "TABLE",
+             *                  "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY",
+             *                  "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
+             *  </OL>
+             *
+             * @return a <code>ResultSet</code> object in which each row has a
+             *         single <code>String</code> column that is a table type
+             * @exception SQLException if a database access error occurs
+             */
+            return builder.labels("TABLE_TYPE")
+                    .data(new String[]{"TABLE", /*"VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM"*/})
                     .build();
         } else if ("SEARCH_PATH".equals(sqlSuffix)) {
             checkSchema();

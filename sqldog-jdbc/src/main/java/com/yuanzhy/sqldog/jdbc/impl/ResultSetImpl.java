@@ -587,7 +587,9 @@ class ResultSetImpl extends AbstractResultSet implements ResultSet {
         if (closed) {
             throw new SQLException("No operations allowed after resultSet closed.");
         }
-        this.statement.checkClosed();
+        if (this.statement != null) {
+            this.statement.checkClosed();
+        }
     }
 
     protected void checkRowPos() throws SQLException {

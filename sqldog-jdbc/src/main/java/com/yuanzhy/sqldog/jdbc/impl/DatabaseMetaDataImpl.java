@@ -1,6 +1,8 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
+import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.jdbc.Driver;
+import com.yuanzhy.sqldog.jdbc.SqldogConnection;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
@@ -67,12 +69,14 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     private static final String[] SQLDOG_KEYWORDS = new String[] {"TINYINT", "TEXT", "JSON", "BYTEA", "SERIAL", "SEARCH_PATH", "USE"};
 
+    private final SqldogConnection connection;
     private final String host;
     private final int port;
     private final String schema;
     private final Properties info;
     private final String version;
-    DatabaseMetaDataImpl(String host, int port, String schema, Properties info, String version) {
+    DatabaseMetaDataImpl(SqldogConnection connection, String host, int port, String schema, Properties info, String version) {
+        this.connection = connection;
         this.host = host;
         this.port = port;
         this.schema = schema;
@@ -693,77 +697,78 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
-        return null;
+        // TODO catalog schemaPattern tableNamePattern types
+        return new DbmdResultSet(connection.execute("SHOW TABLES"));
     }
 
     @Override
     public ResultSet getSchemas() throws SQLException {
-        return null;
+        return new DbmdResultSet(connection.execute("SHOW SCHEMAS"));
     }
 
     @Override
     public ResultSet getCatalogs() throws SQLException {
-        return null;
+        return new DbmdResultSet(connection.execute("SHOW DATABASES"));
     }
 
     @Override
     public ResultSet getTableTypes() throws SQLException {
-        return null;
+        return new DbmdResultSet(connection.execute("SHOW TABLETYPES"));
     }
 
     @Override
     public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getTypeInfo() throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
@@ -778,62 +783,62 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean ownUpdatesAreVisible(int type) throws SQLException {
-        return false;
+        return false; // TODO
     }
 
     @Override
     public boolean ownDeletesAreVisible(int type) throws SQLException {
-        return false;
+        return false; // TODO
     }
 
     @Override
     public boolean ownInsertsAreVisible(int type) throws SQLException {
-        return false;
+        return false; // TODO
     }
 
     @Override
     public boolean othersUpdatesAreVisible(int type) throws SQLException {
-        return false;
+        return false; // TODO
     }
 
     @Override
     public boolean othersDeletesAreVisible(int type) throws SQLException {
-        return false;
+        return false; // TODO
     }
 
     @Override
     public boolean othersInsertsAreVisible(int type) throws SQLException {
-        return false;
+        return false; // TODO
     }
 
     @Override
     public boolean updatesAreDetected(int type) throws SQLException {
-        return false;
+        return false; // TODO
     }
 
     @Override
     public boolean deletesAreDetected(int type) throws SQLException {
-        return false;
+        return false; // TODO
     }
 
     @Override
     public boolean insertsAreDetected(int type) throws SQLException {
-        return false;
+        return false; // TODO
     }
 
     @Override
     public boolean supportsBatchUpdates() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public Connection getConnection() throws SQLException {
-        return null;
+        return connection;
     }
 
     @Override
@@ -843,7 +848,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean supportsNamedParameters() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -853,22 +858,22 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean supportsGetGeneratedKeys() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
@@ -878,27 +883,31 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public int getResultSetHoldability() throws SQLException {
-        return 0;
+        return connection.getHoldability();
     }
 
     @Override
     public int getDatabaseMajorVersion() throws SQLException {
-        return 0;
+        return Integer.parseInt(StringUtils.substringBefore(version, "."));
     }
 
     @Override
     public int getDatabaseMinorVersion() throws SQLException {
-        return 0;
+        String s = StringUtils.substringAfter(version, ".");
+        if (s.contains(".")) {
+            s = StringUtils.substringBefore(s, ".");
+        }
+        return Integer.parseInt(s);
     }
 
     @Override
     public int getJDBCMajorVersion() throws SQLException {
-        return 0;
+        return 4;
     }
 
     @Override
     public int getJDBCMinorVersion() throws SQLException {
-        return 0;
+        return 1;
     }
 
     @Override
@@ -923,7 +932,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
@@ -938,26 +947,53 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public ResultSet getClientInfoProperties() throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public boolean generatedKeyAlwaysReturned() throws SQLException {
-        return false;
+        return true;
+    }
+
+    private class DbmdResultSet extends ResultSetImpl {
+
+        DbmdResultSet(SqlResult sqlResult) {
+            super(null, ResultSet.FETCH_FORWARD, 0, sqlResult);
+        }
+
+        @Override
+        public int getType() throws SQLException {
+            return TYPE_FORWARD_ONLY;
+        }
+
+        @Override
+        public int getConcurrency() throws SQLException {
+            return CONCUR_READ_ONLY;
+        }
+
+        @Override
+        public int getHoldability() throws SQLException {
+            return HOLD_CURSORS_OVER_COMMIT;
+        }
+
+        @Override
+        protected void checkScrollType() throws SQLException {
+            checkClosed();
+        }
     }
 }
