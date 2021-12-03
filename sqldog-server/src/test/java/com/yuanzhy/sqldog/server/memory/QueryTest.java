@@ -120,8 +120,8 @@ public class QueryTest {
         SqlKind kind = field.getKind();
         switch (kind) {
             case AS:
-                SqlNode[] operands_as = ((SqlBasicCall) field).operands;
-                SqlNode left_as = operands_as[0];
+                List<SqlNode> operands_as = ((SqlBasicCall) field).getOperandList();
+                SqlNode left_as = operands_as.get(0);
                 handlerField(left_as);
                 break;
             case IDENTIFIER:
@@ -131,9 +131,9 @@ public class QueryTest {
                 break;
             default:
                 if (field instanceof SqlBasicCall) {
-                    SqlNode[] nodes = ((SqlBasicCall) field).operands;
-                    for (int i = 0; i < nodes.length; i++) {
-                        handlerField(nodes[i]);
+                    List<SqlNode> nodes = ((SqlBasicCall) field).getOperandList();
+                    for (int i = 0; i < nodes.size(); i++) {
+                        handlerField(nodes.get(i));
                     }
                 }
                 if (field instanceof SqlNodeList) {

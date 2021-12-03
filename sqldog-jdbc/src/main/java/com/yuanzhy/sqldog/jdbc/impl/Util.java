@@ -1,5 +1,8 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Statement;
 
 /**
@@ -159,4 +162,62 @@ class Util {
         return array != null && array.length > 0 ? Statement.RETURN_GENERATED_KEYS : Statement.NO_GENERATED_KEYS;
     }
 
+    static boolean isEmpty(CharSequence cs) {
+        return cs == null || cs.length() == 0;
+    }
+
+    static String substringBefore(String str, String separator) {
+        if (!isEmpty(str) && separator != null) {
+            if (separator.isEmpty()) {
+                return "";
+            } else {
+                int pos = str.indexOf(separator);
+                return pos == -1 ? str : str.substring(0, pos);
+            }
+        } else {
+            return str;
+        }
+    }
+
+    static String substringAfter(String str, String separator) {
+        if (isEmpty(str)) {
+            return str;
+        } else if (separator == null) {
+            return "";
+        } else {
+            int pos = str.indexOf(separator);
+            return pos == -1 ? "" : str.substring(pos + separator.length());
+        }
+    }
+
+    static byte[] toByteArray(InputStream is) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] buf = new byte[4096];
+        try (InputStream stream = is) {
+            int n;
+            while (-1 != (n = stream.read(buf))) {
+                baos.write(buf, 0, n);
+            }
+            return baos.toByteArray();
+        }
+    }
+
+    static byte[] toByteArray(InputStream is, int size) throws IOException {
+        if (size < 0) {
+            throw new IllegalArgumentException("Size must be equal or greater than zero: " + size);
+        }
+        if (size == 0) {
+            return new byte[0];
+        }
+        final byte[] data = new byte[size];
+        int offset = 0;
+        int read;
+        while (offset < size && (read = is.read(data, offset, size - offset)) != -1) {
+            offset += read;
+        }
+        if (offset != size) {
+            throw new IOException("Unexpected read size, current: " + offset + ", expected: " + size);
+        }
+        return data;
+    }
 }

@@ -4,7 +4,6 @@ import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.core.util.SqlUtil;
 import com.yuanzhy.sqldog.jdbc.SqldogConnection;
-import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -195,7 +194,7 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
     @Override
     public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
         try {
-            this.setBytes(parameterIndex, IOUtils.toByteArray(x, length));
+            this.setBytes(parameterIndex, Util.toByteArray(x, length));
         } catch (IOException e) {
             throw new SQLException(e);
         }
@@ -497,7 +496,7 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
     @Override
     public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
         try {
-            this.setBytes(parameterIndex, IOUtils.toByteArray(x));
+            this.setBytes(parameterIndex, Util.toByteArray(x));
         } catch (IOException e) {
             throw new SQLException(e);
         }

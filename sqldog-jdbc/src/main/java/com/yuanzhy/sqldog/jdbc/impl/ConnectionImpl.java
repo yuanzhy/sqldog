@@ -8,7 +8,6 @@ import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.jdbc.Driver;
 import com.yuanzhy.sqldog.jdbc.SQLError;
 import com.yuanzhy.sqldog.jdbc.SqldogConnection;
-import org.apache.commons.lang3.StringUtils;
 
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -52,14 +51,13 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     private final Set<Statement> openStatements = new HashSet<>();
 
     private String database = "default";
-    private String schema;
+    private String schema = "";
     private boolean isClosed = false;
 
 
     public ConnectionImpl(String host, int port, String schema, Properties info) throws SQLException {
         this.host = host;
         this.port = port;
-        this.schema = schema;
         this.info = info;
         Executor executor = null;
         try {
@@ -70,11 +68,11 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
             throw SQLError.wrapEx(e);
         }
         this.executor = executor;
-        useSchema();
+        setSchema(schema);
     }
 
     protected void useSchema() throws SQLException {
-        if (StringUtils.isNotEmpty(schema)) {
+        if (!schema.isEmpty()) {
             try {
                 executor.execute("USE " + schema);
             } catch (RemoteException e) {
@@ -273,7 +271,7 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     @Override
     public void setSchema(String schema) throws SQLException {
         checkClosed();
-        this.schema = schema;
+        this.schema = schema == null ? "" : schema.trim();
         this.useSchema();
     }
 

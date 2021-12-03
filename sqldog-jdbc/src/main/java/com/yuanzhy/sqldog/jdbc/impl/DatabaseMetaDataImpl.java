@@ -3,7 +3,6 @@ package com.yuanzhy.sqldog.jdbc.impl;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.jdbc.Driver;
 import com.yuanzhy.sqldog.jdbc.SqldogConnection;
-import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -95,7 +94,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public String getURL() throws SQLException {
-        if (StringUtils.isEmpty(schema)) {
+        if (Util.isEmpty(schema)) {
             return String.format("jdbc:sqldog://%s:%s", host, port);
         } else {
             return String.format("jdbc:sqldog://%s:%s/%s", host, port, schema);
@@ -154,14 +153,14 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public int getDriverMajorVersion() {
-        return Integer.parseInt(StringUtils.substringBefore(Driver.VERSION, "."));
+        return Integer.parseInt(Util.substringBefore(Driver.VERSION, "."));
     }
 
     @Override
     public int getDriverMinorVersion() {
-        String s = StringUtils.substringAfter(Driver.VERSION, ".");
+        String s = Util.substringAfter(Driver.VERSION, ".");
         if (s.contains(".")) {
-            s = StringUtils.substringBefore(s, ".");
+            s = Util.substringBefore(s, ".");
         }
         return Integer.parseInt(s);
     }
@@ -888,14 +887,14 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public int getDatabaseMajorVersion() throws SQLException {
-        return Integer.parseInt(StringUtils.substringBefore(version, "."));
+        return Integer.parseInt(Util.substringBefore(version, "."));
     }
 
     @Override
     public int getDatabaseMinorVersion() throws SQLException {
-        String s = StringUtils.substringAfter(version, ".");
+        String s = Util.substringAfter(version, ".");
         if (s.contains(".")) {
-            s = StringUtils.substringBefore(s, ".");
+            s = Util.substringBefore(s, ".");
         }
         return Integer.parseInt(s);
     }

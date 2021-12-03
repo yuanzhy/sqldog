@@ -12,14 +12,14 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.ArrayUtils;
-
 /**
  * @author yuanzhy
  * @version 1.0
  * @date 2021/11/20
  */
 public class SqlUtil {
+
+    public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     public static String stripComments(String src, String stringOpens, String stringCloses, boolean slashStarComments, boolean slashSlashComments,
                                 boolean hashComments, boolean dashDashComments) {
@@ -322,7 +322,7 @@ public class SqlUtil {
 
         //if empty, return!
         if (line == null && line.isEmpty()) {
-            return ArrayUtils.EMPTY_STRING_ARRAY;
+            return EMPTY_STRING_ARRAY;
         }
 
         if (customQuote == ' ') {

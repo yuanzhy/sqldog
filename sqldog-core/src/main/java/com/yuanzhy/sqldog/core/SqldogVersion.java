@@ -1,7 +1,5 @@
 package com.yuanzhy.sqldog.core;
 
-import org.apache.commons.lang3.StringUtils;
-
 /**
  *
  * @author yuanzhy
@@ -30,8 +28,7 @@ public class SqldogVersion {
      * @see Package#getImplementationVersion()
      */
     public static String getVersionOfEmpty() {
-        Package pkg = SqldogVersion.class.getPackage();
-        String version = (pkg != null ? pkg.getImplementationVersion() : null);
-        return StringUtils.trimToEmpty(version);
+        String version = getVersion();
+        return version == null ? "" : version;
     }
 }

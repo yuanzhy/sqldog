@@ -20,7 +20,7 @@ public class ResponseImpl implements Response {
     }
 
     public ResponseImpl(boolean success, String message) {
-        this(success, message, null);
+        this(success, message, (SqlResult[]) null);
     }
 
     public ResponseImpl(boolean success, SqlResult... results) {
