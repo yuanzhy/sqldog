@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.sql.Array;
+import java.sql.Timestamp;
 import java.sql.Types;
 
 /**
@@ -19,7 +20,7 @@ public enum DataType {
     SERIAL(Integer.class, Types.INTEGER, 10), SMALLSERIAL(Short.class, Types.SMALLINT, 5), BIGSERIAL(Long.class, Types.BIGINT, 20), // 序列
     CHAR(String.class, Types.CHAR, 65535, true), VARCHAR(String.class, Types.VARCHAR, 65535, true),  // 字符串
     TEXT(String.class, Types.LONGVARCHAR, Integer.MAX_VALUE), BYTEA(byte[].class, Types.BINARY, Integer.MAX_VALUE), // 大字段，二进制
-    DATE(Long.class, Types.DATE, 20), TIMESTAMP(Long.class, Types.TIMESTAMP, 20), TIME(java.sql.Time.class, Types.TIME, 10), // 日期时间
+    DATE(java.sql.Date.class, Types.DATE, 20), TIMESTAMP(Timestamp.class, Types.TIMESTAMP, 20), TIME(java.sql.Time.class, Types.TIME, 10), // 日期时间
     BOOLEAN(Boolean.class, Types.BOOLEAN, 1), //
     ARRAY(Array.class, Types.ARRAY, 65535), //
     JSON(Object.class, Types.JAVA_OBJECT, 65535) //
@@ -78,7 +79,7 @@ public enum DataType {
             if (this == DataType.DATE) {
                 return DateUtil.parseSqlDate(defaultValue).getTime();
             } else if (this == DataType.TIME) {
-                return DateUtil.parseSqlTime(defaultValue);
+                return (int) DateUtil.parseSqlTime(defaultValue).getTime();
             } else if (this == DataType.TIMESTAMP) {
                 return DateUtil.parse(defaultValue).getTime();
             } else if (Number.class.isAssignableFrom(this.getClazz()) || this.getClazz() == String.class) {
@@ -118,9 +119,9 @@ public enum DataType {
         if (this == DataType.DATE) {
             return DateUtil.parseSqlDate(value).getTime();
         } else if (this == DataType.TIME) {
-            return DateUtil.parseSqlTime(value);
+            return (int) DateUtil.parseSqlTime(value).getTime();
         } else if (this == DataType.TIMESTAMP) {
-            return DateUtil.parse(value).getTime();
+            return DateUtil.parseTimestamp(value).getTime();
         }
 //        } else if (rawValue.startsWith("[")) {
 //            throw new UnsupportedOperationException(rawValue + " not supported");

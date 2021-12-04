@@ -92,7 +92,7 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
                     builder.add(entry.getKey(), SqlTypeName.VARCHAR, Integer.MAX_VALUE);
                     break;
                 case DATE:
-                    builder.add(entry.getKey(), SqlTypeName.DATE);
+                    builder.add(entry.getKey(), SqlTypeName.TIMESTAMP);
                     break;
                 case TIME:
                     builder.add(entry.getKey(), SqlTypeName.TIME);
@@ -128,13 +128,11 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
 
     @Override
     public Collection getModifiableCollection() {
-        LOG.info("getModifiableCollection");
         return getData();
     }
 
     @Override
     public TableModify toModificationRel(RelOptCluster cluster, RelOptTable table, Prepare.CatalogReader catalogReader, RelNode child, TableModify.Operation operation, List<String> updateColumnList, List<RexNode> sourceExpressionList, boolean flattened) {
-        LOG.info("toModificationRel");
         return LogicalTableModify.create(table, catalogReader, child, operation,
                 updateColumnList, sourceExpressionList, flattened);
     }
