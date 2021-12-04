@@ -29,7 +29,12 @@ import java.util.stream.Collectors;
  */
 class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
-    private static final DbmdResultSet EMPTY_RS = new DbmdResultSet(new SqlResultImpl(StatementType.DQL, 0, null, null, null, null, null, null));
+    private static final DbmdResultSet EMPTY_RS = new DbmdResultSet(new SqlResultImpl(StatementType.DQL, 0, null, null, null, null, null, null)) {
+        @Override
+        public void close() throws SQLException {
+            // ignore
+        }
+    };
 
     // SQL:92 reserved words from 'ANSI X3.135-1992, January 4, 1993'
     //private static final String[] SQL92_KEYWORDS = new String[] { "ABSOLUTE", "ACTION", "ADD", "ALL", "ALLOCATE", "ALTER", "AND", "ANY", "ARE", "AS", "ASC",
@@ -708,6 +713,8 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
         if ("".equals(catalog) || "".equals(schemaPattern)) { // 表不支持没有库和模式，所以直接返回空结果集
             return EMPTY_RS;
         }
+        schemaPattern = handlePattern(schemaPattern);
+        tableNamePattern = handlePattern(tableNamePattern);
         StringBuilder builder = new StringBuilder("select * from ").append(Consts.SYSTABLE_PREFIX).append("TABLE");
         int baseLen = builder.length();
         if (catalog != null) {
@@ -751,6 +758,9 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
         if ("".equals(catalog) || "".equals(schemaPattern)) {
             return EMPTY_RS;
         }
+        schemaPattern = handlePattern(schemaPattern);
+        tableNamePattern = handlePattern(tableNamePattern);
+        columnNamePattern = handlePattern(columnNamePattern);
         StringBuilder builder = new StringBuilder("select * from ").append(Consts.SYSTABLE_PREFIX).append("COLUMN");
         int baseLen = builder.length();
         if (catalog != null) {
@@ -1007,6 +1017,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
         if ("".equals(catalog)) {
             return EMPTY_RS;
         }
+        schemaPattern = handlePattern(schemaPattern);
         StringBuilder builder = new StringBuilder("select * from ").append(Consts.SYSTABLE_PREFIX).append("SCHEMA");
         int baseLen = builder.length();
         if (catalog != null) {
@@ -1059,6 +1070,13 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     private ResultSet executeCommand(String cmd) throws SQLException {
         return new DbmdResultSet(connection.execute(cmd));
+    }
+
+    private String handlePattern(String pattern) {
+        if ("%".equals(pattern)) {
+            return null;
+        }
+        return pattern;
     }
 
     private static class DbmdResultSet extends ResultSetImpl {
