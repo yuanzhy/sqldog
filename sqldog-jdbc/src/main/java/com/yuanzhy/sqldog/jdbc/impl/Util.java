@@ -166,6 +166,10 @@ class Util {
         return cs == null || cs.length() == 0;
     }
 
+    static boolean isNotEmpty(CharSequence cs) {
+        return !isEmpty(cs);
+    }
+
     static String substringBefore(String str, String separator) {
         if (!isEmpty(str) && separator != null) {
             if (separator.isEmpty()) {

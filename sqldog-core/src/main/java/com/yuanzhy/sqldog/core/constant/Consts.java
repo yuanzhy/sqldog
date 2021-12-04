@@ -12,6 +12,8 @@ public final class Consts {
     public static final String END_CHAR = ";";
     public static final String BREAK_CHAR = "~#&#~";
 
+    public static final String SYSTABLE_PREFIX = "DOGSYS_";
+
     public static final char SQL_ESCAPE = '\\';
     public static final char SQL_QUOTES = '\'';
     public static final char SQL_QUESTION_MARK = '?';

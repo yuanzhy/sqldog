@@ -2,6 +2,8 @@ package com.yuanzhy.sqldog.server.sql.result;
 
 import com.yuanzhy.sqldog.core.sql.ColumnMetaData;
 import com.yuanzhy.sqldog.core.sql.ColumnMetaDataImpl;
+import com.yuanzhy.sqldog.core.util.Asserts;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author yuanzhy
@@ -137,6 +139,10 @@ public class ColumnMetaDataBuilder {
     }
 
     public ColumnMetaData build() {
+        Asserts.hasText(columnName, "'columnName' cannot be empty");
+        if (StringUtils.isEmpty(label)) {
+            label = columnName;
+        }
         return new ColumnMetaDataImpl(ordinal, autoIncrement, caseSensitive, searchable, currency, nullable, signed,
                 displaySize, label, columnName, schemaName, precision, scale, tableName, catalogName, readOnly, writable,
                 definitelyWritable, columnClassName, columnType, columnTypeName);

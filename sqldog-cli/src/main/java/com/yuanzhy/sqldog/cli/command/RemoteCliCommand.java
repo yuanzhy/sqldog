@@ -94,7 +94,6 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
             System.out.println(out);
         } else { // other
             String[] headers = result.getLabels();
-            FormatterUtil.translateLabel(headers);
             List<Object[]> data = result.getData();
             if (data == null) {
                 String out = result.getSchema();
@@ -106,6 +105,7 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
                 System.out.println(data.get(0)[0]);
             } else {
                 final int LEN = 15;
+                FormatterUtil.translateLabel(headers);
                 String out = FormatterUtil.joinByVLine(LEN, headers) + "\n" +
                         FormatterUtil.genHLine(LEN, headers.length) + "\n" +
                         data.stream().map(o -> toString(o, LEN)).collect(Collectors.joining("\n")) + "\n";

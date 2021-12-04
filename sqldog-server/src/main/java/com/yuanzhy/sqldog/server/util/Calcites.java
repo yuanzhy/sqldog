@@ -1,5 +1,10 @@
 package com.yuanzhy.sqldog.server.util;
 
+import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.server.sql.adapter.sys.ColumnSysTable;
+import com.yuanzhy.sqldog.server.sql.adapter.sys.PrimaryKeySysTable;
+import com.yuanzhy.sqldog.server.sql.adapter.sys.SchemaSysTable;
+import com.yuanzhy.sqldog.server.sql.adapter.sys.TableSysTable;
 import com.yuanzhy.sqldog.server.sql.function.ScalarFunctions;
 import com.yuanzhy.sqldog.server.sql.function.agg.StringAggFunction;
 import org.apache.calcite.jdbc.CalciteConnection;
@@ -46,6 +51,7 @@ public class Calcites {
         }
         SCHEMA_PLUS = CONNECTION.getRootSchema();
         registerFn();
+        registerSysTable();
 
         FRAMEWORK_CONFIG = Frameworks.newConfigBuilder()
                 .defaultSchema(SCHEMA_PLUS)
@@ -85,5 +91,12 @@ public class Calcites {
         }
         // 2. agg function
         SCHEMA_PLUS.add("STRING_AGG", AggregateFunctionImpl.create(StringAggFunction.class));
+    }
+
+    private static void registerSysTable() {
+        SCHEMA_PLUS.add(Consts.SYSTABLE_PREFIX.concat("SCHEMA"), new SchemaSysTable());
+        SCHEMA_PLUS.add(Consts.SYSTABLE_PREFIX.concat("TABLE"), new TableSysTable());
+        SCHEMA_PLUS.add(Consts.SYSTABLE_PREFIX.concat("COLUMN"), new ColumnSysTable());
+        SCHEMA_PLUS.add(Consts.SYSTABLE_PREFIX.concat("PRIMARYKEY"), new PrimaryKeySysTable());
     }
 }

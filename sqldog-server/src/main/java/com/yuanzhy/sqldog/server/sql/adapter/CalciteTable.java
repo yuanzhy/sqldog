@@ -5,7 +5,6 @@ import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Table;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.java.AbstractQueryableTable;
-import org.apache.calcite.linq4j.AbstractEnumerable;
 import org.apache.calcite.linq4j.Enumerable;
 import org.apache.calcite.linq4j.Enumerator;
 import org.apache.calcite.linq4j.Linq4j;
@@ -33,7 +32,6 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 文件表需要实现 org.apache.calcite.schema.FilterableTable
@@ -125,43 +123,7 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
 
     @Override
     public Enumerable<Object[]> scan(DataContext root) {
-//        LOG.info("scan");
-        final AtomicBoolean cancelFlag = DataContext.Variable.CANCEL_FLAG.get(root);
-        return new AbstractEnumerable<Object[]>() {
-            @Override
-            public Enumerator<Object[]> enumerator() {
-                return new Enumerator<Object[]>() {
-                    private int index = -1;
-                    private List<Object[]> data = getData();
-
-                    @Override
-                    public Object[] current() {
-                        Object[] current = data.get(this.index);
-                        return current;
-                        //return current != null && current.getClass().isArray() ? (Object[])(current) : new Object[]{current};
-                    }
-
-                    @Override
-                    public boolean moveNext() {
-                        if (cancelFlag != null && cancelFlag.get()) {
-                            return false;
-                        } else {
-                            return ++this.index < data.size();
-                        }
-                    }
-
-                    @Override
-                    public void reset() {
-                        this.index = -1;
-                    }
-
-                    @Override
-                    public void close() {
-
-                    }
-                };
-            }
-        };
+        return new ObjectArrayEnumerable(root, getData());
     }
 
     @Override

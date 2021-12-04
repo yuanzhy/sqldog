@@ -76,7 +76,7 @@ public class SqlResultBuilder {
         return this;
     }
 
-    public SqlResultBuilder columns(ColumnMetaData... columns) {
+    public SqlResultBuilder  columns(ColumnMetaData... columns) {
         this.columns = columns;
         return this;
     }
@@ -133,7 +133,7 @@ public class SqlResultBuilder {
                                 .scale(rsmd.getScale(index))
                                 .signed(rsmd.isSigned(index))
                                 .label(rsmd.getColumnLabel(index))
-                                .ordinal(i)
+                                .ordinal(index)
                                 .readOnly(rsmd.isReadOnly(index))
                                 .schemaName(rsmd.getSchemaName(index))
                                 .tableName(rsmd.getTableName(index))
@@ -148,7 +148,7 @@ public class SqlResultBuilder {
                 ColumnMetaDataBuilder columnBuilder = new ColumnMetaDataBuilder();
                 for (int i = 0; i < this.labels.length; i++) {
                     String label = this.labels[i];
-                    this.columns[i] = columnBuilder.ordinal(i).label(label).columnName(label).columnClassName(String.class.getName()).build();
+                    this.columns[i] = columnBuilder.ordinal(i+1).label(label).columnName(label).columnClassName(String.class.getName()).build();
                 }
             }
         }

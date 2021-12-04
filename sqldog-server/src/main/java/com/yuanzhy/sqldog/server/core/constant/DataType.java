@@ -14,34 +14,40 @@ import java.sql.Types;
  */
 public enum DataType {
 
-    INT(Integer.class, Types.INTEGER), SMALLINT(Short.class, Types.SMALLINT), TINYINT(Byte.class, Types.TINYINT), BIGINT(Long.class, Types.BIGINT),
-    NUMERIC(BigDecimal.class, Types.NUMERIC, true), DECIMAL(BigDecimal.class, Types.DECIMAL, true), // 数字
-    SERIAL(Integer.class, Types.INTEGER), SMALLSERIAL(Short.class, Types.SMALLINT), BIGSERIAL(Long.class, Types.BIGINT), // 序列
-    CHAR(String.class, Types.CHAR, true), VARCHAR(String.class, Types.VARCHAR, true),  // 字符串
-    TEXT(String.class, Types.LONGVARCHAR), BYTEA(byte[].class, Types.BINARY), // 大字段，二进制
-    DATE(Long.class, Types.DATE), TIMESTAMP(Long.class, Types.TIMESTAMP), TIME(java.sql.Time.class, Types.TIME), // 日期时间
-    BOOLEAN(Boolean.class, Types.BOOLEAN), //
-    ARRAY(Array.class, Types.ARRAY), //
-    JSON(Object.class, Types.JAVA_OBJECT) //
+    INT(Integer.class, Types.INTEGER, 10), SMALLINT(Short.class, Types.SMALLINT, 5), TINYINT(Byte.class, Types.TINYINT, 3), BIGINT(Long.class, Types.BIGINT, 20),
+    NUMERIC(BigDecimal.class, Types.NUMERIC, 50, true), DECIMAL(BigDecimal.class, Types.DECIMAL, 50, true), // 数字
+    SERIAL(Integer.class, Types.INTEGER, 10), SMALLSERIAL(Short.class, Types.SMALLINT, 5), BIGSERIAL(Long.class, Types.BIGINT, 20), // 序列
+    CHAR(String.class, Types.CHAR, 65535, true), VARCHAR(String.class, Types.VARCHAR, 65535, true),  // 字符串
+    TEXT(String.class, Types.LONGVARCHAR, Integer.MAX_VALUE), BYTEA(byte[].class, Types.BINARY, Integer.MAX_VALUE), // 大字段，二进制
+    DATE(Long.class, Types.DATE, 20), TIMESTAMP(Long.class, Types.TIMESTAMP, 20), TIME(java.sql.Time.class, Types.TIME, 10), // 日期时间
+    BOOLEAN(Boolean.class, Types.BOOLEAN, 1), //
+    ARRAY(Array.class, Types.ARRAY, 65535), //
+    JSON(Object.class, Types.JAVA_OBJECT, 65535) //
     ;
 
 //    private final int precision;
     private final Class<?> clazz;
     private final int sqlType;
+    private final int maxLength;
     private final boolean hasLength;
 
-    DataType(Class<?> clazz, int sqlType) {
-        this(clazz, sqlType, false);
+    DataType(Class<?> clazz, int sqlType, int maxLength) {
+        this(clazz, sqlType, maxLength, false);
     }
 
-    DataType(Class<?> clazz, int sqlType, boolean hasLength) {
+    DataType(Class<?> clazz, int sqlType, int maxLength, boolean hasLength) {
         this.clazz = clazz;
         this.sqlType = sqlType;
+        this.maxLength = maxLength;
         this.hasLength = hasLength;
     }
 
     public boolean isSerial() {
         return this == SERIAL || this == SMALLSERIAL || this == BIGSERIAL;
+    }
+
+    public int getMaxLength() {
+        return maxLength;
     }
 
     public boolean isHasLength() {

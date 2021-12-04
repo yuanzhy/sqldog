@@ -1,6 +1,11 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
+import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.constant.TableType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.sql.SqlResultImpl;
+import com.yuanzhy.sqldog.core.util.SqlUtil;
 import com.yuanzhy.sqldog.jdbc.Driver;
 import com.yuanzhy.sqldog.jdbc.SqldogConnection;
 
@@ -9,7 +14,9 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -21,6 +28,8 @@ import java.util.stream.Collectors;
  * @date 2021/11/21
  */
 class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
+
+    private static final DbmdResultSet EMPTY_RS = new DbmdResultSet(new SqlResultImpl(StatementType.DQL, 0, null, null, null, null, null, null));
 
     // SQL:92 reserved words from 'ANSI X3.135-1992, January 4, 1993'
     //private static final String[] SQL92_KEYWORDS = new String[] { "ABSOLUTE", "ACTION", "ADD", "ALL", "ALLOCATE", "ALTER", "AND", "ANY", "ARE", "AS", "ASC",
@@ -241,7 +250,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public String getSystemFunctions() throws SQLException {
-        return null;
+        return "CURRENT_DATE,CURRENT_TIME,CURRENT_TIMESTAMP,USER,CURRENT_USER,SESSION_USER,SYSTEM_USER";
     }
 
     @Override
@@ -256,7 +265,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public String getExtraNameCharacters() throws SQLException {
-        return null;
+        return "";
     }
 
     @Override
@@ -686,88 +695,152 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
-        return null;
+        return EMPTY_RS;
     }
 
     @Override
     public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern) throws SQLException {
-        return null;
+        return EMPTY_RS;
     }
 
     @Override
     public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
-        // TODO catalog schemaPattern tableNamePattern types
-        return new DbmdResultSet(connection.execute("SHOW TABLES"));
+        if ("".equals(catalog) || "".equals(schemaPattern)) { // 表不支持没有库和模式，所以直接返回空结果集
+            return EMPTY_RS;
+        }
+        StringBuilder builder = new StringBuilder("select * from ").append(Consts.SYSTABLE_PREFIX).append("TABLE");
+        int baseLen = builder.length();
+        if (catalog != null) {
+            builder.append(" and TABLE_CAT='").append(SqlUtil.escape(catalog)).append("'");
+        }
+        if (schemaPattern != null) {
+            builder.append(" and TABLE_SCHEM like '%").append(SqlUtil.escape(schemaPattern)).append("%").append("'");
+        }
+        if (Util.isNotEmpty(tableNamePattern)) {
+            builder.append(" and TABLE_NAME like '%").append(SqlUtil.escape(tableNamePattern)).append("%").append("'");
+        }
+        if (types != null && types.length > 0) {
+            List<String> legalTypes = Arrays.stream(TableType.values()).map(TableType::getName).collect(Collectors.toList());
+            String in = Arrays.stream(types).filter(legalTypes::contains).map(t -> "'"+t+"'").collect(Collectors.joining(",", "(", ")"));
+            builder.append(" and TABLE_TYPE in ").append(in);
+        }
+        if (builder.length() > baseLen) {
+            builder.replace(baseLen+1, baseLen+4, "where");
+        }
+        builder.append(" order by TABLE_TYPE,TABLE_CAT,TABLE_SCHEM,TABLE_NAME");
+        return executeCommand(builder.toString());
     }
 
     @Override
     public ResultSet getSchemas() throws SQLException {
-        return new DbmdResultSet(connection.execute("SHOW SCHEMAS"));
+        return getSchemas(null, null);
     }
 
     @Override
     public ResultSet getCatalogs() throws SQLException {
-        return new DbmdResultSet(connection.execute("SHOW DATABASES"));
+        return executeCommand("SHOW DATABASES");
     }
 
     @Override
     public ResultSet getTableTypes() throws SQLException {
-        return new DbmdResultSet(connection.execute("SHOW TABLETYPES"));
+        return executeCommand("SHOW TABLETYPES");
     }
 
     @Override
     public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
-        return null; // TODO
+        if ("".equals(catalog) || "".equals(schemaPattern)) {
+            return EMPTY_RS;
+        }
+        StringBuilder builder = new StringBuilder("select * from ").append(Consts.SYSTABLE_PREFIX).append("COLUMN");
+        int baseLen = builder.length();
+        if (catalog != null) {
+            builder.append(" and TABLE_CAT='").append(SqlUtil.escape(catalog)).append("'");
+        }
+        if (schemaPattern != null) {
+            builder.append(" and TABLE_SCHEM like '%").append(SqlUtil.escape(schemaPattern)).append("%").append("'");
+        }
+        if (Util.isNotEmpty(tableNamePattern)) {
+            builder.append(" and TABLE_NAME like '%").append(SqlUtil.escape(tableNamePattern)).append("%").append("'");
+        }
+        if (Util.isNotEmpty(columnNamePattern)) {
+            builder.append(" and COLUMN_NAME like '%").append(SqlUtil.escape(columnNamePattern)).append("%").append("'");
+        }
+        if (builder.length() > baseLen) {
+            builder.replace(baseLen+1, baseLen+4, "where");
+        }
+        builder.append(" order by TABLE_CAT,TABLE_SCHEM,TABLE_NAME,ORDINAL_POSITION");
+        return executeCommand(builder.toString());
     }
 
     @Override
     public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {
-        return null; // TODO
+        return EMPTY_RS; // TODO 暂不支持权限
     }
 
     @Override
     public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-        return null; // TODO
+        return EMPTY_RS; // TODO 暂不支持权限
     }
 
     @Override
     public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException {
-        return null; // TODO
+//        if (table == null) {
+//            throw new SQLException("Table not specified.", SQLError.SQL_STATE_ILLEGAL_ARGUMENT);
+//        }
+        return EMPTY_RS; // 不支持隐式唯一列
     }
 
     @Override
     public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
-        return null; // TODO
+        return EMPTY_RS; // 不支持隐式版本列
     }
 
     @Override
     public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
-        return null; // TODO
+        if ("".equals(catalog) || "".equals(schema)) {
+            return EMPTY_RS;
+        }
+        StringBuilder builder = new StringBuilder("select * from ").append(Consts.SYSTABLE_PREFIX).append("PRIMARYKEY");
+        int baseLen = builder.length();
+        if (catalog != null) {
+            builder.append(" and TABLE_CAT='").append(SqlUtil.escape(catalog)).append("'");
+        }
+        if (schema != null) {
+            builder.append(" and TABLE_SCHEM='").append(SqlUtil.escape(schema)).append("'");
+        }
+        if (Util.isNotEmpty(table)) {
+            builder.append(" and TABLE_NAME='").append(SqlUtil.escape(table)).append("'");
+        }
+        if (builder.length() > baseLen) {
+            builder.replace(baseLen+1, baseLen+4, "where");
+        }
+        builder.append(" order by COLUMN_NAME");
+        return executeCommand(builder.toString());
     }
 
     @Override
     public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
-        return null; // TODO
+        return EMPTY_RS; // TODO 暂不支持外键约束
     }
 
     @Override
     public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
-        return null; // TODO
+        return EMPTY_RS; // TODO 暂不支持外键约束
     }
 
     @Override
     public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException {
-        return null; // TODO
+        return EMPTY_RS; // TODO 暂不支持外键约束
     }
 
     @Override
     public ResultSet getTypeInfo() throws SQLException {
-        return null; // TODO
+        return executeCommand("SHOW TYPEINFO");
     }
 
     @Override
     public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
-        return null; // TODO
+        return EMPTY_RS; // TODO 暂不支持索引
     }
 
     @Override
@@ -782,47 +855,47 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public boolean ownUpdatesAreVisible(int type) throws SQLException {
-        return false; // TODO
+        return false; // TODO UpdatedResultSetImpl 实现后再议
     }
 
     @Override
     public boolean ownDeletesAreVisible(int type) throws SQLException {
-        return false; // TODO
+        return false; // TODO UpdatedResultSetImpl 实现后再议
     }
 
     @Override
     public boolean ownInsertsAreVisible(int type) throws SQLException {
-        return false; // TODO
+        return false; // TODO UpdatedResultSetImpl 实现后再议
     }
 
     @Override
     public boolean othersUpdatesAreVisible(int type) throws SQLException {
-        return false; // TODO
+        return false; // TODO UpdatedResultSetImpl 实现后再议
     }
 
     @Override
     public boolean othersDeletesAreVisible(int type) throws SQLException {
-        return false; // TODO
+        return false; // TODO UpdatedResultSetImpl 实现后再议
     }
 
     @Override
     public boolean othersInsertsAreVisible(int type) throws SQLException {
-        return false; // TODO
+        return false; // TODO UpdatedResultSetImpl 实现后再议
     }
 
     @Override
     public boolean updatesAreDetected(int type) throws SQLException {
-        return false; // TODO
+        return false;
     }
 
     @Override
     public boolean deletesAreDetected(int type) throws SQLException {
-        return false; // TODO
+        return false;
     }
 
     @Override
     public boolean insertsAreDetected(int type) throws SQLException {
-        return false; // TODO
+        return false;
     }
 
     @Override
@@ -832,7 +905,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types) throws SQLException {
-        return null; // TODO
+        return EMPTY_RS;
     }
 
     @Override
@@ -862,17 +935,17 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
-        return null; // TODO
+        return EMPTY_RS;
     }
 
     @Override
     public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-        return null; // TODO
+        return EMPTY_RS;
     }
 
     @Override
     public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern) throws SQLException {
-        return null; // TODO
+        return EMPTY_RS;
     }
 
     @Override
@@ -931,7 +1004,22 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
-        return null; // TODO
+        if ("".equals(catalog)) {
+            return EMPTY_RS;
+        }
+        StringBuilder builder = new StringBuilder("select * from ").append(Consts.SYSTABLE_PREFIX).append("SCHEMA");
+        int baseLen = builder.length();
+        if (catalog != null) {
+            builder.append(" and TABLE_CATALOG='").append(SqlUtil.escape(catalog)).append("'");
+        }
+        if (Util.isNotEmpty(schemaPattern)) {
+            builder.append(" and TABLE_SCHEM like '%").append(SqlUtil.escape(schemaPattern)).append("%").append("'");
+        }
+        if (builder.length() > baseLen) {
+            builder.replace(baseLen+1, baseLen+4, "where");
+        }
+        builder.append(" order by TABLE_CATALOG,TABLE_SCHEM");
+        return executeCommand(builder.toString());
     }
 
     @Override
@@ -946,22 +1034,22 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
 
     @Override
     public ResultSet getClientInfoProperties() throws SQLException {
-        return null; // TODO
+        return EMPTY_RS; // support any
     }
 
     @Override
     public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
-        return null; // TODO
+        return executeCommand("SHOW FUNCTIONS");
     }
 
     @Override
     public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern) throws SQLException {
-        return null; // TODO
+        return EMPTY_RS; // TODO gaota
     }
 
     @Override
     public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
-        return null; // TODO
+        return EMPTY_RS; // not supported
     }
 
     @Override
@@ -969,7 +1057,11 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
         return true;
     }
 
-    private class DbmdResultSet extends ResultSetImpl {
+    private ResultSet executeCommand(String cmd) throws SQLException {
+        return new DbmdResultSet(connection.execute(cmd));
+    }
+
+    private static class DbmdResultSet extends ResultSetImpl {
 
         DbmdResultSet(SqlResult sqlResult) {
             super(null, ResultSet.FETCH_FORWARD, 0, sqlResult);

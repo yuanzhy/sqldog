@@ -1,15 +1,15 @@
 package com.yuanzhy.sqldog.server.core;
 
-import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
-import com.yuanzhy.sqldog.server.core.constant.DataType;
-import com.yuanzhy.sqldog.server.memory.ColumnBuilder;
-import com.yuanzhy.sqldog.server.memory.ConstraintBuilder;
-import com.yuanzhy.sqldog.server.memory.DatabaseBuilder;
-import com.yuanzhy.sqldog.server.memory.SchemaBuilder;
-import com.yuanzhy.sqldog.server.memory.TableBuilder;
+import com.yuanzhy.sqldog.server.util.Calcites;
 import org.junit.Test;
 
+import java.sql.Date;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -20,22 +20,41 @@ import java.util.List;
 public class DatabaseTest {
 
     @Test
-    public void t() {
-        List<Database> databases = new ArrayList<>();
-        databases.add(new DatabaseBuilder().name("db1").build());
-        databases.add(new DatabaseBuilder().name("postgres").build());
-        databases.add(new DatabaseBuilder().name("test").build());
-        Schema schema = new SchemaBuilder().name("test_schema").build();
-        databases.get(0).addSchema(schema);
-        schema.addTable(new TableBuilder()
-                .name("test_table")
-                .addColumn(new ColumnBuilder().name("id").dataType(DataType.INT).nullable(false).build())
-                .addColumn(new ColumnBuilder().name("name").dataType(DataType.VARCHAR).precision(50).build())
-                .addConstraint(new ConstraintBuilder()
-                                .type(ConstraintType.PRIMARY_KEY)
-                                .addColumnName("id")
-                                .build())
-                .build()
-        );
+    public void t() throws Exception {
+        ResultSet rs = Calcites.getConnection().getMetaData().getSchemas();
+        ResultSetMetaData rsmd = rs.getMetaData();
+        // TODO 返回太多卡死内存占用过大问题
+        List<Object[]> data = new ArrayList<>();
+        while (rs.next()) {
+            Object[] values = new Object[rsmd.getColumnCount()];
+            for (int i = 0; i < rsmd.getColumnCount(); i++) {
+                final int index = i + 1;
+                String columnLabel = rsmd.getColumnLabel(index); // 别名
+                String className = rsmd.getColumnClassName(index);
+                Object value = null;
+                if ("java.sql.Date".equals(className)) {
+                    Long date = rs.getLong(columnLabel);
+                    if (date != null) {
+                        value = new Date(date.longValue());
+                    }
+                } else if ("java.sql.Time".equals(className)) {
+                    Long time = rs.getLong(columnLabel);
+                    if (time != null) {
+                        value = new Time(time.longValue());
+                    }
+                } else if ("java.sql.Timestamp".equals(className)) {
+                    Long timestamp = rs.getLong(columnLabel);
+                    if (timestamp != null) {
+                        value = new Timestamp(timestamp.longValue());
+                    }
+                } else {
+                    value = rs.getObject(columnLabel);
+                }
+                values[i] = value;
+            }
+            System.out.println(Arrays.toString(values));
+            data.add(values);
+        }
+        System.out.println(data);
     }
 }

@@ -400,4 +400,13 @@ public class SqlUtil {
         return result.toArray(new String[0]);
     }
 
+    public static String escape(String keyword) {
+        return keyword.replace("'", "\\'")
+                .replace("%", "\\%")
+                .replace("_", "\\_")
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("`", "\\`").toUpperCase();
+    }
+
 }

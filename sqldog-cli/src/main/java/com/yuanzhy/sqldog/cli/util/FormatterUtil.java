@@ -50,6 +50,9 @@ public final class FormatterUtil {
     }
 
     public static void translateLabel(String[] headers) {
+        if (headers == null) {
+            return;
+        }
         for (int i = 0; i < headers.length; i++) {
             if (headers[i].equals("TABLE_CATALOG")) {
                 headers[i] = "Database";

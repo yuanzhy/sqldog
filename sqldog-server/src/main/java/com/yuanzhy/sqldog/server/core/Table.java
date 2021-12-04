@@ -14,7 +14,8 @@ public interface Table extends Base {
 
     Map<String, Column> getColumns();
 
-    String[] getPkNames();
+    String[] getPkColumnName();
+    Constraint getPrimaryKey();
 
     List<Constraint> getConstraints();
 

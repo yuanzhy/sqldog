@@ -1,5 +1,6 @@
 package com.yuanzhy.sqldog.server.sql.adapter;
 
+import com.yuanzhy.sqldog.core.constant.Consts;
 import org.apache.calcite.sql.SqlAsOperator;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDelete;
@@ -148,7 +149,7 @@ public class CalciteSqlParser extends SqlParserImpl {
     }
 
     private void handleIdentifier(SqlIdentifier sqlIdentifier) {
-        if (sqlIdentifier.names.size() == 1) {
+        if (sqlIdentifier.names.size() == 1 && !sqlIdentifier.names.get(0).startsWith(Consts.SYSTABLE_PREFIX)) {
             // 如果不带模式， 则自动拼接上
             sqlIdentifier.setNames(Arrays.asList(new String[]{ schema, sqlIdentifier.names.get(0)}), null);
         }

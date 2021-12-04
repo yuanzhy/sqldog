@@ -81,8 +81,13 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
     }
 
     @Override
-    public String[] getPkNames() {
+    public String[] getPkColumnName() {
         return primaryKey == null ? null : primaryKey.getColumnNames();
+    }
+
+    @Override
+    public Constraint getPrimaryKey() {
+        return primaryKey;
     }
 
     @Override
@@ -206,7 +211,7 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
         } else if (condition instanceof SqlBasicCall) {
             Set<Map<String, Object>> dataList = handleWhere(data, (SqlBasicCall)condition);
             count = dataList.size();
-            String[] pkNames = getPkNames();
+            String[] pkNames = getPkColumnName();
             for (Map<String, Object> row : dataList) {
                 // 删除主键索引
                 if (pkNames != null) {
