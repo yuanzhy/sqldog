@@ -65,7 +65,6 @@ exit
 - 将 jdbc jar 安装到本地仓库
 ```shell
 mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-jdbc -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=./sqldog/jdbc/sqldog-jdbc-1.0-SNAPSHOT.jar
-mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-dialect -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=./sqldog/jdbc/sqldog-dialect-1.0-SNAPSHOT.jar
 ```
 - 引入 maven 依赖
 ```xml
@@ -78,7 +77,7 @@ mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-dialec
 - 配置jdbc
 ```properties
 url=jdbc:sqldog://127.0.0.1[:2345][/schema_name]
-user=uuu
-password=xxx
+user=root
+password=123456
 driver-class=com.yuanzhy.sqldog.jdbc.Driver
 ```
