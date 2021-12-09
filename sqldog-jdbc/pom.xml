@@ -16,12 +16,14 @@
             <groupId>com.yuanzhy.sqldog</groupId>
             <artifactId>sqldog-core</artifactId>
             <version>${project.version}</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>com.yuanzhy.sqldog</groupId>
             <artifactId>sqldog-dialect</artifactId>
             <version>${project.version}</version>
+            <optional>true</optional>
         </dependency>
 
     </dependencies>
