@@ -1,5 +1,6 @@
 package com.yuanzhy.sqldog.jdbc;
 
+import com.yuanzhy.sqldog.core.SqldogVersion;
 import com.yuanzhy.sqldog.jdbc.impl.ConnectionImpl;
 
 import java.sql.Connection;
@@ -26,12 +27,17 @@ abstract class UnregisteredDriver implements Driver {
     public static final String PORT_PROPERTY_KEY = "PORT";
     public static final String SCHEMA_PROPERTY_KEY = "SCHEMA";
 
-    public static final String VERSION = "1.0.0";
+    public static final String VERSION;
     public static final String NAME = "Sqldog Connector Java";
 
     private static final String DEFAULT_PORT = "2345";
 
     private static final Pattern URL_PTN = Pattern.compile("jdbc:sqldog://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})(:\\d{1,5})?(/[\\w\\d-_]+)?");
+
+    static {
+        String version = SqldogVersion.getVersion();
+        VERSION = version == null ? "1.0" : version;
+    }
 
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
