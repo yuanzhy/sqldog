@@ -46,7 +46,7 @@ public class DefaultSqlParser implements SqlParser {
                 return new CreateSchemaCommand(sql);
             } else if (tmp.startsWith("TABLE")) {
                 return new CreateTableCommand(sql);
-            } else if (tmp.startsWith("INDEX")) {
+            } else if (tmp.startsWith("INDEX") || tmp.startsWith("UNIQUE INDEX")) {
                 return new CreateIndexCommand(sql);
             }
         } else if (sql.startsWith("ALTER")) {

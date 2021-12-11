@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -215,7 +216,7 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
             for (Map<String, Object> row : dataList) {
                 // 删除主键索引
                 if (pkNames != null) {
-                    pkSet.remove(uniqueColName(pkNames));
+                    pkSet.remove(uniqueColValue(pkNames, row));
                 }
                 // 删除唯一索引
                 for (Constraint c : this.constraint) {
@@ -365,6 +366,19 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
             fn = m -> m.get(colName) != null && ObjectUtils.compare((Comparable)m.get(colName), (Comparable)val) > 0;
         } else if (kind == SqlKind.GREATER_THAN_OR_EQUAL) {
             fn = m -> m.get(colName) != null && ObjectUtils.compare((Comparable)m.get(colName), (Comparable)val) >= 0;
+        } else if (kind == SqlKind.LIKE) {
+            if (val == null) {
+                fn = m -> false;
+            } else {
+                Pattern pattern = Pattern.compile("^" + val.toString().replace("%", ".*").replace("_", ".") + "$");
+                fn = m -> {
+                    Object v = m.get(colName);
+                    if (v == null) {
+                        return false;
+                    }
+                    return pattern.matcher(v.toString()).matches();
+                };
+            }
         } else {
             throw new UnsupportedOperationException("operation not support: " + condition.toString());
         }

@@ -403,7 +403,7 @@ public class SqlUtil {
     public static String escape(String keyword) {
         return keyword.replace("'", "\\'")
                 .replace("%", "\\%")
-                .replace("_", "\\_")
+//                .replace("_", "\\_")
                 .replace("\\", "\\\\")
                 .replace("\"", "\\\"")
                 .replace("`", "\\`").toUpperCase();

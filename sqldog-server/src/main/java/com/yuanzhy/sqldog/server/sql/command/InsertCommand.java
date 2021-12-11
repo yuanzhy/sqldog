@@ -1,16 +1,15 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.commons.lang3.StringUtils;
-
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.core.util.SqlUtil;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author yuanzhy
@@ -29,6 +28,7 @@ public class InsertCommand extends AbstractSqlCommand {
         String sqlSuffix = sql.substring("insert into ".length());
         super.parseSchemaTable(sqlSuffix);
         sqlSuffix = StringUtils.substringAfter(sqlSuffix, table.getName()).trim();
+        sqlSuffix = stripQuotes(sqlSuffix);
         if (!sqlSuffix.startsWith("VALUES") && !sqlSuffix.startsWith("(")) {
             throw new IllegalArgumentException("Illegal sql: " + sql);
         }
@@ -52,7 +52,7 @@ public class InsertCommand extends AbstractSqlCommand {
         Map<String, Column> columnMap = table.getColumns();
         Map<String, Object> values = new HashMap<>();
         for (int i = 0; i < colArr.length; i++) {
-            final String colName = colArr[i].trim();
+            final String colName = stripQuotes(colArr[i]);
             final String rawValue = valArr[i].trim();
             final Object value = columnMap.get(colName).getDataType().parseValue(rawValue);
             values.put(colName, value);

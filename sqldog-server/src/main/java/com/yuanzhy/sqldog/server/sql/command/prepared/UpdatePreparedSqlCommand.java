@@ -1,26 +1,5 @@
 package com.yuanzhy.sqldog.server.sql.command.prepared;
 
-import java.io.IOException;
-import java.sql.ParameterMetaData;
-import java.sql.SQLFeatureNotSupportedException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.calcite.sql.SqlBasicCall;
-import org.apache.calcite.sql.SqlDynamicParam;
-import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlLiteral;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.SqlUpdate;
-import org.apache.calcite.sql.parser.SqlParserPos;
-import org.apache.calcite.util.TimeString;
-import org.apache.calcite.util.TimestampString;
-
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.ParamMetaData;
 import com.yuanzhy.sqldog.core.sql.ParamMetaDataImpl;
@@ -34,6 +13,26 @@ import com.yuanzhy.sqldog.server.sql.command.AbstractSqlCommand;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Calcites;
 import com.yuanzhy.sqldog.server.util.Databases;
+import org.apache.calcite.sql.SqlBasicCall;
+import org.apache.calcite.sql.SqlDynamicParam;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlLiteral;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlUpdate;
+import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.util.TimeString;
+import org.apache.calcite.util.TimestampString;
+
+import java.io.IOException;
+import java.sql.ParameterMetaData;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author yuanzhy
@@ -204,6 +203,8 @@ public class UpdatePreparedSqlCommand extends AbstractSqlCommand implements Prep
             case TINYINT:
             case DECIMAL:
             case NUMERIC:
+            case FLOAT:
+            case DOUBLE:
                 return SqlLiteral.createExactNumeric(x.toString(), pos);
             case DATE:
                 Calendar cal = Calendar.getInstance();

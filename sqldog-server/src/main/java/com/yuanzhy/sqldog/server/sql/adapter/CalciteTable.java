@@ -79,6 +79,12 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
                 case TINYINT:
                     builder.add(entry.getKey(), SqlTypeName.TINYINT);
                     break;
+                case FLOAT:
+                    builder.add(entry.getKey(), SqlTypeName.FLOAT);
+                    break;
+                case DOUBLE:
+                    builder.add(entry.getKey(), SqlTypeName.DOUBLE);
+                    break;
                 case NUMERIC:
                     builder.add(entry.getKey(), SqlTypeName.DECIMAL, column.getPrecision(), column.getScale());
                     break;

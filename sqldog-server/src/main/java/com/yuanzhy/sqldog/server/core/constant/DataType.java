@@ -16,6 +16,7 @@ import java.sql.Types;
 public enum DataType {
 
     INT(Integer.class, Types.INTEGER, 10), SMALLINT(Short.class, Types.SMALLINT, 5), TINYINT(Byte.class, Types.TINYINT, 3), BIGINT(Long.class, Types.BIGINT, 20),
+    FLOAT(Double.class, Types.FLOAT, 20), DOUBLE(Double.class, Types.DOUBLE, 20),
     NUMERIC(BigDecimal.class, Types.NUMERIC, 50, true), DECIMAL(BigDecimal.class, Types.DECIMAL, 50, true), // 数字
     SERIAL(Integer.class, Types.INTEGER, 10), SMALLSERIAL(Short.class, Types.SMALLINT, 5), BIGSERIAL(Long.class, Types.BIGINT, 20), // 序列
     CHAR(String.class, Types.CHAR, 65535, true), VARCHAR(String.class, Types.VARCHAR, 65535, true),  // 字符串
@@ -101,8 +102,10 @@ public enum DataType {
             return Short.valueOf(rawValue);
         } else if (this == DataType.BOOLEAN) {
             return Boolean.valueOf(rawValue);
-        } else if (this == DataType.NUMERIC) {
+        } else if (this == DataType.NUMERIC || this == DataType.DECIMAL) {
             return BigDecimal.valueOf(Double.parseDouble(rawValue));
+        } else if (this == DataType.FLOAT || this == DataType.DOUBLE) {
+            return Double.valueOf(rawValue);
         } else if (this.getClazz() == String.class) {
             throw new IllegalArgumentException("Illegal data type, " + this.name() + ": " + rawValue);
         }
@@ -137,8 +140,10 @@ public enum DataType {
             return Short.valueOf(value);
         } else if (this == DataType.BOOLEAN) {
             return Boolean.valueOf(value);
-        } else if (this == DataType.NUMERIC) {
+        } else if (this == DataType.NUMERIC || this == DataType.DECIMAL) {
             return BigDecimal.valueOf(Double.parseDouble(value));
+        } else if (this == DataType.FLOAT || this == DataType.DOUBLE) {
+            return Double.valueOf(value);
         }
         return value;
     }

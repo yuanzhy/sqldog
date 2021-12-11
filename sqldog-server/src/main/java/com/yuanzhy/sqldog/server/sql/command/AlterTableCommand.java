@@ -43,6 +43,9 @@ public class AlterTableCommand extends AbstractSqlCommand {
             table.dropColumn(columnName);
         } else if (tmp.startsWith("ADD")) {
             tmp = tmp.substring("ADD ".length());
+            if (tmp.startsWith("COLUMN ")) {
+                tmp = tmp.substring("COLUMN ".length()).trim();
+            }
             final String columnName = StringUtils.substringBefore(tmp, " ");
             tmp = StringUtils.substringAfter(tmp, " ");
             final String rawDataType = StringUtils.substringBefore(tmp, " ").trim();

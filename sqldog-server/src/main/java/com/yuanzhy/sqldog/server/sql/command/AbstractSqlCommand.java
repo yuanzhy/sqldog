@@ -35,13 +35,18 @@ public abstract class AbstractSqlCommand implements SqlCommand {
     protected void parseSchema(String sqlSuffix) {
         String schemaTable = StringUtils.substringBefore(sqlSuffix, " ");
         if (schemaTable.contains(".")) {
-            final String schemaName = StringUtils.substringBefore(schemaTable, ".");
+            String schemaName = StringUtils.substringBefore(schemaTable, ".");
+            schemaName = stripQuotes(schemaName);
 //        final String tableName = StringUtils.substringAfter(schemaTable, ".");
             schema = Databases.getDefault().getSchema(schemaName);
             Asserts.notNull(schema, schemaName + " not exists");
         } else {
             checkSchema();
         }
+    }
+
+    protected String stripQuotes(String sqlIdentify) {
+        return StringUtils.strip(sqlIdentify, "\"` ");
     }
 
     protected void checkSchema() {
@@ -55,9 +60,9 @@ public abstract class AbstractSqlCommand implements SqlCommand {
             schemaTable = StringUtils.substringBefore(schemaTable, "(").trim();
         }
         if (schemaTable.contains(".")) {
-            return StringUtils.substringAfter(schemaTable, ".").trim();
+            schemaTable = StringUtils.substringAfter(schemaTable, ".").trim();
         }
-        return schemaTable;
+        return stripQuotes(schemaTable);
     }
 
     protected void parseSchemaTable(String sqlSuffix) {
