@@ -108,22 +108,26 @@ class ResultSetImpl extends AbstractResultSet implements ResultSet {
 
     @Override
     public int getInt(int columnIndex) throws SQLException {
-        return getObject(columnIndex, Integer.class);
+        Integer i = getObject(columnIndex, Integer.class);
+        return wasNull ? 0 : i;
     }
 
     @Override
     public long getLong(int columnIndex) throws SQLException {
-        return getObject(columnIndex, Long.class);
+        Long l = getObject(columnIndex, Long.class);
+        return wasNull ? 0 : l;
     }
 
     @Override
     public float getFloat(int columnIndex) throws SQLException {
-        return getObject(columnIndex, Float.class);
+        Float f = getObject(columnIndex, Float.class);
+        return wasNull ? 0 : f;
     }
 
     @Override
     public double getDouble(int columnIndex) throws SQLException {
-        return getObject(columnIndex, Double.class);
+        Double d = getObject(columnIndex, Double.class);
+        return wasNull ? 0 : d;
     }
 
     @Override
@@ -252,7 +256,7 @@ class ResultSetImpl extends AbstractResultSet implements ResultSet {
 
     @Override
     public int findColumn(String columnLabel) throws SQLException {
-        checkRowPos();
+        checkClosed();
         columnLabel = columnLabel.toUpperCase();
         Integer index = columnToIndexCache.get(columnLabel);
         if (index != null) {

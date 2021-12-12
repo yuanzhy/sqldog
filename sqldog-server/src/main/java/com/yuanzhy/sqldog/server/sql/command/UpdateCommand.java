@@ -24,6 +24,7 @@ public class UpdateCommand extends AbstractSqlCommand {
         try {
             SqlNode sqlNode = Calcites.getPanner().parse(sql);
             SqlUpdate update = (SqlUpdate) sqlNode;
+//            Calcites.getPanner().validate(update);
             super.parseSchemaTable(update.getTargetTable().toString());
             int rows = table.getDML().updateBy(update);
             return new SqlResultBuilder(StatementType.DML).schema(schema.getName()).table(table.getName()).rows(rows).build();

@@ -148,8 +148,8 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
 //                    continue;
 //                }
 //                value = column.getDataType().parseRawValue(value.toString());
-            if (column.getDataType() == DataType.CHAR && Objects.toString(value).length() < column.getPrecision()) {
-                value = StringUtils.rightPad(Objects.toString(value), column.getPrecision());
+            if (value != null && column.getDataType() == DataType.CHAR && value.toString().length() < column.getPrecision()) {
+                value = StringUtils.rightPad(value.toString(), column.getPrecision());
             }
             row.put(columnName, value);
         }
@@ -455,6 +455,7 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
     @Override
     public synchronized void truncate() {
         this.data.clear();
+        this.pkSet.clear();
         this.uniqueMap.clear();
     }
 

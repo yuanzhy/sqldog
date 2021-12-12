@@ -40,9 +40,10 @@ public class SelectPreparedSqlCommand extends AbstractPreparedSqlCommand impleme
                 int precision = pmd.getPrecision(i);
 //                int scale = pmd.getScale(i);
                 boolean nullable = pmd.isNullable(i) == ParameterMetaData.parameterNoNulls;
-                Asserts.isFalse(!nullable && x == null, "the parameter index '"+i+"' must not null");
+//                Asserts.isFalse(!nullable && x == null, "the parameter index '"+i+"' must not null");
                 if (x == null) {
                     ps.setNull(i, type);
+                    continue;
                 }
                 switch (type) {
                     case Types.CLOB:

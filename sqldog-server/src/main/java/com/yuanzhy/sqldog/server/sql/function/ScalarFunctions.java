@@ -84,19 +84,19 @@ public class ScalarFunctions {
         }
     }
 
-    public static final String concat(Object o1, Object o2) {
+    public static final String concat(String o1, String o2) {
         return concat(o1, o2, "");
     }
 
-    public static final String concat_ws(String seq, Object o1, Object o2) {
+    public static final String concat_ws(String seq, String o1, String o2) {
         return concat_ws(seq, o1, o2, "");
     }
 
-    public static final String concat(Object o1, Object o2, Object o3) {
+    public static final String concat(String o1, String o2, String o3) {
         return concat_ws("", o1, o2, o3);
     }
 
-    public static final String concat_ws(String seq, Object o1, Object o2, Object o3) {
+    public static final String concat_ws(String seq, String o1, String o2, String o3) {
         if (o1 == null) {
             o1 = "";
         }

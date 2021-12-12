@@ -317,7 +317,7 @@ public class SqlUtil {
     }
 
     public static String[] parseLine(String line, char separators, char customQuote) {
-
+        line = line.replace(", ", ",");
         List<String> result = new ArrayList<>();
 
         //if empty, return!
@@ -336,28 +336,33 @@ public class SqlUtil {
         StringBuffer curVal = new StringBuffer();
         boolean inQuotes = false;
         boolean startCollectChar = false;
-        boolean doubleQuotesInColumn = false;
+//        boolean escape = false;
+//        boolean doubleQuotesInColumn = false;
 
         char[] chars = line.toCharArray();
-
-        for (char ch : chars) {
-
+        for (int i = 0; i < chars.length; i++) {
+            char ch = chars[i];
             if (inQuotes) {
                 startCollectChar = true;
                 if (ch == customQuote) {
+                    if (i + 1 < chars.length && chars[i+1] == customQuote) {
+                        curVal.append("'");
+                        ++i;
+                        continue;
+                    }
                     inQuotes = false;
-                    doubleQuotesInColumn = false;
+//                    doubleQuotesInColumn = false;
                 } else {
 
                     //Fixed : allow "" in custom quote enclosed
-                    if (ch == '\"') {
-                        if (!doubleQuotesInColumn) {
-                            curVal.append(ch);
-                            doubleQuotesInColumn = true;
-                        }
-                    } else {
+//                    if (ch == '\"') {
+//                        if (!doubleQuotesInColumn) {
+//                            curVal.append(ch);
+//                            doubleQuotesInColumn = true;
+//                        }
+//                    } else {
                         curVal.append(ch);
-                    }
+//                    }
 
                 }
             } else {

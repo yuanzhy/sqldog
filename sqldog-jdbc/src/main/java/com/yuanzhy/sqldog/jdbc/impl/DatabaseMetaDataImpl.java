@@ -721,10 +721,10 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
             builder.append(" and TABLE_CAT='").append(SqlUtil.escape(catalog)).append("'");
         }
         if (schemaPattern != null) {
-            builder.append(" and TABLE_SCHEM like '%").append(SqlUtil.escape(schemaPattern)).append("%").append("'");
+            builder.append(" and TABLE_SCHEM = '").append(SqlUtil.escape(schemaPattern)).append("'");
         }
         if (Util.isNotEmpty(tableNamePattern)) {
-            builder.append(" and TABLE_NAME like '%").append(SqlUtil.escape(tableNamePattern)).append("%").append("'");
+            builder.append(" and TABLE_NAME = '").append(SqlUtil.escape(tableNamePattern)).append("'");
         }
         if (types != null && types.length > 0) {
             List<String> legalTypes = Arrays.stream(TableType.values()).map(TableType::getName).collect(Collectors.toList());
@@ -767,13 +767,13 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
             builder.append(" and TABLE_CAT='").append(SqlUtil.escape(catalog)).append("'");
         }
         if (schemaPattern != null) {
-            builder.append(" and TABLE_SCHEM like '%").append(SqlUtil.escape(schemaPattern)).append("%").append("'");
+            builder.append(" and TABLE_SCHEM = '").append(SqlUtil.escape(schemaPattern)).append("'");
         }
         if (Util.isNotEmpty(tableNamePattern)) {
-            builder.append(" and TABLE_NAME like '%").append(SqlUtil.escape(tableNamePattern)).append("%").append("'");
+            builder.append(" and TABLE_NAME = '").append(SqlUtil.escape(tableNamePattern)).append("'");
         }
         if (Util.isNotEmpty(columnNamePattern)) {
-            builder.append(" and COLUMN_NAME like '%").append(SqlUtil.escape(columnNamePattern)).append("%").append("'");
+            builder.append(" and COLUMN_NAME = '").append(SqlUtil.escape(columnNamePattern)).append("'");
         }
         if (builder.length() > baseLen) {
             builder.replace(baseLen+1, baseLen+4, "where");
@@ -1024,7 +1024,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
             builder.append(" and TABLE_CATALOG='").append(SqlUtil.escape(catalog)).append("'");
         }
         if (Util.isNotEmpty(schemaPattern)) {
-            builder.append(" and TABLE_SCHEM like '%").append(SqlUtil.escape(schemaPattern)).append("%").append("'");
+            builder.append(" and TABLE_SCHEM = '").append(SqlUtil.escape(schemaPattern)).append("'");
         }
         if (builder.length() > baseLen) {
             builder.replace(baseLen+1, baseLen+4, "where");
