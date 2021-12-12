@@ -1,29 +1,32 @@
 package com.yuanzhy.sqldog.server.util;
 
-import com.yuanzhy.sqldog.core.constant.Consts;
-import com.yuanzhy.sqldog.server.sql.adapter.sys.ColumnSysTable;
-import com.yuanzhy.sqldog.server.sql.adapter.sys.PrimaryKeySysTable;
-import com.yuanzhy.sqldog.server.sql.adapter.sys.SchemaSysTable;
-import com.yuanzhy.sqldog.server.sql.adapter.sys.TableSysTable;
-import com.yuanzhy.sqldog.server.sql.function.ScalarFunctions;
-import com.yuanzhy.sqldog.server.sql.function.agg.StringAggFunction;
-import org.apache.calcite.jdbc.CalciteConnection;
-import org.apache.calcite.schema.SchemaPlus;
-import org.apache.calcite.schema.impl.AggregateFunctionImpl;
-import org.apache.calcite.schema.impl.ScalarFunctionImpl;
-import org.apache.calcite.sql.parser.SqlParser;
-import org.apache.calcite.sql.parser.impl.SqlParserImpl;
-import org.apache.calcite.tools.FrameworkConfig;
-import org.apache.calcite.tools.Frameworks;
-import org.apache.calcite.tools.Planner;
-import org.apache.calcite.util.ConversionUtil;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
+
+import org.apache.calcite.jdbc.CalciteConnection;
+import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.schema.impl.AggregateFunctionImpl;
+import org.apache.calcite.schema.impl.ScalarFunctionImpl;
+import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.parser.impl.SqlParserImpl;
+import org.apache.calcite.sql.validate.SqlConformanceEnum;
+import org.apache.calcite.tools.FrameworkConfig;
+import org.apache.calcite.tools.Frameworks;
+import org.apache.calcite.tools.Planner;
+import org.apache.calcite.util.ConversionUtil;
+
+import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.server.sql.adapter.CalciteParserFactory;
+import com.yuanzhy.sqldog.server.sql.adapter.sys.ColumnSysTable;
+import com.yuanzhy.sqldog.server.sql.adapter.sys.PrimaryKeySysTable;
+import com.yuanzhy.sqldog.server.sql.adapter.sys.SchemaSysTable;
+import com.yuanzhy.sqldog.server.sql.adapter.sys.TableSysTable;
+import com.yuanzhy.sqldog.server.sql.function.ScalarFunctions;
+import com.yuanzhy.sqldog.server.sql.function.agg.StringAggFunction;
 
 /**
  * @author yuanzhy
@@ -43,6 +46,7 @@ public class Calcites {
         //config.put("model", MyCsvTest.class.getClassLoader().getResource("my_csv_model.json").getPath());
         config.put("parserFactory", "com.yuanzhy.sqldog.server.sql.adapter.CalciteParserFactory");
         config.put("caseSensitive", "false");
+        config.put("conformance", "ORACLE_12");
         try {
             Connection conn = DriverManager.getConnection("jdbc:calcite:", config);
             CONNECTION = conn.unwrap(CalciteConnection.class);
@@ -56,12 +60,12 @@ public class Calcites {
         FRAMEWORK_CONFIG = Frameworks.newConfigBuilder()
                 .defaultSchema(SCHEMA_PLUS)
                 .parserConfig(SqlParser.config()
-                                .withParserFactory(SqlParserImpl.FACTORY)
+                                .withParserFactory(new CalciteParserFactory())
                                 .withCaseSensitive(false)
                         //.withQuoting(Quoting.BACK_TICK)
                         //.withQuotedCasing(Casing.TO_UPPER)
                         //.withUnquotedCasing(Casing.TO_UPPER)
-                        //.withConformance(SqlConformanceEnum.ORACLE_12)
+                        .withConformance(SqlConformanceEnum.ORACLE_12)
                 )
 //                .operatorTable(sqlStdOperatorTable)
                 .build();
