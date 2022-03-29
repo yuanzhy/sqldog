@@ -1,12 +1,16 @@
-package com.yuanzhy.sqldog.server.memory;
+package com.yuanzhy.sqldog.server.storage.builder;
 
+import com.yuanzhy.sqldog.core.builder.BaseBuilder;
+import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Constraint;
 import com.yuanzhy.sqldog.server.core.Serial;
 import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.core.builder.BaseBuilder;
 import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
-import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.storage.disk.DiskTable;
+import com.yuanzhy.sqldog.server.storage.memory.MemorySerial;
+import com.yuanzhy.sqldog.server.storage.memory.MemoryTable;
+import com.yuanzhy.sqldog.server.util.ConfigUtil;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -38,7 +42,7 @@ public class TableBuilder extends BaseBuilder<TableBuilder> {
     }
 
     public TableBuilder serial(long initValue, int step) {
-        this.serial = new SerialMemoryImpl(initValue, step);
+        this.serial = new MemorySerial(initValue, step);
         return this;
     }
 
@@ -57,9 +61,11 @@ public class TableBuilder extends BaseBuilder<TableBuilder> {
             Asserts.notNull(pkColumn, "primaryKey column '"+primaryKey.getColumnNames()[0]+"' not exists");
             // setSerial
             if (this.serial == null && pkColumn.getDataType().isSerial()) {
-                this.serial = new SerialMemoryImpl(0, 1); // 默认步长
+                this.serial = new MemorySerial(0, 1); // 默认步长
             }
         }
-        return new TableMemoryImpl(name, columnMap, primaryKey, constraint, serial);
+        return ConfigUtil.isDisk()
+                ? new DiskTable(name, columnMap, primaryKey, constraint, serial)
+                : new MemoryTable(name, columnMap, primaryKey, constraint, serial);
     }
 }

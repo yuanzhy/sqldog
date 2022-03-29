@@ -1,4 +1,4 @@
-package com.yuanzhy.sqldog.server.memory;
+package com.yuanzhy.sqldog.server.storage.memory;
 
 import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.core.Table;
@@ -13,11 +13,11 @@ import java.util.Set;
  * @version 1.0
  * @date 2021/10/24
  */
-public class SchemaMemoryImpl extends MemoryBase implements Schema {
+public class MemorySchema extends MemoryBase implements Schema {
     /** 表 */
     private final Map<String, Table> tables = new LinkedHashMap<>();
 
-    SchemaMemoryImpl(String name, String description) {
+    public MemorySchema(String name, String description) {
         super(name.toUpperCase());
         setDescription(description);
     }

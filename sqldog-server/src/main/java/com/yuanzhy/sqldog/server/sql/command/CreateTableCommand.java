@@ -6,9 +6,9 @@ import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.server.core.constant.DataType;
-import com.yuanzhy.sqldog.server.memory.ColumnBuilder;
-import com.yuanzhy.sqldog.server.memory.ConstraintBuilder;
-import com.yuanzhy.sqldog.server.memory.TableBuilder;
+import com.yuanzhy.sqldog.server.storage.builder.ColumnBuilder;
+import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
+import com.yuanzhy.sqldog.server.storage.builder.TableBuilder;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 
 /**

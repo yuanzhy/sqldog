@@ -1,4 +1,4 @@
-package com.yuanzhy.sqldog.server.memory;
+package com.yuanzhy.sqldog.server.storage.memory;
 
 import com.yuanzhy.sqldog.server.core.Serial;
 
@@ -9,16 +9,16 @@ import java.util.concurrent.atomic.AtomicLong;
  * @version 1.0
  * @date 2021/10/24
  */
-public class SerialMemoryImpl implements Serial {
+public class MemorySerial implements Serial {
 
     private final int step;
     private final AtomicLong value;
 
-    public SerialMemoryImpl(long initValue) {
+    public MemorySerial(long initValue) {
         this(initValue, 1);
     }
 
-    public SerialMemoryImpl(long initValue, int step) {
+    public MemorySerial(long initValue, int step) {
         this.value = new AtomicLong(initValue);
         this.step = step;
     }

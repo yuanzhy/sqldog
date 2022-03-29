@@ -1,5 +1,6 @@
-package com.yuanzhy.sqldog.server.memory;
+package com.yuanzhy.sqldog.server.storage.builder;
 
+import com.yuanzhy.sqldog.server.storage.memory.MemoryColumn;
 import org.apache.commons.lang3.StringUtils;
 
 import com.yuanzhy.sqldog.core.builder.BaseBuilder;
@@ -57,6 +58,6 @@ public class ColumnBuilder extends BaseBuilder<ColumnBuilder> {
         if (defaultValue != null && dataType == DataType.CHAR) {
             defaultValue = StringUtils.rightPad(defaultValue.toString(), this.precision);
         }
-        return new ColumnMemoryImpl(name, dataType, precision, scale, nullable, defaultValue);
+        return new MemoryColumn(name, dataType, precision, scale, nullable, defaultValue);
     }
 }

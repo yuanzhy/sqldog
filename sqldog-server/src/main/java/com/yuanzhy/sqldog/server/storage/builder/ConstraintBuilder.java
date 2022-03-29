@@ -1,9 +1,10 @@
-package com.yuanzhy.sqldog.server.memory;
+package com.yuanzhy.sqldog.server.storage.builder;
 
 import com.yuanzhy.sqldog.core.builder.BaseBuilder;
 import com.yuanzhy.sqldog.server.core.Constraint;
 import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.storage.memory.MemoryConstraint;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -44,6 +45,6 @@ public class ConstraintBuilder extends BaseBuilder<ConstraintBuilder> {
             this.name = type.name() + "_" + columnNames.stream().map(String::toUpperCase).collect(
                     Collectors.joining("_"));
         }
-        return new ConstraintMemoryImpl(name, type, columnNames.toArray(new String[0]));
+        return new MemoryConstraint(name, type, columnNames.toArray(new String[0]));
     }
 }

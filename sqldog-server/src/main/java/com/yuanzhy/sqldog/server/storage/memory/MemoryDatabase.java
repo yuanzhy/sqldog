@@ -1,18 +1,18 @@
-package com.yuanzhy.sqldog.server.memory;
+package com.yuanzhy.sqldog.server.storage.memory;
+
+import com.yuanzhy.sqldog.server.core.Database;
+import com.yuanzhy.sqldog.server.core.Schema;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-
-import com.yuanzhy.sqldog.server.core.Database;
-import com.yuanzhy.sqldog.server.core.Schema;
 
 /**
  * @author yuanzhy
  * @version 1.0
  * @date 2021/10/24
  */
-public class DatabaseMemoryImpl extends MemoryBase implements Database {
+public class MemoryDatabase extends MemoryBase implements Database {
     /** 编码 */
     private final String encoding;
     /** 表空间 */
@@ -20,7 +20,7 @@ public class DatabaseMemoryImpl extends MemoryBase implements Database {
     /** 模式 */
     private final Map<String, Schema> schemas = new LinkedHashMap<>();
 
-    DatabaseMemoryImpl(String name, String encoding, String description, String tablespace) {
+    public MemoryDatabase(String name, String encoding, String description, String tablespace) {
         super(name.toUpperCase());
         this.encoding = encoding;
         this.description = description;

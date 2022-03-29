@@ -1,4 +1,4 @@
-package com.yuanzhy.sqldog.server.memory;
+package com.yuanzhy.sqldog.server.storage.memory;
 
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.constant.DataType;
@@ -8,7 +8,7 @@ import com.yuanzhy.sqldog.server.core.constant.DataType;
  * @version 1.0
  * @date 2021/10/24
  */
-public class ColumnMemoryImpl extends MemoryBase implements Column {
+public class MemoryColumn extends MemoryBase implements Column {
     /** 数据类型 */
     private final DataType dataType;
     /** 数据长度 */
@@ -20,7 +20,7 @@ public class ColumnMemoryImpl extends MemoryBase implements Column {
 
     private final Object defaultValue;
 
-    ColumnMemoryImpl(String name, DataType dataType, int precision, int scale, boolean nullable, Object defaultValue) {
+    public MemoryColumn(String name, DataType dataType, int precision, int scale, boolean nullable, Object defaultValue) {
         super(name.toUpperCase());
         this.dataType = dataType;
         this.precision = precision;

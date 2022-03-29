@@ -1,4 +1,4 @@
-package com.yuanzhy.sqldog.server.memory;
+package com.yuanzhy.sqldog.server.storage.memory;
 
 import com.google.common.collect.Sets;
 import com.yuanzhy.sqldog.core.util.Asserts;
@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -40,7 +39,7 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @date 2021/10/24
  */
-public class TableMemoryImpl extends MemoryBase implements Table, DML {
+public class MemoryTable extends MemoryBase implements Table, DML {
 
     private static final String UNITED_SEP = "#~^~#";
     /** 列 */
@@ -65,7 +64,7 @@ public class TableMemoryImpl extends MemoryBase implements Table, DML {
      */
     private final Map<String, Set<String>> uniqueMap = new HashMap<>();
 
-    TableMemoryImpl(String name, Map<String, Column> columnMap, Constraint primaryKey, Set<Constraint> constraint, Serial serial) {
+    public MemoryTable(String name, Map<String, Column> columnMap, Constraint primaryKey, Set<Constraint> constraint, Serial serial) {
         super(name.toUpperCase());
         this.columnMap = columnMap;
         this.primaryKey = primaryKey;

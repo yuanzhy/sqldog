@@ -23,6 +23,8 @@ public class ConfigUtil {
      */
     private static Properties props = new Properties();
 
+    private static final String DATA_PATH;
+
     static {
         // 先从平级目录找config.properties
         InputStream in = null;
@@ -41,6 +43,13 @@ public class ConfigUtil {
         } finally {
             IOUtils.closeQuietly(in);
         }
+        // dataPath
+        String dataPath = getProperty("server.storage.path", "data");
+        if (!dataPath.startsWith("/")) {
+            dataPath = new File(getJarPath()).getParent() + "/" + dataPath;
+            new File(dataPath).mkdirs();
+        }
+        DATA_PATH = dataPath;
     }
 
     public static String getProperty(String key) {
@@ -66,5 +75,13 @@ public class ConfigUtil {
         String path = ConfigUtil.class.getProtectionDomain().getCodeSource().getLocation().getPath();
         String result = new File(path).getParentFile().getAbsolutePath();
         return CodecUtil.decode(result).replace("\\", "/");
+    }
+
+    public static boolean isDisk() {
+        return "disk".equals(getProperty("server.storage.mode"));
+    }
+
+    public static String getDataPath() {
+        return DATA_PATH;
     }
 }

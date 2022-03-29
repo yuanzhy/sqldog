@@ -1,6 +1,8 @@
-package com.yuanzhy.sqldog.server.memory;
+package com.yuanzhy.sqldog.server.storage.memory;
 
 import com.yuanzhy.sqldog.server.core.Base;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -9,6 +11,7 @@ import com.yuanzhy.sqldog.server.core.Base;
  */
 public abstract class MemoryBase implements Base {
 
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final String name;
     protected String description = "";
 
