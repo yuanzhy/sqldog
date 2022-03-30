@@ -11,11 +11,13 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class MemoryBase implements Base {
 
-    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+    protected final transient Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final String name;
+    protected final transient Base parent;
     protected String description = "";
 
-    protected MemoryBase(String name) {
+    protected MemoryBase(Base parent, String name) {
+        this.parent = parent;
         this.name = name;
     }
 
@@ -35,6 +37,7 @@ public abstract class MemoryBase implements Base {
             description = "";
         }
         this.description = description;
+        this.persistence();
     }
 
 }

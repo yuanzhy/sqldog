@@ -18,7 +18,7 @@ public class MemoryConstraint extends MemoryBase implements Constraint {
     private final String[] columnNames;
 
     public MemoryConstraint(String name, ConstraintType type, String[] columnNames) {
-        super(name.toUpperCase());
+        super(null, name.toUpperCase());
         this.type = type;
         this.columnNames = columnNames;
     }

@@ -78,7 +78,11 @@ public class ConfigUtil {
     }
 
     public static boolean isDisk() {
-        return "disk".equals(getProperty("server.storage.mode"));
+        return "disk".equals(getProperty("server.storage.mode", "disk"));
+    }
+
+    public static boolean isMemory() {
+        return "memory".equals(getProperty("server.storage.mode"));
     }
 
     public static String getDataPath() {

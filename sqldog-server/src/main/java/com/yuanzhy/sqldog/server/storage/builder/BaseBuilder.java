@@ -1,4 +1,6 @@
-package com.yuanzhy.sqldog.core.builder;
+package com.yuanzhy.sqldog.server.storage.builder;
+
+import com.yuanzhy.sqldog.server.core.Base;
 
 /**
  *
@@ -7,6 +9,7 @@ package com.yuanzhy.sqldog.core.builder;
  */
 public abstract class BaseBuilder<T> {
 
+    protected Base parent;
     protected String name;
     protected String description;
 
@@ -17,6 +20,11 @@ public abstract class BaseBuilder<T> {
 
     public T description(String description) {
         this.description = description;
+        return getSelf();
+    }
+
+    public T parent(Base parent) {
+        this.parent = parent;
         return getSelf();
     }
 

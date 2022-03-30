@@ -12,4 +12,8 @@ public interface StorageConst {
     String DEF_DATABASE_NAME = "DEFAULT";
 
     String DEF_SCHEMA_NAME = "PUBLIC";
+
+    String TABLE_DATA_PATH = "tbd";
+
+    String TABLE_INDEX_PATH = "idx";
 }

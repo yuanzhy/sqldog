@@ -1,6 +1,5 @@
 package com.yuanzhy.sqldog.server.storage.builder;
 
-import com.yuanzhy.sqldog.core.builder.BaseBuilder;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.storage.disk.DiskSchema;
@@ -21,8 +20,9 @@ public class SchemaBuilder extends BaseBuilder<SchemaBuilder> {
 
     public Schema build() {
         Asserts.hasText(name, "模式名称不能为空");
+        Asserts.notNull(parent, "模式parent不能为空");
         return ConfigUtil.isDisk()
-                ? new DiskSchema(name, description)
-                : new MemorySchema(name, description);
+                ? new DiskSchema(parent, name, description)
+                : new MemorySchema(parent, name, description);
     }
 }

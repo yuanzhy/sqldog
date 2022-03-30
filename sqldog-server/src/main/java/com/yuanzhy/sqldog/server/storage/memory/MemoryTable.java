@@ -2,6 +2,7 @@ package com.yuanzhy.sqldog.server.storage.memory;
 
 import com.google.common.collect.Sets;
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.core.Base;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Constraint;
 import com.yuanzhy.sqldog.server.core.DML;
@@ -64,8 +65,8 @@ public class MemoryTable extends MemoryBase implements Table, DML {
      */
     private final Map<String, Set<String>> uniqueMap = new HashMap<>();
 
-    public MemoryTable(String name, Map<String, Column> columnMap, Constraint primaryKey, Set<Constraint> constraint, Serial serial) {
-        super(name.toUpperCase());
+    public MemoryTable(Base parent, String name, Map<String, Column> columnMap, Constraint primaryKey, Set<Constraint> constraint, Serial serial) {
+        super(parent, name.toUpperCase());
         this.columnMap = columnMap;
         this.primaryKey = primaryKey;
         this.constraint = constraint;

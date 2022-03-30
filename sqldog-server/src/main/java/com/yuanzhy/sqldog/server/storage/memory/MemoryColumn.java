@@ -21,7 +21,7 @@ public class MemoryColumn extends MemoryBase implements Column {
     private final Object defaultValue;
 
     public MemoryColumn(String name, DataType dataType, int precision, int scale, boolean nullable, Object defaultValue) {
-        super(name.toUpperCase());
+        super(null, name.toUpperCase());
         this.dataType = dataType;
         this.precision = precision;
         this.scale = scale;

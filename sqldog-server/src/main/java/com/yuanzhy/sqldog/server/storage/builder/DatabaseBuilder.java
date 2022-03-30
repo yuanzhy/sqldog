@@ -1,6 +1,5 @@
 package com.yuanzhy.sqldog.server.storage.builder;
 
-import com.yuanzhy.sqldog.core.builder.BaseBuilder;
 import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.storage.disk.DiskDatabase;

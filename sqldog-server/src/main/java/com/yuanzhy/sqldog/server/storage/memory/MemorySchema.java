@@ -1,5 +1,7 @@
 package com.yuanzhy.sqldog.server.storage.memory;
 
+import com.yuanzhy.sqldog.server.core.Base;
+import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.core.Table;
 
@@ -15,10 +17,10 @@ import java.util.Set;
  */
 public class MemorySchema extends MemoryBase implements Schema {
     /** 表 */
-    private final Map<String, Table> tables = new LinkedHashMap<>();
+    private transient final Map<String, Table> tables = new LinkedHashMap<>();
 
-    public MemorySchema(String name, String description) {
-        super(name.toUpperCase());
+    public MemorySchema(Base parent, String name, String description) {
+        super(parent, name.toUpperCase());
         setDescription(description);
     }
 

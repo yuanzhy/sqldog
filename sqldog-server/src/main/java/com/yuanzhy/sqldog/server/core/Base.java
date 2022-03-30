@@ -17,4 +17,6 @@ public interface Base {
      * 删除后的清理操作
      */
     void drop();
+
+    default void persistence() {}
 }

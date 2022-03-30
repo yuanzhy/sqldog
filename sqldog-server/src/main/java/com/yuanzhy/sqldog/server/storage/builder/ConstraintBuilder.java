@@ -1,6 +1,5 @@
 package com.yuanzhy.sqldog.server.storage.builder;
 
-import com.yuanzhy.sqldog.core.builder.BaseBuilder;
 import com.yuanzhy.sqldog.server.core.Constraint;
 import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.core.util.Asserts;
