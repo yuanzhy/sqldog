@@ -1,20 +1,18 @@
 package com.yuanzhy.sqldog.server.util;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Database;
+import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.sql.decorator.DatabaseDecorator;
 import com.yuanzhy.sqldog.server.storage.builder.DatabaseBuilder;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.ArrayUtils;
+import com.yuanzhy.sqldog.server.storage.builder.SchemaBuilder;
+import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,43 +28,33 @@ public class Databases {
     static {
         final String DEF_NAME = StorageConst.DEF_DATABASE_NAME;
         if (ConfigUtil.isDisk()) {
-            try {
-                loadDbFromDisk();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            loadDbFromDisk();
         } else {
             DATABASES.put(DEF_NAME, new DatabaseDecorator(new DatabaseBuilder().name(DEF_NAME).description("sqldog default db").build()));
         }
     }
 
-    private static void loadDbFromDisk() throws IOException {
-        String dataPath = ConfigUtil.getDataPath();
-        File dataFolder = new File(dataPath);
-        File[] dbFolders = dataFolder.listFiles(pathname -> pathname.isDirectory());
-        if (ArrayUtils.isEmpty(dbFolders)) {
+    private static void loadDbFromDisk() {
+        Persistence persistence = PersistenceFactory.get();
+        List<String> dbPaths = persistence.list("");
+        if (dbPaths.isEmpty()) {
             // 创建一个default库和PUBLIC schema
-            File defaultFolder = new File(dataFolder, StorageConst.DEF_DATABASE_NAME);
-            File defaultMeta = new File(defaultFolder, StorageConst.META);
-            final String defMeta = "{\"name\": \"default\",\"encoding\": \"UTF-8\",\"description\": \"sqldog default db\"}";
-            FileUtils.writeStringToFile(defaultMeta, defMeta, "UTF-8");
-            File publicFolder = new File(defaultFolder, StorageConst.DEF_SCHEMA_NAME);
-            File publicMeta = new File(publicFolder, StorageConst.META);
-            final String pubMeta = "{\"name\": \"PUBLIC\",\"description\": \"The default schema\"}";
-            FileUtils.writeStringToFile(publicMeta, pubMeta, "UTF-8");
             Database db = new DatabaseDecorator(new DatabaseBuilder().name(StorageConst.DEF_DATABASE_NAME).description("sqldog default db").build());
+            db.persistence();
+            Schema schema = new SchemaBuilder().name(StorageConst.DEF_SCHEMA_NAME).description("The default schema").parent(db).build();
+            db.addSchema(schema);
             DATABASES.put(StorageConst.DEF_DATABASE_NAME, db);
         } else {
-            for (File dbFolder : dbFolders) {
-                File dbMetaFile = new File(dbFolder, StorageConst.META);
-                if (dbMetaFile.exists()) {
-                    String name = dbMetaFile.getName();
-                    JSONObject dbMeta = JSON.parseObject(FileUtils.readFileToString(dbMetaFile, "UTF-8"));
-                    Database db = new DatabaseDecorator(
-                            new DatabaseBuilder().name(name).encoding(dbMeta.getString("encoding"))
-                                    .tablespace(dbMeta.getString("tablespace")).description(dbMeta.getString("description")).build());
-                    DATABASES.put(name, db);
+            for (String dbPath : dbPaths) {
+                Map<String, Object> map = persistence.read(persistence.resolvePath(dbPath, StorageConst.META_NAME)); // 数据库名称就是相对path
+                if (map.isEmpty()) {
+                    continue;
                 }
+                String dbName = (String)map.get("name");
+                Database db = new DatabaseDecorator(
+                        new DatabaseBuilder().name(dbName).encoding((String)map.get("encoding"))
+                                .tablespace((String)map.get("tablespace")).description((String)map.get("description")).build());
+                DATABASES.put(dbName, db);
             }
         }
     }

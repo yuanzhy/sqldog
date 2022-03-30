@@ -1,16 +1,21 @@
 package com.yuanzhy.sqldog.server.storage.disk;
 
 import com.alibaba.fastjson.JSONObject;
-import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Base;
 import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
+import com.yuanzhy.sqldog.server.core.constant.DataType;
+import com.yuanzhy.sqldog.server.storage.builder.ColumnBuilder;
+import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
+import com.yuanzhy.sqldog.server.storage.builder.TableBuilder;
 import com.yuanzhy.sqldog.server.storage.memory.MemorySchema;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
 
-import java.io.File;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author yuanzhy
@@ -18,47 +23,55 @@ import java.io.File;
  * @date 2022/3/29
  */
 public class DiskSchema extends MemorySchema implements Schema {
-    /** 相对路径: 相对于数据根目录的路径 */
-    private transient String relPath;
-
+    private final String storagePath;
+    private final Persistence persistence;
     public DiskSchema(Base parent, String name, String description) {
         super(parent, name, description);
-        Persistence persistence = PersistenceFactory.get();
-//        persistence.list();
-        // TODO 从硬盘读出所有的表
-//        Table table = new TableBuilder().name("PERSON")
-//                .addColumn(new ColumnBuilder().name("ID").dataType(DataType.INT).nullable(false).build())
-//                .addColumn(new ColumnBuilder().name("NAME").dataType(DataType.VARCHAR).precision(50).build())
-//                .addColumn(new ColumnBuilder().name("AGE").dataType(DataType.INT).build())
-//                .addConstraint(new ConstraintBuilder().type(ConstraintType.PRIMARY_KEY).addColumnName("ID").build())
-//                .build();
-//        super.addTable(table);
+        this.persistence = PersistenceFactory.get();
+        this.storagePath = persistence.resolvePath(this);
+        List<String> tablePaths = persistence.list(storagePath);
+        for (String tablePath : tablePaths) {
+            Map<String, Object> map = persistence.read(persistence.resolvePath(tablePath, StorageConst.META_NAME));
+            if (map.isEmpty()) {
+                continue;
+            }
+            TableBuilder tb = new TableBuilder().parent(this).name((String)map.get("name")).description((String)map.get("description"));
+            List<Map<String, Object>> columns = (List<Map<String, Object>>) map.get("columns");
+            for (Map<String, Object> c : columns) {
+                tb.addColumn(new ColumnBuilder().name((String)c.get("name")).dataType(DataType.of((String)c.get("dataType")))
+                        .precision((int)c.get("precision")).scale((int)c.get("scale")).nullable((boolean)c.get("nullable"))
+                        .defaultValue(map.get("defaultValue")).build());
+            }
+            List<Map<String, Object>> constraints = (List<Map<String, Object>>) map.get("constraints");
+            for (Map<String, Object> c : constraints) {
+                ConstraintBuilder cb = new ConstraintBuilder().name((String)c.get("name")).type(ConstraintType.valueOf((String)c.get("type")));
+                List<String> columnNames = (List<String>) c.get("columnNames");
+                for (String columnName : columnNames) {
+                    cb.addColumnName(columnName);
+                }
+                tb.addConstraint(cb.build());
+            }
+            super.addTable(tb.build());
+        }
     }
 
     @Override
     public void addTable(Table table) {
         super.addTable(table);
-        DiskTable diskTable = (DiskTable) table;
-        diskTable.initPath(relPath);
-        diskTable.persistence();
+        table.persistence();
     }
 
     @Override
     public void drop() {
         super.drop();
-        PersistenceFactory.get().delete(relPath);
+        persistence.delete(persistence.resolvePath(this));
     }
 
     @Override
     public void persistence() {
-        Asserts.hasText(relPath, "The path must not null");
-        File metaFile = new File(relPath, StorageConst.META);
+        String relPath = persistence.resolvePath(this, StorageConst.META_NAME);
         JSONObject json = new JSONObject();
         json.fluentPut("name", getName()).fluentPut("description", getDescription());
-        PersistenceFactory.get().write(metaFile.getAbsolutePath(), json);
-    }
-
-    void initPath(String basePath) {
-        this.relPath = basePath + "/" + getName();
+        persistence.write(relPath, json);
     }
 }

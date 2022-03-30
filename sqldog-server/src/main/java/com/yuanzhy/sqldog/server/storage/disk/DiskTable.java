@@ -2,11 +2,11 @@ package com.yuanzhy.sqldog.server.storage.disk;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Base;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Constraint;
+import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.core.Serial;
 import com.yuanzhy.sqldog.server.core.Table;
 import com.yuanzhy.sqldog.server.storage.memory.MemoryTable;
@@ -22,11 +22,12 @@ import java.util.Set;
  * @date 2022/3/29
  */
 public class DiskTable extends MemoryTable implements Table {
-    /** 相对路径: 相对于数据根目录的路径 */
-    private String relPath;
-
+    private final String storagePath;
+    private final Persistence persistence;
     public DiskTable(Base parent, String name, Map<String, Column> columnMap, Constraint primaryKey, Set<Constraint> constraint, Serial serial) {
         super(parent, name, columnMap, primaryKey, constraint, serial);
+        this.persistence = PersistenceFactory.get();
+        this.storagePath = persistence.resolvePath(this);
     }
 
     @Override
@@ -47,14 +48,14 @@ public class DiskTable extends MemoryTable implements Table {
     @Override
     public void truncate() {
         super.truncate();
-        PersistenceFactory.get().delete(relPath + "/" + StorageConst.TABLE_DATA_PATH);
-        PersistenceFactory.get().delete(relPath + "/" + StorageConst.TABLE_INDEX_PATH);
+        persistence.delete(persistence.resolvePath(storagePath, StorageConst.TABLE_DATA_PATH));
+        persistence.delete(persistence.resolvePath(storagePath, StorageConst.TABLE_INDEX_PATH));
     }
 
     @Override
     public void drop() {
         super.drop();
-        PersistenceFactory.get().delete(relPath);
+        persistence.delete(storagePath);
     }
 
     /*
@@ -87,7 +88,6 @@ public class DiskTable extends MemoryTable implements Table {
      */
     @Override
     public void persistence() {
-        Asserts.hasText(relPath, "The path must not null");
         // columns
         JSONArray columnsJson = new JSONArray();
         for (Column c : getColumns().values()) {
@@ -109,10 +109,6 @@ public class DiskTable extends MemoryTable implements Table {
         json.fluentPut("name", getName()).fluentPut("description", getDescription())
                 .fluentPut("columns", columnsJson).fluentPut("constraints", constraintsJson);
 
-        PersistenceFactory.get().write(relPath + "/" + StorageConst.META, json);
-    }
-
-    void initPath(String basePath) {
-        this.relPath = basePath + "/" + getName();
+        persistence.write(persistence.resolvePath(storagePath, StorageConst.META_NAME), json);
     }
 }

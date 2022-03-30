@@ -18,5 +18,7 @@ public interface Base {
      */
     void drop();
 
+    Base getParent();
+
     default void persistence() {}
 }

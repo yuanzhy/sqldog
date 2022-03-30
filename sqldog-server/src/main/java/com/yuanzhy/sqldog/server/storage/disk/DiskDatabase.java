@@ -19,18 +19,21 @@ import java.util.Map;
  */
 public class DiskDatabase extends MemoryDatabase implements Database {
 
+    private final String storagePath;
+    private final Persistence persistence;
     public DiskDatabase(String name, String encoding, String description, String tablespace) {
         super(name, encoding, description, tablespace);
-        Persistence persistence = PersistenceFactory.get();
-        List<String> schemePaths = persistence.list(getName());
+        this.persistence = PersistenceFactory.get();
+        this.storagePath = persistence.resolvePath(this);
+        List<String> schemePaths = persistence.list(storagePath);
         // 初始化模式
         for (String schemePath : schemePaths) {
-            Map<String, Object> metaData = persistence.read(schemePath + "/" + StorageConst.META);
+            Map<String, Object> metaData = persistence.read(persistence.resolvePath(schemePath, StorageConst.META_NAME));
             if (metaData.isEmpty()) {
                 continue;
             }
             String schName = (String) metaData.get("name");
-            String schDesc = (String) metaData.get("description"); // TODO 可能有循环依赖问题
+            String schDesc = (String) metaData.get("description");
             super.addSchema(new SchemaBuilder().parent(this).name(schName).description(schDesc).build());
         }
     }
@@ -38,21 +41,19 @@ public class DiskDatabase extends MemoryDatabase implements Database {
     @Override
     public void addSchema(Schema schema) {
         super.addSchema(schema);
-        DiskSchema diskSchema = (DiskSchema) schema;
-        diskSchema.initPath(getName());
-        diskSchema.persistence();
+        schema.persistence();
     }
 
     @Override
     public void drop() {
         super.drop();
-        PersistenceFactory.get().delete(getName());
+        persistence.delete(storagePath);
     }
 
     @Override
     public void persistence() {
         JSONObject data = new JSONObject();
         data.fluentPut("name", getName()).fluentPut("encoding", getEncoding()).fluentPut("description", getDescription()).fluentPut("tablespace", getTablespace());
-        PersistenceFactory.get().write(getName() + "/" + StorageConst.META, data);
+        persistence.write(persistence.resolvePath(storagePath, StorageConst.META_NAME), data);
     }
 }

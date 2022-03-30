@@ -40,4 +40,8 @@ public abstract class MemoryBase implements Base {
         this.persistence();
     }
 
+    @Override
+    public Base getParent() {
+        return parent;
+    }
 }

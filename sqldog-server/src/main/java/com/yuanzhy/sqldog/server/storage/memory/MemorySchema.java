@@ -1,7 +1,6 @@
 package com.yuanzhy.sqldog.server.storage.memory;
 
 import com.yuanzhy.sqldog.server.core.Base;
-import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.core.Table;
 
@@ -21,7 +20,7 @@ public class MemorySchema extends MemoryBase implements Schema {
 
     public MemorySchema(Base parent, String name, String description) {
         super(parent, name.toUpperCase());
-        setDescription(description);
+        this.description = description;
     }
 
     @Override

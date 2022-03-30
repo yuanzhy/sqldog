@@ -28,7 +28,7 @@ public class CreateTableCommand extends AbstractSqlCommand {
         super.parseSchema(sqlSuffix);
         final String tableName = parseTableName(sqlSuffix);
         TableBuilder tb = new TableBuilder();
-        tb.name(tableName);
+        tb.name(tableName).parent(schema);
         String main = StringUtils.substringAfter(sqlSuffix, "(").trim();
         String colInfoStr = StringUtils.substringBeforeLast(main, ")").trim();
         String halfLine = null;

@@ -6,6 +6,7 @@ import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.util.ConfigUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,12 +26,17 @@ public class DiskPersistence implements Persistence {
     private final String rootPath;
     public DiskPersistence(Codec codec) {
         this.codec = codec;
-        this.rootPath = ConfigUtil.getDataPath();
+        String dataPath = ConfigUtil.getProperty("server.storage.path", "data");
+        if (!dataPath.startsWith("/")) {
+            dataPath = new File(ConfigUtil.getJarPath()).getParent() + "/" + dataPath;
+            new File(dataPath).mkdirs();
+        }
+        rootPath = dataPath;
     }
 
     @Override
-    public Map<String, Object> read(String relativePath) throws PersistenceException {
-        File f = new File(rootPath, relativePath);
+    public Map<String, Object> read(String storagePath) throws PersistenceException {
+        File f = new File(rootPath, storagePath);
         if (!f.exists()) {
             return Collections.emptyMap();
         }
@@ -43,30 +49,38 @@ public class DiskPersistence implements Persistence {
     }
 
     @Override
-    public void write(String relativePath, Map<String, Object> data) throws PersistenceException {
+    public void write(String storagePath, Map<String, Object> data) throws PersistenceException {
         String output = codec.encode(data);
         try {
-            FileUtils.writeStringToFile(new File(rootPath, relativePath), output,"UTF-8");
+            FileUtils.writeStringToFile(new File(rootPath, storagePath), output,"UTF-8");
         } catch (IOException e) {
             throw new PersistenceException(e);
         }
     }
 
     @Override
-    public void delete(String relativePath) throws PersistenceException {
+    public void delete(String storagePath) throws PersistenceException {
         try {
-            FileUtils.delete(new File(rootPath, relativePath));
+            FileUtils.delete(new File(rootPath, storagePath));
         } catch (IOException e) {
             throw new PersistenceException(e);
         }
     }
 
     @Override
-    public List<String> list(String relativePath) throws PersistenceException {
-        File[] folders = new File(rootPath, relativePath).listFiles(pathname -> pathname.isDirectory());
+    public List<String> list(String storagePath) throws PersistenceException {
+        File[] folders = new File(rootPath, storagePath).listFiles(pathname -> pathname.isDirectory());
         if (ArrayUtils.isEmpty(folders)) {
             return Collections.emptyList();
         }
-        return Arrays.stream(folders).map(f -> relativePath + "/" + f.getName()).collect(Collectors.toList());
+        return Arrays.stream(folders).map(f -> resolvePath(storagePath, f.getName())).collect(Collectors.toList());
+    }
+
+    @Override
+    public String resolvePath(String... paths) {
+        if (ArrayUtils.isEmpty(paths)) {
+            return "";
+        }
+        return Arrays.stream(paths).filter(path -> StringUtils.isNotEmpty(path)).collect(Collectors.joining("/"));
     }
 }

@@ -7,7 +7,7 @@ package com.yuanzhy.sqldog.server.common;
  */
 public interface StorageConst {
 
-    String META = ".meta";
+    String META_NAME = ".meta";
 
     String DEF_DATABASE_NAME = "DEFAULT";
 

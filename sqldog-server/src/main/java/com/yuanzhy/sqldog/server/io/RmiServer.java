@@ -7,6 +7,7 @@ import com.yuanzhy.sqldog.core.rmi.RMIServer;
 import com.yuanzhy.sqldog.core.rmi.Response;
 import com.yuanzhy.sqldog.core.rmi.ResponseImpl;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.sql.PreparedSqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlParser;
@@ -66,6 +67,7 @@ public class RmiServer implements Server {
             RMIServer remoteHandler = new RMIServerImpl();
             Registry registry = LocateRegistry.createRegistry(port);
             registry.bind(Consts.SERVER_NAME, remoteHandler);
+            Databases.getDatabase(StorageConst.DEF_DATABASE_NAME); // 触发一下初始化
             log.info("Sqldog server ready");
             // 如果不想再让该对象被继续调用，使用下面一行
             // UnicastRemoteObject.unexportObject(remoteMath, false);
@@ -126,7 +128,7 @@ public class RmiServer implements Server {
         private final int serialNum;
         private final String version;
         private final Map<String, PreparedSqlCommand> preparedSqlCache = new LRUCache<>(50);
-        private String currentSchema = Databases.DEFAULT_SCHEMA;
+        private String currentSchema = StorageConst.DEF_SCHEMA_NAME;
         ExecutorImpl(String clientHost, int serialNum) {
             this.clientHost = clientHost;
             this.serialNum = serialNum;

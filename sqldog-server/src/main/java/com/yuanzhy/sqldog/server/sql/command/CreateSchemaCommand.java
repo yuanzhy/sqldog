@@ -24,7 +24,7 @@ public class CreateSchemaCommand extends AbstractSqlCommand {
         // create schema SCHEMA_NAME
         String schemaName = sql.substring("CREATE SCHEMA ".length());
         schemaName = StringUtils.substringBefore(schemaName, " ");
-        Schema schema = new SchemaBuilder().name(schemaName).build();
+        Schema schema = new SchemaBuilder().parent(Databases.getDefault()).name(schemaName).build();
         Databases.getDefault().addSchema(schema);
         return new SqlResultBuilder(StatementType.DDL).schema(schemaName).build();
     }

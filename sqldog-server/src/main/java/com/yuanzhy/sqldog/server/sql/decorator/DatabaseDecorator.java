@@ -1,11 +1,12 @@
 package com.yuanzhy.sqldog.server.sql.decorator;
 
-import java.util.Set;
-
+import com.yuanzhy.sqldog.server.core.Base;
 import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.sql.adapter.CalciteSchema;
 import com.yuanzhy.sqldog.server.util.Calcites;
+
+import java.util.Set;
 
 /**
  *
@@ -73,5 +74,15 @@ public class DatabaseDecorator implements Database {
             calciteSchema.removeSubSchema(schemaName);
         }
         delegate.drop();
+    }
+
+    @Override
+    public Base getParent() {
+        return delegate.getParent();
+    }
+
+    @Override
+    public void persistence() {
+        delegate.persistence();
     }
 }
