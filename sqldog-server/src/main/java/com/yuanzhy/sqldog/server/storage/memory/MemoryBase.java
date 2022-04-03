@@ -1,5 +1,6 @@
 package com.yuanzhy.sqldog.server.storage.memory;
 
+import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.core.Base;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,17 +13,22 @@ import org.slf4j.LoggerFactory;
 public abstract class MemoryBase implements Base {
 
     protected final transient Logger logger = LoggerFactory.getLogger(this.getClass());
-    protected final String name;
     protected final transient Base parent;
+    protected String name;
     protected String description = "";
+
+    protected MemoryBase(Base parent) {
+        this.parent = parent;
+    }
 
     protected MemoryBase(Base parent, String name) {
         this.parent = parent;
-        this.name = name;
+        this.name = name.toUpperCase();
     }
 
     @Override
     public String getName() {
+        Asserts.hasText(name, "The name is null");
         return name;
     }
 
@@ -37,11 +43,16 @@ public abstract class MemoryBase implements Base {
             description = "";
         }
         this.description = description;
-        this.persistence();
     }
 
     @Override
     public Base getParent() {
         return parent;
+    }
+
+    @Override
+    public void rename(String newName) {
+        Asserts.hasText(newName, "The newName is must not be null");
+        this.name = newName.toUpperCase();
     }
 }

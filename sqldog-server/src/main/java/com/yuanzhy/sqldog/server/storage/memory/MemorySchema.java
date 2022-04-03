@@ -18,6 +18,10 @@ public class MemorySchema extends MemoryBase implements Schema {
     /** 表 */
     private transient final Map<String, Table> tables = new LinkedHashMap<>();
 
+    protected MemorySchema(Base parent) {
+        super(parent);
+    }
+
     public MemorySchema(Base parent, String name, String description) {
         super(parent, name.toUpperCase());
         this.description = description;

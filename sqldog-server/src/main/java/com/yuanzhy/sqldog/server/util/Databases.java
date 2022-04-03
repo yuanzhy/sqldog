@@ -8,6 +8,7 @@ import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.sql.decorator.DatabaseDecorator;
 import com.yuanzhy.sqldog.server.storage.builder.DatabaseBuilder;
 import com.yuanzhy.sqldog.server.storage.builder.SchemaBuilder;
+import com.yuanzhy.sqldog.server.storage.disk.DiskDatabase;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
 import org.apache.commons.lang3.StringUtils;
 
@@ -40,21 +41,13 @@ public class Databases {
         if (dbPaths.isEmpty()) {
             // 创建一个default库和PUBLIC schema
             Database db = new DatabaseDecorator(new DatabaseBuilder().name(StorageConst.DEF_DATABASE_NAME).description("sqldog default db").build());
-            db.persistence();
             Schema schema = new SchemaBuilder().name(StorageConst.DEF_SCHEMA_NAME).description("The default schema").parent(db).build();
             db.addSchema(schema);
-            DATABASES.put(StorageConst.DEF_DATABASE_NAME, db);
+            DATABASES.put(db.getName(), db);
         } else {
             for (String dbPath : dbPaths) {
-                Map<String, Object> map = persistence.read(persistence.resolvePath(dbPath, StorageConst.META_NAME)); // 数据库名称就是相对path
-                if (map.isEmpty()) {
-                    continue;
-                }
-                String dbName = (String)map.get("name");
-                Database db = new DatabaseDecorator(
-                        new DatabaseBuilder().name(dbName).encoding((String)map.get("encoding"))
-                                .tablespace((String)map.get("tablespace")).description((String)map.get("description")).build());
-                DATABASES.put(dbName, db);
+                Database db = new DatabaseDecorator(new DiskDatabase(dbPath));
+                DATABASES.put(db.getName(), db);
             }
         }
     }

@@ -82,7 +82,7 @@ public class DatabaseDecorator implements Database {
     }
 
     @Override
-    public void persistence() {
-        delegate.persistence();
+    public void rename(String newName) {
+        delegate.rename(newName);
     }
 }

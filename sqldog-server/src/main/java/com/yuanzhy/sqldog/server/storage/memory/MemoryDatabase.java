@@ -1,6 +1,5 @@
 package com.yuanzhy.sqldog.server.storage.memory;
 
-import com.yuanzhy.sqldog.server.core.Base;
 import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.server.core.Schema;
 
@@ -15,12 +14,15 @@ import java.util.Set;
  */
 public class MemoryDatabase extends MemoryBase implements Database {
     /** 编码 */
-    private final String encoding;
+    protected String encoding;
     /** 表空间 */
-    private final String tablespace;
+    protected String tablespace;
     /** 模式 */
     private final Map<String, Schema> schemas = new LinkedHashMap<>();
 
+    protected MemoryDatabase() {
+        super(null);
+    }
     public MemoryDatabase(String name, String encoding, String description, String tablespace) {
         super(null, name.toUpperCase());
         this.encoding = encoding;

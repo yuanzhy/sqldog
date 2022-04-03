@@ -44,11 +44,11 @@ public class MemoryTable extends MemoryBase implements Table, DML {
 
     private static final String UNITED_SEP = "#~^~#";
     /** 列 */
-    private final Map<String, Column> columnMap;
+    protected final Map<String, Column> columnMap;
     /** 约束 */
-    private final Constraint primaryKey;
-    private final Serial serial;
-    private final Set<Constraint> constraint;
+    protected Constraint primaryKey;
+    protected Serial serial;
+    protected Set<Constraint> constraint;
 
     /**
      * 数据
@@ -64,6 +64,11 @@ public class MemoryTable extends MemoryBase implements Table, DML {
      * value = uniqueValueSet 联合唯一则拼接列的value
      */
     private final Map<String, Set<String>> uniqueMap = new HashMap<>();
+
+    protected MemoryTable(Base parent) {
+        super(parent);
+        columnMap = new LinkedHashMap<>();
+    }
 
     public MemoryTable(Base parent, String name, Map<String, Column> columnMap, Constraint primaryKey, Set<Constraint> constraint, Serial serial) {
         super(parent, name.toUpperCase());

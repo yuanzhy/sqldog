@@ -6,9 +6,14 @@ import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Base;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Constraint;
+import com.yuanzhy.sqldog.server.core.Persistable;
 import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.core.Serial;
 import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
+import com.yuanzhy.sqldog.server.core.constant.DataType;
+import com.yuanzhy.sqldog.server.storage.builder.ColumnBuilder;
+import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
 import com.yuanzhy.sqldog.server.storage.memory.MemoryTable;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
 
@@ -21,13 +26,52 @@ import java.util.Set;
  * @version 1.0
  * @date 2022/3/29
  */
-public class DiskTable extends MemoryTable implements Table {
+public class DiskTable extends MemoryTable implements Table, Persistable {
     private final String storagePath;
     private final Persistence persistence;
+
+    protected DiskTable(Base parent, String tablePath) {
+        super(parent);
+        this.persistence = PersistenceFactory.get();
+        // 从硬盘meta文件中恢复table
+        Map<String, Object> map = persistence.read(persistence.resolvePath(tablePath, StorageConst.META_NAME));
+        super.rename((String)map.get("name"));
+        super.setDescription((String)map.get("description"));
+        this.storagePath = persistence.resolvePath(this);
+
+        List<Map<String, Object>> columns = (List<Map<String, Object>>) map.get("columns");
+        for (Map<String, Object> c : columns) {
+            super.addColumn(new ColumnBuilder().name((String)c.get("name")).dataType(DataType.of((String)c.get("dataType")))
+                    .precision((int)c.get("precision")).scale((int)c.get("scale")).nullable((boolean)c.get("nullable"))
+                    .defaultValue(map.get("defaultValue")).build());
+        }
+        List<Map<String, Object>> constraints = (List<Map<String, Object>>) map.get("constraints");
+        for (Map<String, Object> c : constraints) {
+            ConstraintBuilder cb = new ConstraintBuilder().name((String)c.get("name")).type(ConstraintType.valueOf((String)c.get("type")));
+            List<String> columnNames = (List<String>) c.get("columnNames");
+            for (String columnName : columnNames) {
+                cb.addColumnName(columnName);
+            }
+            Constraint constraint = cb.build();
+            if (constraint.getType() == ConstraintType.PRIMARY_KEY) {
+                this.primaryKey = constraint;
+            } else {
+                this.constraint.add(constraint);
+            }
+        }
+    }
+
     public DiskTable(Base parent, String name, Map<String, Column> columnMap, Constraint primaryKey, Set<Constraint> constraint, Serial serial) {
         super(parent, name, columnMap, primaryKey, constraint, serial);
         this.persistence = PersistenceFactory.get();
         this.storagePath = persistence.resolvePath(this);
+        this.persistence();
+    }
+
+    @Override
+    public void setDescription(String description) {
+        super.setDescription(description);
+        this.persistence();
     }
 
     @Override
@@ -37,7 +81,7 @@ public class DiskTable extends MemoryTable implements Table {
 
     @Override
     public void addColumn(Column column) {
-
+        super.addColumn(column);
     }
 
     @Override
@@ -56,6 +100,13 @@ public class DiskTable extends MemoryTable implements Table {
     public void drop() {
         super.drop();
         persistence.delete(storagePath);
+    }
+
+    @Override
+    public void rename(String newName) {
+        super.rename(newName);
+        this.persistence();
+        // TODO meta里的name属性改过了，目录的名称要不要改？
     }
 
     /*

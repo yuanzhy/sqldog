@@ -20,5 +20,5 @@ public interface Base {
 
     Base getParent();
 
-    default void persistence() {}
+    void rename(String newName);
 }
