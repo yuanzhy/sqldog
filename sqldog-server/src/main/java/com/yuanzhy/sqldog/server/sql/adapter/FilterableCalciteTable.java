@@ -4,57 +4,41 @@ import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Table;
 import org.apache.calcite.DataContext;
-import org.apache.calcite.adapter.java.AbstractQueryableTable;
 import org.apache.calcite.linq4j.Enumerable;
-import org.apache.calcite.linq4j.Enumerator;
-import org.apache.calcite.linq4j.Linq4j;
-import org.apache.calcite.linq4j.QueryProvider;
-import org.apache.calcite.linq4j.Queryable;
-import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptTable;
-import org.apache.calcite.prepare.Prepare;
-import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.TableModify;
-import org.apache.calcite.rel.logical.LogicalTableModify;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.schema.ModifiableTable;
-import org.apache.calcite.schema.ScannableTable;
-import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.schema.FilterableTable;
 import org.apache.calcite.schema.Statistic;
-import org.apache.calcite.schema.impl.AbstractTableQueryable;
+import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Type;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 文件表需要实现 org.apache.calcite.schema.FilterableTable
- *
  * @author yuanzhy
- * @date 2021-10-26
+ * @version 1.0
+ * @date 2022/4/4
  */
-public class CalciteTable extends AbstractQueryableTable implements ScannableTable, ModifiableTable {
-    private static final Logger LOG = LoggerFactory.getLogger(CalciteTable.class);
-    private static final Type TYPE = Object[].class;
+public class FilterableCalciteTable extends AbstractTable implements FilterableTable {
+    private static final Logger LOG = LoggerFactory.getLogger(FilterableCalciteTable.class);
+//    private static final Type TYPE = Object[].class;
 
     private final Table table;
 //    private final List<Object[]> data = new ArrayList<>();
 
-    public CalciteTable(Table table) {
-        super(TYPE);
+    public FilterableCalciteTable(Table table) {
+//        super(TYPE);
         Asserts.hasEle(table.getColumns(), "column is empty");
         this.table = table;
     }
 
     @Override
     public Statistic getStatistic() {
-        return super.getStatistic();
+        return super.getStatistic(); // TODO
     }
 
     @Override
@@ -127,35 +111,28 @@ public class CalciteTable extends AbstractQueryableTable implements ScannableTab
         return builder.build();
     }
 
-    @Override
-    public Enumerable<Object[]> scan(DataContext root) {
-        return new ObjectArrayEnumerable(root, getData());
-    }
+//    @Override
+////    public TableModify toModificationRel(RelOptCluster cluster, RelOptTable table, Prepare.CatalogReader catalogReader, RelNode child, TableModify.Operation operation, List<String> updateColumnList, List<RexNode> sourceExpressionList, boolean flattened) {
+////        return LogicalTableModify.create(table, catalogReader, child, operation,
+////                updateColumnList, sourceExpressionList, flattened);
+////    }
+//
+////    @Override
+////    public <T> Queryable<T> asQueryable(QueryProvider queryProvider, SchemaPlus schema, String tableName) {
+////        return new AbstractTableQueryable<T>(queryProvider, schema, this, tableName) {
+////            @Override public Enumerator<T> enumerator() {
+////                //noinspection unchecked
+////                return (Enumerator<T>) Linq4j.enumerator(getData());
+////            }
+////        };
+////    }
+//
+////    private List<Object[]> getData() {
+////        return table.getData();
+////    }
 
     @Override
-    public Collection getModifiableCollection() {
-        return getData();
+    public Enumerable<Object[]> scan(DataContext root, List<RexNode> filters) {
+        return null; // TODO
     }
-
-    @Override
-    public TableModify toModificationRel(RelOptCluster cluster, RelOptTable table, Prepare.CatalogReader catalogReader, RelNode child, TableModify.Operation operation, List<String> updateColumnList, List<RexNode> sourceExpressionList, boolean flattened) {
-        return LogicalTableModify.create(table, catalogReader, child, operation,
-                updateColumnList, sourceExpressionList, flattened);
-    }
-
-    @Override
-    public <T> Queryable<T> asQueryable(QueryProvider queryProvider, SchemaPlus schema, String tableName) {
-//        LOG.info("asQueryable");
-        return new AbstractTableQueryable<T>(queryProvider, schema, this, tableName) {
-            @Override public Enumerator<T> enumerator() {
-                //noinspection unchecked
-                return (Enumerator<T>) Linq4j.enumerator(getData());
-            }
-        };
-    }
-
-    private List<Object[]> getData() {
-        return table.getData();
-    }
-
 }

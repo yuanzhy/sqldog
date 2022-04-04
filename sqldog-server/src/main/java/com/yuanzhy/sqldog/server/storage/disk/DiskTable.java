@@ -69,32 +69,34 @@ public class DiskTable extends MemoryTable implements Table, Persistable {
     }
 
     @Override
+    protected void initTableData() {
+        super.tableData = new DiskTableData(this);
+    }
+
+    @Override
     public void setDescription(String description) {
         super.setDescription(description);
         this.persistence();
     }
 
     @Override
-    public List<Object[]> getData() {
-        return null;
-    }
-
-    @Override
     public void addColumn(Column column) {
         super.addColumn(column);
+        this.persistence();
     }
 
     @Override
     public void dropColumn(String columnName) {
-
+        super.dropColumn(columnName);
+        this.persistence();
     }
 
-    @Override
-    public void truncate() {
-        super.truncate();
-        persistence.delete(persistence.resolvePath(storagePath, StorageConst.TABLE_DATA_PATH));
-        persistence.delete(persistence.resolvePath(storagePath, StorageConst.TABLE_INDEX_PATH));
-    }
+//    @Override
+//    public void truncate() {
+//        super.truncate();
+//        persistence.delete(persistence.resolvePath(storagePath, StorageConst.TABLE_DATA_PATH));
+//        persistence.delete(persistence.resolvePath(storagePath, StorageConst.TABLE_INDEX_PATH));
+//    }
 
     @Override
     public void drop() {

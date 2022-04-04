@@ -33,7 +33,7 @@ public class DmlPreparedSqlCommand extends AbstractPreparedSqlCommand implements
 
     private SqlCommand getDelegateCommand(String sql) {
         SqlCommand command;
-        // TODO 先粗暴的实现一下，后续改为直接拿值并调用 table.getDML().xxx()
+        // TODO 先粗暴的实现一下，后续改为直接拿值并调用 table.getTableData().xxx()
         if (sql.startsWith("INSERT")) {
             command = new InsertCommand(sql);
         } else if (sql.startsWith("DELETE")) {

@@ -20,7 +20,7 @@ public class TruncateTableCommand extends AbstractSqlCommand {
         // truncate schema.table_name
         String sqlSuffix = sql.substring("TRUNCATE TABLE ".length());
         super.parseSchemaTable(sqlSuffix);
-        table.truncate();
+        table.getTableData().truncate();
         return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(table.getName()).build();
     }
 }

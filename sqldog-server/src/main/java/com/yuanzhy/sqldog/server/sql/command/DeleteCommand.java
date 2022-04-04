@@ -25,7 +25,7 @@ public class DeleteCommand extends AbstractSqlCommand {
 //            Calcites.getPanner().validate(sqlNode); // TODO validate
             SqlDelete sqlDelete = (SqlDelete) sqlNode;
             super.parseSchemaTable(sqlDelete.getTargetTable().toString());
-            int rows = table.getDML().deleteBy(sqlDelete);
+            int rows = table.getTableData().deleteBy(sqlDelete);
             return new SqlResultBuilder(StatementType.DML).schema(schema.getName()).table(table.getName()).rows(rows).build();
         } catch (SqlParseException /*| ValidationException*/ e) {
             throw new IllegalArgumentException(e.getMessage(), e);

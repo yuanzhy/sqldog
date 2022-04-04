@@ -84,7 +84,7 @@ public class InsertCommand extends AbstractSqlCommand {
                 final Object value = columnMap.get(colName).getDataType().parseValue(rawValue);
                 values.put(colName, value);
             }
-            Object[] pkValues = table.getDML().insert(values);
+            Object[] pkValues = table.getTableData().insert(values);
             pkValuesList.add(pkValues);
         }
         return new SqlResultBuilder(StatementType.DML).schema(schema.getName()).table(table.getName()).rows(rows.size())

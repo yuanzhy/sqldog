@@ -111,7 +111,7 @@ public class UpdatePreparedSqlCommand extends AbstractSqlCommand implements Prep
         try {
             SqlUpdate sqlUpdate = (SqlUpdate) Calcites.getPanner().parse(sql);
             replacePlaceHolder(sqlUpdate, parameter, new AtomicInteger(0));
-            int rows = table.getDML().updateBy(sqlUpdate);
+            int rows = table.getTableData().updateBy(sqlUpdate);
             return new SqlResultBuilder(StatementType.DML).schema(schema.getName()).table(table.getName()).rows(rows).build();
         } catch (Exception e) {
             throw new RuntimeException(e);

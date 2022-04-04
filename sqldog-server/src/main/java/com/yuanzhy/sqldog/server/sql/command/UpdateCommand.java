@@ -26,7 +26,7 @@ public class UpdateCommand extends AbstractSqlCommand {
             SqlUpdate update = (SqlUpdate) sqlNode;
 //            Calcites.getPanner().validate(update);
             super.parseSchemaTable(update.getTargetTable().toString());
-            int rows = table.getDML().updateBy(update);
+            int rows = table.getTableData().updateBy(update);
             return new SqlResultBuilder(StatementType.DML).schema(schema.getName()).table(table.getName()).rows(rows).build();
         } catch (SqlParseException /*| ValidationException*/ e) {
             throw new IllegalArgumentException(e.getMessage(), e);

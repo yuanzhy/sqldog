@@ -3,15 +3,15 @@ package com.yuanzhy.sqldog.server.core;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlUpdate;
 
+import java.util.List;
 import java.util.Map;
 
 /**
- * TODO 暂不支持联表删除和修改
  * @author yuanzhy
  * @version 1.0
- * @date 2021/10/24
+ * @date 2022/4/4
  */
-public interface DML {
+public interface TableData {
 
     Object[] insert(Map<String, Object> values);
 
@@ -22,4 +22,12 @@ public interface DML {
     int deleteBy(SqlDelete sqlDelete);
 
     int updateBy(SqlUpdate sqlUpdate);
+
+    void truncate();
+
+    List<Object[]> getData();
+
+    void addColumn(Column column);
+
+    void dropColumn(String columnName);
 }

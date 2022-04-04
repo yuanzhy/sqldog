@@ -25,7 +25,7 @@ public class CalciteSchema extends AbstractSchema {
     protected Map<String, Table> getTableMap() {
         Map<String, Table> tableMap = new HashMap<>();
         for (String tableName : schema.getTableNames()) {
-            tableMap.put(tableName, new CalciteTable(schema.getTable(tableName)));
+            tableMap.put(tableName, new ScannableCalciteTable(schema.getTable(tableName)));
         }
         return Collections.unmodifiableMap(tableMap);
     }

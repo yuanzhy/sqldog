@@ -9,6 +9,7 @@ import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
 import com.yuanzhy.sqldog.server.storage.builder.SchemaBuilder;
 import com.yuanzhy.sqldog.server.storage.builder.TableBuilder;
 import com.yuanzhy.sqldog.server.sql.adapter.CalciteSchema;
+import com.yuanzhy.sqldog.server.util.Databases;
 import org.apache.calcite.jdbc.CalciteConnection;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.util.ConversionUtil;
@@ -36,30 +37,30 @@ public class TestQuery {
     private Connection conn;
     @Before
     public void setUp() throws SQLException {
-        Table table = new TableBuilder().name("PERSON")
+        Schema schema = new SchemaBuilder().parent(Databases.getDefault()).name("TEST").build();
+        Table table = new TableBuilder().name("PERSON").parent(schema)
                 .addColumn(new ColumnBuilder().name("ID").dataType(DataType.INT).nullable(false).build())
                 .addColumn(new ColumnBuilder().name("NAME").dataType(DataType.VARCHAR).precision(50).build())
                 .addColumn(new ColumnBuilder().name("AGE").dataType(DataType.INT).build())
                 .addConstraint(new ConstraintBuilder().type(ConstraintType.PRIMARY_KEY).addColumnName("ID").build())
                 .build();
-        Schema schema = new SchemaBuilder().name("TEST").build();
         schema.addTable(table);
 
         Map<String, Object> values = new HashMap<>();
         values.put("ID", 1);
         values.put("NAME", "张三");
         values.put("AGE", 10);
-        table.getDML().insert(values);
+        table.getTableData().insert(values);
         values = new HashMap<>();
         values.put("ID", 2);
         values.put("NAME", "李四");
         values.put("AGE", 15);
-        table.getDML().insert(values);
+        table.getTableData().insert(values);
         values = new HashMap<>();
         values.put("ID", 3);
         values.put("NAME", "王五");
         values.put("AGE", 15);
-        table.getDML().insert(values);
+        table.getTableData().insert(values);
         System.setProperty("saffron.default.charset", ConversionUtil.NATIVE_UTF16_CHARSET_NAME);
         System.setProperty("saffron.default.nationalcharset",ConversionUtil.NATIVE_UTF16_CHARSET_NAME);
         System.setProperty("saffron.default.collation.name",ConversionUtil.NATIVE_UTF16_CHARSET_NAME + "$en_US");

@@ -17,17 +17,15 @@ public interface Table extends Base {
     String[] getPkColumnName();
     Constraint getPrimaryKey();
 
+    Serial getSerial();
+
     List<Constraint> getConstraints();
 
-    List<Object[]> getData();
-
-    DML getDML();
+    TableData getTableData();
 
     void addColumn(Column column);
 
     void dropColumn(String columnName);
-
-    void truncate();
 
 //    Query getQuery();
 

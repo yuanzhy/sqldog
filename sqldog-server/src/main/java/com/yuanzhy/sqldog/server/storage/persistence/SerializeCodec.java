@@ -30,7 +30,7 @@ public class SerializeCodec implements Codec {
             throw new CodecException(e);
         }
         try {
-            return baos.toString("UTF-8");
+            return cipher.encrypt(baos.toString("UTF-8"));
         } catch (UnsupportedEncodingException e) {
             throw new CodecException(e);
         }
@@ -38,7 +38,7 @@ public class SerializeCodec implements Codec {
 
     @Override
     public Map<String, Object> decode(String data) throws CodecException {
-        ByteArrayInputStream bois = new ByteArrayInputStream(data.getBytes());
+        ByteArrayInputStream bois = new ByteArrayInputStream(cipher.decrypt(data).getBytes());
         try (ObjectInputStream ois = new ObjectInputStream(bois)) {
             return (Map<String, Object>) ois.readObject();
         } catch (Exception e) {
