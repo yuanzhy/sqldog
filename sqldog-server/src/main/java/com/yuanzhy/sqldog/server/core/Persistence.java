@@ -20,7 +20,7 @@ public interface Persistence {
      * @return
      * @throws PersistenceException
      */
-    Map<String, Object> read(String storagePath) throws PersistenceException;
+    Map<String, Object> readMeta(String storagePath) throws PersistenceException;
 
     /**
      *
@@ -28,7 +28,7 @@ public interface Persistence {
      * @param data 数据
      * @throws PersistenceException
      */
-    void write(String storagePath, Map<String, Object> data) throws PersistenceException;
+    void writeMeta(String storagePath, Map<String, Object> data) throws PersistenceException;
 
     /**
      *

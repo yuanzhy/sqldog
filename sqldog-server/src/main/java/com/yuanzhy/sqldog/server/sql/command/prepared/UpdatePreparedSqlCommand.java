@@ -7,6 +7,7 @@ import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.core.util.DateUtil;
 import com.yuanzhy.sqldog.core.util.SqlUtil;
+import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.sql.PreparedSqlCommand;
 import com.yuanzhy.sqldog.server.sql.command.AbstractSqlCommand;
@@ -219,7 +220,7 @@ public class UpdatePreparedSqlCommand extends AbstractSqlCommand implements Prep
             case CHAR:
             case VARCHAR:
             case TEXT:
-                return SqlLiteral.createCharString(SqlUtil.toString(x), "UTF-8", pos);
+                return SqlLiteral.createCharString(SqlUtil.toString(x), StorageConst.CHARSET, pos);
             case BOOLEAN:
                 return SqlLiteral.createBoolean(SqlUtil.toBoolean(x), pos);
             case BYTEA:

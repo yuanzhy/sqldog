@@ -5,6 +5,7 @@ import com.yuanzhy.sqldog.core.codec.SerializeCodec;
 import com.yuanzhy.sqldog.core.constant.Auth;
 import com.yuanzhy.sqldog.core.constant.Consts;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.sql.SqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlParser;
 import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
@@ -63,8 +64,8 @@ public class BioServer implements Server {
         }
         @Override
         public void run() {
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
-                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"))) {
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream(), StorageConst.CHARSET));
+                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StorageConst.CHARSET))) {
                 while (true) {
                     String params = this.waitCommand(br);
                     if (StringUtils.isEmpty(params)) {

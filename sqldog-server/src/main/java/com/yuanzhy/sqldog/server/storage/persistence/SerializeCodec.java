@@ -1,6 +1,7 @@
 package com.yuanzhy.sqldog.server.storage.persistence;
 
 import com.yuanzhy.sqldog.core.exception.CodecException;
+import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Cipher;
 import com.yuanzhy.sqldog.server.core.Codec;
 
@@ -30,7 +31,7 @@ public class SerializeCodec implements Codec {
             throw new CodecException(e);
         }
         try {
-            return cipher.encrypt(baos.toString("UTF-8"));
+            return cipher.encrypt(baos.toString(StorageConst.CHARSET));
         } catch (UnsupportedEncodingException e) {
             throw new CodecException(e);
         }

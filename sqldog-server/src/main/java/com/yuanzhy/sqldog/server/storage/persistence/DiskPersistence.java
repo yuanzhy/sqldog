@@ -1,6 +1,7 @@
 package com.yuanzhy.sqldog.server.storage.persistence;
 
 import com.yuanzhy.sqldog.core.exception.PersistenceException;
+import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Codec;
 import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.util.ConfigUtil;
@@ -35,13 +36,13 @@ public class DiskPersistence implements Persistence {
     }
 
     @Override
-    public Map<String, Object> read(String storagePath) throws PersistenceException {
-        File f = new File(rootPath, storagePath);
+    public Map<String, Object> readMeta(String storagePath) throws PersistenceException {
+        File f = new File(resolvePath(rootPath, storagePath, StorageConst.META_NAME));
         if (!f.exists()) {
             return Collections.emptyMap();
         }
         try {
-            String data = FileUtils.readFileToString(f, "UTF-8");
+            String data = FileUtils.readFileToString(f, StorageConst.CHARSET);
             return codec.decode(data);
         } catch (IOException e) {
             throw new PersistenceException(e);
@@ -49,10 +50,10 @@ public class DiskPersistence implements Persistence {
     }
 
     @Override
-    public void write(String storagePath, Map<String, Object> data) throws PersistenceException {
+    public void writeMeta(String storagePath, Map<String, Object> data) throws PersistenceException {
         String output = codec.encode(data);
         try {
-            FileUtils.writeStringToFile(new File(rootPath, storagePath), output,"UTF-8");
+            FileUtils.writeStringToFile(new File(resolvePath(rootPath, storagePath, StorageConst.META_NAME)), output, StorageConst.CHARSET);
         } catch (IOException e) {
             throw new PersistenceException(e);
         }

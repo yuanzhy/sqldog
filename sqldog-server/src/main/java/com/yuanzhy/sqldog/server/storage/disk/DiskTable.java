@@ -2,7 +2,6 @@ package com.yuanzhy.sqldog.server.storage.disk;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Base;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Constraint;
@@ -34,11 +33,11 @@ public class DiskTable extends MemoryTable implements Table, Persistable {
         super(parent);
         this.persistence = PersistenceFactory.get();
         // 从硬盘meta文件中恢复table
-        Map<String, Object> map = persistence.read(persistence.resolvePath(tablePath, StorageConst.META_NAME));
+        Map<String, Object> map = persistence.readMeta(tablePath);
         super.rename((String)map.get("name"));
         super.setDescription((String)map.get("description"));
         this.storagePath = persistence.resolvePath(this);
-
+        super.tableData = new DiskTableData(this, storagePath);
         List<Map<String, Object>> columns = (List<Map<String, Object>>) map.get("columns");
         for (Map<String, Object> c : columns) {
             super.addColumn(new ColumnBuilder().name((String)c.get("name")).dataType(DataType.of((String)c.get("dataType")))
@@ -66,11 +65,12 @@ public class DiskTable extends MemoryTable implements Table, Persistable {
         this.persistence = PersistenceFactory.get();
         this.storagePath = persistence.resolvePath(this);
         this.persistence();
+        super.tableData = new DiskTableData(this, storagePath);
     }
 
     @Override
     protected void initTableData() {
-        super.tableData = new DiskTableData(this);
+//        super.tableData = new DiskTableData(this);
     }
 
     @Override
@@ -162,6 +162,6 @@ public class DiskTable extends MemoryTable implements Table, Persistable {
         json.fluentPut("name", getName()).fluentPut("description", getDescription())
                 .fluentPut("columns", columnsJson).fluentPut("constraints", constraintsJson);
 
-        persistence.write(persistence.resolvePath(storagePath, StorageConst.META_NAME), json);
+        persistence.writeMeta(storagePath, json);
     }
 }

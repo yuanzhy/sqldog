@@ -1,7 +1,6 @@
 package com.yuanzhy.sqldog.server.storage.disk;
 
 import com.alibaba.fastjson.JSONObject;
-import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.server.core.Persistable;
 import com.yuanzhy.sqldog.server.core.Persistence;
@@ -29,7 +28,7 @@ public class DiskDatabase extends MemoryDatabase implements Database, Persistabl
         super();
         this.persistence = PersistenceFactory.get();
         // 从硬盘中加载database
-        Map<String, Object> map = persistence.read(persistence.resolvePath(databasePath, StorageConst.META_NAME)); // 数据库名称就是相对path
+        Map<String, Object> map = persistence.readMeta(databasePath); // 数据库名称就是相对path
         super.rename((String)map.get("name"));
         super.setDescription((String)map.get("description"));
         super.encoding = (String)map.get("encoding");
@@ -72,6 +71,6 @@ public class DiskDatabase extends MemoryDatabase implements Database, Persistabl
     public void persistence() {
         JSONObject data = new JSONObject();
         data.fluentPut("name", getName()).fluentPut("encoding", getEncoding()).fluentPut("description", getDescription()).fluentPut("tablespace", getTablespace());
-        persistence.write(persistence.resolvePath(storagePath, StorageConst.META_NAME), data);
+        persistence.writeMeta(storagePath, data);
     }
 }

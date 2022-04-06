@@ -1,7 +1,8 @@
 package com.yuanzhy.sqldog.server.storage.builder;
 
-import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.server.storage.disk.DiskDatabase;
 import com.yuanzhy.sqldog.server.storage.memory.MemoryDatabase;
 import com.yuanzhy.sqldog.server.util.ConfigUtil;
@@ -16,7 +17,7 @@ public class DatabaseBuilder extends BaseBuilder<DatabaseBuilder> {
     /** 名称 */
     private String name;
     /** 编码 */
-    private String encoding = "UTF-8";
+    private String encoding = StorageConst.CHARSET;
     /** 描述 */
     private String description;
     /** 表空间 */

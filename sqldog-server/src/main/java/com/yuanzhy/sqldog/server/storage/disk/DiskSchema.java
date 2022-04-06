@@ -1,7 +1,6 @@
 package com.yuanzhy.sqldog.server.storage.disk;
 
 import com.alibaba.fastjson.JSONObject;
-import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Base;
 import com.yuanzhy.sqldog.server.core.Persistable;
 import com.yuanzhy.sqldog.server.core.Persistence;
@@ -25,7 +24,7 @@ public class DiskSchema extends MemorySchema implements Schema, Persistable {
         super(parent);
         this.persistence = PersistenceFactory.get();
         // 从硬盘中恢复schema
-        Map<String, Object> metaData = persistence.read(persistence.resolvePath(schemaPath, StorageConst.META_NAME));
+        Map<String, Object> metaData = persistence.readMeta(schemaPath);
         super.rename((String) metaData.get("name"));
         super.setDescription((String) metaData.get("description"));
         this.storagePath = persistence.resolvePath(this);
@@ -57,9 +56,8 @@ public class DiskSchema extends MemorySchema implements Schema, Persistable {
 
     @Override
     public void persistence() {
-        String relPath = persistence.resolvePath(this, StorageConst.META_NAME);
         JSONObject json = new JSONObject();
         json.fluentPut("name", getName()).fluentPut("description", getDescription());
-        persistence.write(relPath, json);
+        persistence.writeMeta(storagePath, json);
     }
 }

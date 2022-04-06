@@ -15,7 +15,7 @@ public interface Column extends Base {
     DataType getDataType();
 
     /**
-     * 数据精度 int, numeric等
+     * 数据长度 numeric，varchar, char等
      * @return
      */
     int getPrecision();

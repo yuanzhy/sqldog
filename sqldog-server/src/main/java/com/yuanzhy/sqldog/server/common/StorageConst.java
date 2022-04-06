@@ -7,6 +7,8 @@ package com.yuanzhy.sqldog.server.common;
  */
 public interface StorageConst {
 
+    String CHARSET = "UTF-8";
+
     String META_NAME = ".meta";
 
     String DEF_DATABASE_NAME = "DEFAULT";
