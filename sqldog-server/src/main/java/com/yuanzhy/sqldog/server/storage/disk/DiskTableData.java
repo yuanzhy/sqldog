@@ -9,7 +9,6 @@ import com.yuanzhy.sqldog.server.util.ByteUtil;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -204,12 +203,8 @@ public class DiskTableData extends AbstractTableData implements TableData {
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                    if (column.getPrecision() > 255) {
-                        short len = (short)strBytes.length;
-                        addAll(dataList, ByteUtil.toBytes(len));
-                    } else {
-                        dataList.add((byte) strBytes.length);
-                    }
+                    short len = (short)strBytes.length;
+                    addAll(dataList, ByteUtil.toBytes(len));
                     addAll(dataList, strBytes);
             }
         }
@@ -280,6 +275,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
                             byte nullBit = (byte) Math.pow(2, nullIdx % 8);
                             if (nullBit == (nullFlags[nullIdx / 8] & nullBit)) { // null位为1，说明对应的值为空
                                 nullIdx++;
+                                colIdx++;
                                 continue;
                             }
                             nullIdx++;
@@ -287,33 +283,42 @@ public class DiskTableData extends AbstractTableData implements TableData {
                         switch (column.getDataType()) {
                             case INT:
                             case SERIAL:
-                                row[colIdx++] = ByteUtil.toInt(ArrayUtils.subarray(pageBuf, dataStart, dataStart += 4));
+//                                row[colIdx++] = ByteUtil.toInt(ArrayUtils.subarray(pageBuf, dataStart, dataStart += 4));
+                                row[colIdx++] = ByteUtil.toInt(pageBuf, dataStart);
+                                dataStart += 4;
                                 break;
                             case BIGINT:
                             case BIGSERIAL:
-                                row[colIdx++] = ByteUtil.toLong(ArrayUtils.subarray(pageBuf, dataStart, dataStart += 8));
+                                row[colIdx++] = ByteUtil.toLong(pageBuf, dataStart);
+                                dataStart += 8;
                                 break;
                             case SMALLINT:
                             case SMALLSERIAL:
-                                row[colIdx++] = ByteUtil.toShort(ArrayUtils.subarray(pageBuf, dataStart, dataStart += 2));
+                                row[colIdx++] = ByteUtil.toShort(pageBuf, dataStart);
+                                dataStart += 2;
                                 break;
                             case TINYINT:
                                 row[colIdx++] = pageBuf[dataStart++];
                                 break;
                             case FLOAT:
-                                row[colIdx++] = ByteUtil.toFloat(ArrayUtils.subarray(pageBuf, dataStart, dataStart += 4));
+                                row[colIdx++] = ByteUtil.toFloat(pageBuf, dataStart);
+                                dataStart += 4;
                                 break;
                             case DOUBLE:
-                                row[colIdx++] = ByteUtil.toDouble(ArrayUtils.subarray(pageBuf, dataStart, dataStart += 8));
+                                row[colIdx++] = ByteUtil.toDouble(pageBuf, dataStart);
+                                dataStart += 8;
                                 break;
                             case DATE:
-                                row[colIdx++] = new java.sql.Date(ByteUtil.toLong(ArrayUtils.subarray(pageBuf, dataStart, dataStart += 8)));
+                                row[colIdx++] = new java.sql.Date(ByteUtil.toLong(pageBuf, dataStart));
+                                dataStart += 8;
                                 break;
                             case TIMESTAMP:
-                                row[colIdx++] = new java.sql.Timestamp(ByteUtil.toLong(ArrayUtils.subarray(pageBuf, dataStart, dataStart += 8)));
+                                row[colIdx++] = new java.sql.Timestamp(ByteUtil.toLong(pageBuf, dataStart));
+                                dataStart += 8;
                                 break;
                             case TIME:
-                                row[colIdx++] = new java.sql.Time(ByteUtil.toLong(ArrayUtils.subarray(pageBuf, dataStart, dataStart += 8)));
+                                row[colIdx++] = new java.sql.Time(ByteUtil.toLong(pageBuf, dataStart));
+                                dataStart += 8;
                                 break;
                             case BOOLEAN:
                                 row[colIdx++] = pageBuf[dataStart++] == 1;
@@ -325,18 +330,16 @@ public class DiskTableData extends AbstractTableData implements TableData {
                                 throw new UnsupportedOperationException("暂未实现大字段存储");
                             case DECIMAL:
                             case NUMERIC:
-                                int len = pageBuf[dataStart++];
-                                byte[] strBytes = ArrayUtils.subarray(pageBuf, dataStart, dataStart += len);
-                                row[colIdx++] = new BigDecimal(new String(strBytes, StorageConst.CHARSET));
+                                int len = ByteUtil.toShort(pageBuf, dataStart);
+                                dataStart += 2;
+                                row[colIdx++] = new BigDecimal(ByteUtil.toString(pageBuf, dataStart, len));
+                                dataStart += len;
                                 break;
                             default: // VARCHAR, CHAR
-                                if (column.getPrecision() > 255) {
-                                    len = ByteUtil.toShort(ArrayUtils.subarray(pageBuf, dataStart, dataStart += 2));
-                                } else {
-                                    len = pageBuf[dataStart++];
-                                }
-                                strBytes = ArrayUtils.subarray(pageBuf, dataStart, dataStart += len);
-                                row[colIdx++] = new String(strBytes, StorageConst.CHARSET);
+                                len = ByteUtil.toShort(pageBuf, dataStart);
+                                dataStart += 2;
+                                row[colIdx++] = ByteUtil.toString(pageBuf, dataStart, len);
+                                dataStart += len;
                         }
                     }
                 }

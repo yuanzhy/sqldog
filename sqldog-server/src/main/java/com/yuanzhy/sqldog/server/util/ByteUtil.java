@@ -1,5 +1,9 @@
 package com.yuanzhy.sqldog.server.util;
 
+import com.yuanzhy.sqldog.server.common.StorageConst;
+
+import java.io.UnsupportedEncodingException;
+
 /**
  * @author yuanzhy
  * @version 1.0
@@ -47,23 +51,55 @@ public class ByteUtil {
     }
 
     public static float toFloat(byte[] bytes) {
-        return Float.intBitsToFloat(toInt(bytes));
+        return toFloat(bytes, 0);
+    }
+    
+    public static float toFloat(byte[] bytes, int offset) {
+        return Float.intBitsToFloat(toInt(bytes, offset));
     }
 
     public static double toDouble(byte[] bytes) {
-        return Double.longBitsToDouble(toLong(bytes));
+        return toDouble(bytes, 0);
+    }
+
+    public static double toDouble(byte[] bytes, int offset) {
+        return Double.longBitsToDouble(toLong(bytes, offset));
     }
 
     public static short toShort(byte[] bytes) {
-        return (short) ((0xff & bytes[0]) | (0xff00 & (bytes[1] << 8)));
+        return (short) toShort(bytes, 0);
+    }
+
+    public static short toShort(byte[] bytes, int offset) {
+        return (short) ((0xff & bytes[offset++]) | (0xff00 & (bytes[offset++] << 8)));
     }
 
     public static int toInt(byte[] bytes){
-        return (0xff & bytes[0]) | (0xff00 & (bytes[1] << 8)) | (0xff0000 & (bytes[2] << 16)) | (0xff000000 & (bytes[3] << 24));
+        return toInt(bytes, 0);
+    }
+
+    public static int toInt(byte[] bytes, int offset){
+        return (0xff & bytes[offset++]) | (0xff00 & (bytes[offset++] << 8)) | (0xff0000 & (bytes[offset++] << 16)) | (0xff000000 & (bytes[offset++] << 24));
     }
 
     public static long toLong(byte[] bytes) {
-        return (0xffL & (long) bytes[0]) | (0xff00L & ((long) bytes[1] << 8)) | (0xff0000L & ((long) bytes[2] << 16)) | (0xff000000L & ((long) bytes[3] << 24))
-                | (0xff00000000L & ((long) bytes[4] << 32)) | (0xff0000000000L & ((long) bytes[5] << 40)) | (0xff000000000000L & ((long) bytes[6] << 48)) | (0xff00000000000000L & ((long) bytes[7] << 56));
+        return toLong(bytes, 0);
+    }
+    
+    public static long toLong(byte[] bytes, int offset) {
+        return (0xffL & (long) bytes[offset++]) | (0xff00L & ((long) bytes[offset++] << 8)) | (0xff0000L & ((long) bytes[offset++] << 16)) | (0xff000000L & ((long) bytes[offset++] << 24))
+                | (0xff00000000L & ((long) bytes[offset++] << 32)) | (0xff0000000000L & ((long) bytes[offset++] << 40)) | (0xff000000000000L & ((long) bytes[offset++] << 48)) | (0xff00000000000000L & ((long) bytes[offset++] << 56));
+    }
+
+    public static String toString(byte[] bytes) {
+        return toString(bytes, 0, bytes.length);
+    }
+
+    public static String toString(byte[] bytes, int offset, int len) {
+        try {
+            return new String(bytes, offset, len, StorageConst.CHARSET);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
