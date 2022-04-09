@@ -25,9 +25,10 @@ public interface TableData {
 
     void truncate();
 
+    @Deprecated
     List<Object[]> getData();
 
     void addColumn(Column column);
 
-    void dropColumn(String columnName);
+    void dropColumn(Column column, int deleteIndex);
 }

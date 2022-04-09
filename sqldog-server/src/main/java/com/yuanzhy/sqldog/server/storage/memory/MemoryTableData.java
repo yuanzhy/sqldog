@@ -174,8 +174,8 @@ public class MemoryTableData extends AbstractTableData implements TableData {
     }
 
     @Override
-    public void dropColumn(String columnName) {
-        this.data.forEach(row -> row.remove(columnName));
+    public void dropColumn(Column column, int deleteIndex) {
+        this.data.forEach(row -> row.remove(column.getName()));
     }
 
     /**

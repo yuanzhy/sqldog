@@ -6,6 +6,7 @@ import com.yuanzhy.sqldog.server.core.Constraint;
 import com.yuanzhy.sqldog.server.core.Serial;
 import com.yuanzhy.sqldog.server.core.Table;
 import com.yuanzhy.sqldog.server.core.TableData;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -112,7 +113,8 @@ public class MemoryTable extends MemoryBase implements Table {
 
     @Override
     public synchronized void dropColumn(String columnName) {
-        this.columnMap.remove(columnName);
-        getTableData().dropColumn(columnName);
+        int deleteIndex = ArrayUtils.indexOf(this.columnMap.keySet().toArray(), columnName);
+        Column column = this.columnMap.remove(columnName);
+        getTableData().dropColumn(column, deleteIndex);
     }
 }

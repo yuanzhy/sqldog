@@ -1,6 +1,8 @@
 package com.yuanzhy.sqldog.server.core;
 
 import com.yuanzhy.sqldog.core.exception.PersistenceException;
+import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.model.DataPage;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Collections;
@@ -43,6 +45,49 @@ public interface Persistence {
      */
     List<String> list(String storagePath) throws PersistenceException;
 
+
+    /**
+     * 读取一个数据页
+     * @param tablePath table路径
+     * @param fileId    文件标识
+     * @param offset    偏移量
+     * @return DataPage: nullable
+     */
+    DataPage readData(String tablePath, String fileId, int offset) throws PersistenceException;
+
+    /**
+     * 获取可插入的数据页
+     * @param tablePath table路径
+     * @return DataPage: not null
+     */
+    DataPage getInsertableData(String tablePath) throws PersistenceException;
+
+    /**
+     * 写入数据页
+     * @param tablePath table路径
+     * @param dataPage 数据页
+     * @return 写入后的数据页
+     */
+    DataPage writeData(String tablePath, DataPage dataPage) throws PersistenceException;
+
+    /**
+     * 读取第一个文件的一个数据页
+     * @param tablePath table路径
+     * @param offset    偏移量
+     * @return
+     */
+    default DataPage readData(String tablePath, int offset) throws PersistenceException {
+        return readData(tablePath, StorageConst.TABLE_DEF_FILE_ID, offset);
+    }
+
+    /**
+     * 读取第一个文件的一个数据页，默认offset为0
+     * @param tablePath table路径
+     * @return
+     */
+    default DataPage readData(String tablePath) throws PersistenceException {
+        return readData(tablePath,0);
+    }
     /**
      *
      * @param paths 各个域的名称
@@ -62,4 +107,6 @@ public interface Persistence {
         }
         return resolvePath(list.toArray(ArrayUtils.EMPTY_STRING_ARRAY));
     }
+
+    void move(String fromPath, String toPath) throws PersistenceException;
 }

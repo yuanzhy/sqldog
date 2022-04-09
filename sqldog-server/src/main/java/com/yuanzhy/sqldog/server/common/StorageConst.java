@@ -18,4 +18,17 @@ public interface StorageConst {
     String TABLE_DATA_PATH = "tbd";
 
     String TABLE_INDEX_PATH = "idx";
+
+    String TABLE_DEF_FILE_ID = "0";
+    // ----------------------------------------------
+    long MAX_FILE_SIZE = 1024 * 1024 * 1024;
+    short PAGE_SIZE = 16 * 1024;
+    short PAGE_HEADER_SIZE = 16;
+    short CHECK_SUM_SIZE = 4;
+    short FREE_START_SIZE = 2;
+    short FREE_END_SIZE = 2;
+    short FREE_START_OFFSET = CHECK_SUM_SIZE;
+    short FREE_END_OFFSET = CHECK_SUM_SIZE + FREE_START_SIZE;
+    short DATA_START_OFFSET = PAGE_HEADER_SIZE;
+
 }
