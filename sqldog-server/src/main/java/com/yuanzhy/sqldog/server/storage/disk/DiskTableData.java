@@ -6,13 +6,14 @@ import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.core.Table;
 import com.yuanzhy.sqldog.server.core.TableData;
+import com.yuanzhy.sqldog.server.core.constant.DataType;
 import com.yuanzhy.sqldog.server.storage.base.AbstractTableData;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
 import com.yuanzhy.sqldog.server.util.ByteUtil;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlUpdate;
+import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -176,16 +177,23 @@ public class DiskTableData extends AbstractTableData implements TableData {
                     break;
                 case BYTEA:
                 case TEXT:
+                    byte[] bytes = (value instanceof byte[]) ? (byte[]) value : ByteUtil.toBytes(value.toString());
+                    if (bytes.length > StorageConst.LARGE_FIELD_THRESHOLD) {
+                        // 需要存储在外部, 此处只存储代表外部存储的标识
+                        byte[] extraId = persistence.writeExtraData(tablePath, bytes);
+                        addAll(dataList, extraId);
+                    } else {
+                        // 存储在数据内部，和varchar逻辑一致
+                        short len = (short)bytes.length;
+                        addAll(dataList, ByteUtil.toBytes(len));
+                        addAll(dataList, bytes);
+                    }
+                    break;
                 case ARRAY:
                 case JSON:
                     throw new UnsupportedOperationException("暂未实现大字段存储");
                 default: // VARCHAR, CHAR, DECIMAL, NUMERIC
-                    byte[] strBytes;
-                    try {
-                        strBytes = value.toString().getBytes(StorageConst.CHARSET);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    byte[] strBytes = ByteUtil.toBytes(value.toString());
                     short len = (short)strBytes.length;
                     addAll(dataList, ByteUtil.toBytes(len));
                     addAll(dataList, strBytes);
@@ -286,7 +294,10 @@ public class DiskTableData extends AbstractTableData implements TableData {
             int end = dataStart + (dataHeader & 0b0111111111111111);
             // 读取nullFlag
             byte[] nullFlags = new byte[nullBytesCount];
-            for (int i = nullBytesCount - 1; i >= 0; i--) {
+//            for (int i = nullBytesCount - 1; i >= 0; i--) {
+//                nullFlags[i] = pageBuf[dataStart++];
+//            }
+            for (int i = 0; i < nullBytesCount; i++) {
                 nullFlags[i] = pageBuf[dataStart++];
             }
             // 读数据
@@ -349,6 +360,23 @@ public class DiskTableData extends AbstractTableData implements TableData {
                             break;
                         case BYTEA:
                         case TEXT:
+                            short fileId = ByteUtil.toShort(pageBuf, dataStart);
+                            boolean extra = 0x1000 == (fileId & 0x1000);
+                            if (extra) {
+                                byte[] extraId = ArrayUtils.subarray(pageBuf, dataStart, dataStart += 8);
+                                byte[] bytes = persistence.readExtraData(tablePath, extraId);
+                                row[colIdx++] = column.getDataType() == DataType.TEXT ? ByteUtil.toString(bytes) : bytes;
+                            } else {
+                                short len = ByteUtil.toShort(pageBuf, dataStart);
+                                dataStart += 2;
+                                if (column.getDataType() == DataType.TEXT) {
+                                    row[colIdx++] = ByteUtil.toString(pageBuf, dataStart, len);
+                                    dataStart += len;
+                                } else {
+                                    row[colIdx++] = ArrayUtils.subarray(pageBuf, dataStart, dataStart += len);
+                                }
+                            }
+                            break;
                         case ARRAY:
                         case JSON:
                             throw new UnsupportedOperationException("暂未实现大字段存储");

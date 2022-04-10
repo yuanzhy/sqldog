@@ -40,9 +40,10 @@ public class DiskTable extends MemoryTable implements Table, Persistable {
         super.tableData = new DiskTableData(this, storagePath);
         List<Map<String, Object>> columns = (List<Map<String, Object>>) map.get("columns");
         for (Map<String, Object> c : columns) {
-            super.addColumn(new ColumnBuilder().name((String)c.get("name")).dataType(DataType.of((String)c.get("dataType")))
+            Column column = new ColumnBuilder().name((String)c.get("name")).dataType(DataType.of((String)c.get("dataType")))
                     .precision((int)c.get("precision")).scale((int)c.get("scale")).nullable((boolean)c.get("nullable"))
-                    .defaultValue(map.get("defaultValue")).build());
+                    .defaultValue(map.get("defaultValue")).build();
+            super.columnMap.put(column.getName(), column);
         }
         List<Map<String, Object>> constraints = (List<Map<String, Object>>) map.get("constraints");
         for (Map<String, Object> c : constraints) {
@@ -91,7 +92,13 @@ public class DiskTable extends MemoryTable implements Table, Persistable {
         this.persistence();
     }
 
-//    @Override
+    @Override
+    public void updateColumnDescription(String colName, String description) {
+        super.updateColumnDescription(colName, description);
+        this.persistence();
+    }
+
+    //    @Override
 //    public void truncate() {
 //        super.truncate();
 //        persistence.delete(persistence.resolvePath(storagePath, StorageConst.TABLE_DATA_PATH));

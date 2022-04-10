@@ -11,6 +11,14 @@ import java.io.UnsupportedEncodingException;
  */
 public class ByteUtil {
 
+    public static byte[] toBytes(String s) {
+        try {
+            return s.getBytes(StorageConst.CHARSET);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static byte[] toBytes(short s) {
         byte[] bytes = new byte[2];
         bytes[0] = (byte) (s & 0xff);

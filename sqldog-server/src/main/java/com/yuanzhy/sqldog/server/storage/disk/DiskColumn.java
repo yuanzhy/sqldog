@@ -17,11 +17,7 @@ public class DiskColumn extends MemoryColumn implements Column {
 
     @Override
     public void setDescription(String description) {
-
-    }
-
-    @Override
-    public void drop() {
-
+        super.setDescription(description);
+//        this.persistence();
     }
 }

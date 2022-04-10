@@ -53,7 +53,10 @@ public class ColumnBuilder extends BaseBuilder<ColumnBuilder> {
     public Column build() {
         Asserts.hasText(name, "列名不能为空");
         Asserts.notNull(dataType, "数据类型不能为空");
-        Asserts.isFalse(dataType.isHasLength() && this.precision == 0, "数据长度不能为空");
+        if (dataType.isHasLength()) {
+            Asserts.isTrue(this.precision > 0, name + " 数据长度不能为空");
+            Asserts.isTrue(this.precision <= dataType.getMaxLength(), name + " 数据长度超过限制：" + dataType.getMaxLength());
+        }
         if (defaultValue != null && dataType == DataType.CHAR) {
             defaultValue = StringUtils.rightPad(defaultValue.toString(), this.precision);
         }

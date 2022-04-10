@@ -16,10 +16,14 @@ public interface StorageConst {
     String DEF_SCHEMA_NAME = "PUBLIC";
 
     String TABLE_DATA_PATH = "tbd";
+    String TABLE_LARGE_FIELD_PATH = "lfd";
 
     String TABLE_INDEX_PATH = "idx";
 
     String TABLE_DEF_FILE_ID = "0";
+    String LARGE_FIELD_DEF_FILE_ID = TABLE_DEF_FILE_ID;
+
+    int LARGE_FIELD_THRESHOLD = 1000;
     // ----------------------------------------------
     long MAX_FILE_SIZE = 1024 * 1024 * 1024;
     short PAGE_SIZE = 16 * 1024;

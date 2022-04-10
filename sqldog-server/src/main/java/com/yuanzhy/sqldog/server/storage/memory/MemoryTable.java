@@ -1,5 +1,6 @@
 package com.yuanzhy.sqldog.server.storage.memory;
 
+import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.core.Base;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Constraint;
@@ -84,7 +85,7 @@ public class MemoryTable extends MemoryBase implements Table {
         if (constraint != null) {
             r.addAll(constraint);
         }
-        return r.isEmpty() ? null : r;
+        return r.isEmpty() ? Collections.emptyList() : r;
     }
 
     @Override
@@ -116,5 +117,12 @@ public class MemoryTable extends MemoryBase implements Table {
         int deleteIndex = ArrayUtils.indexOf(this.columnMap.keySet().toArray(), columnName);
         Column column = this.columnMap.remove(columnName);
         getTableData().dropColumn(column, deleteIndex);
+    }
+
+    @Override
+    public void updateColumnDescription(String colName, String description) {
+        Column column = this.getColumn(colName);
+        Asserts.notNull(column, colName + " not exists");
+        column.setDescription(description);
     }
 }

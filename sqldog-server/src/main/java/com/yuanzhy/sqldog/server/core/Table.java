@@ -27,6 +27,8 @@ public interface Table extends Base {
 
     void dropColumn(String columnName);
 
+    void updateColumnDescription(String colName, String substringBetween);
+
 //    Query getQuery();
 
 }

@@ -4,8 +4,11 @@ import com.alibaba.fastjson.JSONObject;
 import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.server.core.Persistable;
 import com.yuanzhy.sqldog.server.core.Persistence;
+import com.yuanzhy.sqldog.server.core.Schema;
+import com.yuanzhy.sqldog.server.sql.adapter.CalciteSchema;
 import com.yuanzhy.sqldog.server.storage.memory.MemoryDatabase;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
+import com.yuanzhy.sqldog.server.util.Calcites;
 
 import java.util.List;
 import java.util.Map;
@@ -37,7 +40,10 @@ public class DiskDatabase extends MemoryDatabase implements Database, Persistabl
         // 从硬盘中初始化子schema
         List<String> schemePaths = persistence.list(databasePath);
         for (String schemePath : schemePaths) {
-            this.addSchema(new DiskSchema(this, schemePath));
+            Schema diskSchema = new DiskSchema(this, schemePath);
+            this.addSchema(diskSchema);
+            // TODO 此处野路子先调用一下，后续看看怎么优化 2022-04-10
+            Calcites.getRootSchema().add(diskSchema.getName(), new CalciteSchema(diskSchema));
         }
     }
 

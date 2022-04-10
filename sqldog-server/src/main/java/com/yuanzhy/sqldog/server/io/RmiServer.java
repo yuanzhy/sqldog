@@ -65,6 +65,7 @@ public class RmiServer implements Server {
             // 客户端就可以通过RMI Registry请求到该远程服务对象的stub，
             // 利用stub代理就可以访问远程服务对象了。
             RMIServer remoteHandler = new RMIServerImpl();
+            System.setProperty("java.rmi.server.hostname", host);
             Registry registry = LocateRegistry.createRegistry(port);
             registry.bind(Consts.SERVER_NAME, remoteHandler);
             Databases.getDatabase(StorageConst.DEF_DATABASE_NAME); // 触发一下初始化

@@ -71,6 +71,22 @@ public interface Persistence {
     DataPage writeData(String tablePath, DataPage dataPage) throws PersistenceException;
 
     /**
+     * 读取大字段
+     * @param tablePath table路径
+     * @param extraId 代表该数据存储位置的标识
+     * @return 数据
+     */
+    byte[] readExtraData(String tablePath, byte[] extraId) throws PersistenceException;
+    /**
+     * 写入大字段
+     * @param tablePath table路径
+     * @param bytes     数据
+     * @return 代表该数据存储位置的标识
+     * @throws PersistenceException
+     */
+    byte[] writeExtraData(String tablePath, byte[] bytes) throws PersistenceException;
+
+    /**
      * 读取第一个文件的一个数据页
      * @param tablePath table路径
      * @param offset    偏移量
@@ -109,4 +125,5 @@ public interface Persistence {
     }
 
     void move(String fromPath, String toPath) throws PersistenceException;
+
 }

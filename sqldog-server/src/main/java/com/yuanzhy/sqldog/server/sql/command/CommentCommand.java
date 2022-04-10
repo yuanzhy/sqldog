@@ -40,7 +40,7 @@ public class CommentCommand extends AbstractSqlCommand {
             String schemaTable = StringUtils.substringBeforeLast(schemaTableColumn, ".").trim();
             super.parseSchemaTable(schemaTable);
             String colName = StringUtils.substringAfterLast(schemaTableColumn, ".").trim();
-            table.getColumn(colName).setDescription(StringUtils.substringBetween(sqlSuffix, "'"));
+            table.updateColumnDescription(colName, StringUtils.substringBetween(sqlSuffix, "'"));
         } else {
             throw new UnsupportedOperationException("not supported: " + sql);
         }

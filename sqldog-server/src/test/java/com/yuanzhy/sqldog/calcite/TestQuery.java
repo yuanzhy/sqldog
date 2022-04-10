@@ -53,13 +53,13 @@ public class TestQuery {
         table.getTableData().insert(values);
         values = new HashMap<>();
         values.put("ID", 2);
-        values.put("NAME", "李四");
+        values.put("NAME", "");
         values.put("AGE", 15);
         table.getTableData().insert(values);
         values = new HashMap<>();
         values.put("ID", 3);
         values.put("NAME", "王五");
-        values.put("AGE", 15);
+        values.put("AGE", null);
         table.getTableData().insert(values);
         System.setProperty("saffron.default.charset", ConversionUtil.NATIVE_UTF16_CHARSET_NAME);
         System.setProperty("saffron.default.nationalcharset", ConversionUtil.NATIVE_UTF16_CHARSET_NAME);
