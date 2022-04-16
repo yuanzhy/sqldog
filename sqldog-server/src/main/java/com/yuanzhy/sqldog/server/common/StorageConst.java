@@ -27,6 +27,9 @@ public interface StorageConst {
     // ----------------------------------------------
     long MAX_FILE_SIZE = 1024 * 1024 * 1024;
     short PAGE_SIZE = 16 * 1024;
+
+    int EXTENT_PAGE_COUNT = 64;
+    int EXTENT_SIZE = EXTENT_PAGE_COUNT * PAGE_SIZE;
     short PAGE_HEADER_SIZE = 16;
     short CHECK_SUM_SIZE = 4;
     short FREE_START_SIZE = 2;

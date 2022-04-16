@@ -4,20 +4,21 @@ import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.util.ByteUtil;
 
 /**
+ * 数据页 = 16KB
  * @author yuanzhy
  * @version 1.0
  * @date 2022/4/9
  */
 public class DataPage {
     /** 存储标识 */
-    private final String fileId;
+    private final String pageId;
     /** page offset */
     private final int offset;
     /** 页数据 16K */
     private final byte[] data;
 
-    public DataPage(String fileId) {
-        this.fileId = fileId;
+    public DataPage(String pageId) {
+        this.pageId = pageId;
         this.offset = 0;
         this.data = new byte[StorageConst.PAGE_SIZE];
         // Page Header
@@ -34,18 +35,18 @@ public class DataPage {
         data[7] = endBytes[1];
     }
 
-    public DataPage(String fileId, byte[] data) {
-        this(fileId, 0, data);
+    public DataPage(String pageId, byte[] data) {
+        this(pageId, 0, data);
     }
 
-    public DataPage(String fileId, int offset, byte[] data) {
-        this.fileId = fileId;
+    public DataPage(String pageId, int offset, byte[] data) {
+        this.pageId = pageId;
         this.offset = offset;
         this.data = data;
     }
 
-    public String getFileId() {
-        return fileId;
+    public String getPageId() {
+        return pageId;
     }
 
     public int getOffset() {

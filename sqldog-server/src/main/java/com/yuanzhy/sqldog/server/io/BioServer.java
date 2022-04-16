@@ -27,6 +27,7 @@ import java.net.Socket;
  * @version 1.0
  * @date 2021/10/31
  */
+@Deprecated
 public class BioServer implements Server {
 
     private static final Logger LOG = LoggerFactory.getLogger(BioServer.class);

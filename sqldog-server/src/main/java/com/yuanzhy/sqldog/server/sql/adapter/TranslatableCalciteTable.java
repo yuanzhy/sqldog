@@ -27,7 +27,7 @@ public class TranslatableCalciteTable extends AbstractTable implements Translata
 
     @Override
     public RelNode toRel(RelOptTable.ToRelContext context, RelOptTable relOptTable) {
-        return null; // TODO
+        return relOptTable.toRel(context);
     }
 
     @Override

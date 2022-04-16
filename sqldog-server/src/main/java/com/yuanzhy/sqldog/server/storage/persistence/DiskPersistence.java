@@ -3,6 +3,7 @@ package com.yuanzhy.sqldog.server.storage.persistence;
 import com.yuanzhy.sqldog.core.exception.PersistenceException;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.model.DataExtent;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
 import com.yuanzhy.sqldog.server.core.Codec;
 import com.yuanzhy.sqldog.server.core.Persistence;
@@ -86,7 +87,7 @@ public class DiskPersistence implements Persistence {
     }
 
     @Override
-    public DataPage readData(String tablePath, String fileId, int offset) throws PersistenceException {
+    public DataPage readPage(String tablePath, String fileId, int offset) throws PersistenceException {
         Asserts.hasText(tablePath, "tablePath 不能为空");
         Asserts.hasText(fileId, "fileId 不能为空");
         File file = new File(resolvePath(rootPath, tablePath, StorageConst.TABLE_DATA_PATH, fileId));
@@ -97,11 +98,11 @@ public class DiskPersistence implements Persistence {
         if (pos >= file.length()) { // pos 已经大于文件大小了，取下一个文件
             String nextFileId = String.valueOf(Integer.parseInt(fileId) + 1); // next fileId
             int nextOffset = (int)((pos - file.length()) / offset);
-            return readData(tablePath, nextFileId, nextOffset);
+            return readPage(tablePath, nextFileId, nextOffset);
         }
 
         byte[] pageBuf = new byte[StorageConst.PAGE_SIZE];
-        try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
             raf.seek(pos);
             int n = raf.read(pageBuf);
             if (n != pageBuf.length) {
@@ -113,13 +114,41 @@ public class DiskPersistence implements Persistence {
         }
     }
 
+    @Override
+    public DataExtent readExtent(String tablePath, String fileId, int offset) throws PersistenceException {
+        Asserts.hasText(tablePath, "tablePath 不能为空");
+        Asserts.hasText(fileId, "fileId 不能为空");
+        File file = new File(resolvePath(rootPath, tablePath, StorageConst.TABLE_DATA_PATH, fileId));
+        if (!file.exists()) {
+            return null;
+        }
+        long pos = (long)offset * StorageConst.EXTENT_SIZE;
+        if (pos >= file.length()) { // pos 已经大于文件大小了，取下一个文件
+            String nextFileId = String.valueOf(Integer.parseInt(fileId) + 1); // next fileId
+            int nextOffset = (int)((pos - file.length()) / offset);
+            return readExtent(tablePath, nextFileId, nextOffset);
+        }
+        byte[][] pages = new byte[StorageConst.EXTENT_PAGE_COUNT][StorageConst.PAGE_SIZE];
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            raf.seek(pos);
+            for (byte[] page : pages) {
+                if (raf.read(page) < StorageConst.PAGE_SIZE) {
+                    break;
+                }
+            }
+            return new DataExtent(fileId, offset, pages);
+        } catch (IOException e) {
+            throw new PersistenceException(e);
+        }
+    }
+
     /*
      * 可插入数据的数据页
      * 一般情况是最后一个文件的最后一个数据页
      * 特殊情况是复用已删除的空间（暂未实现 TODO）
      */
     @Override
-    public DataPage getInsertableData(String tablePath) {
+    public DataPage getInsertablePage(String tablePath) {
         File folder = new File(resolvePath(rootPath, tablePath, StorageConst.TABLE_DATA_PATH));
         String[] fileIdArr = folder.list((dir, name) -> !name.contains("_"));
         if (ArrayUtils.isEmpty(fileIdArr)) {
@@ -128,7 +157,7 @@ public class DiskPersistence implements Persistence {
         String lastFileId = Arrays.stream(fileIdArr).max(Comparator.comparing(Integer::valueOf)).orElse("0");
         File file = new File(folder, lastFileId);
         int offset = (int)(file.length() / StorageConst.PAGE_SIZE - 1);
-        DataPage dataPage = readData(tablePath, lastFileId, offset);
+        DataPage dataPage = readPage(tablePath, lastFileId, offset);
         if (dataPage == null) {
             dataPage = new DataPage(StorageConst.TABLE_DEF_FILE_ID);
         }
@@ -141,16 +170,16 @@ public class DiskPersistence implements Persistence {
      *         当文档不存在或大于1G后会生成新的数据页
      */
     @Override
-    public DataPage writeData(String tablePath, DataPage dataPage) throws PersistenceException {
-        File file = new File(resolvePath(rootPath, tablePath, StorageConst.TABLE_DATA_PATH, dataPage.getFileId()));
+    public DataPage writePage(String tablePath, DataPage dataPage) throws PersistenceException {
+        File file = new File(resolvePath(rootPath, tablePath, StorageConst.TABLE_DATA_PATH, dataPage.getPageId()));
         if (!file.exists()) {
             // 不存在，创建一个空的
             createFile(file);
             // newDataPage
-            dataPage = new DataPage(dataPage.getFileId(), dataPage.getData());
+            dataPage = new DataPage(dataPage.getPageId(), dataPage.getData());
         } else if (file.length() >= StorageConst.MAX_FILE_SIZE) {
             // 单个文件大于1G, 新申请一个
-            String nextFileId = String.valueOf(Integer.parseInt(dataPage.getFileId()) + 1);
+            String nextFileId = String.valueOf(Integer.parseInt(dataPage.getPageId()) + 1);
             file = new File(resolvePath(rootPath, tablePath, StorageConst.TABLE_DATA_PATH, nextFileId));
             while (file.exists()) { // 存在，再去下一个
                 nextFileId = String.valueOf(Integer.parseInt(nextFileId) + 1);

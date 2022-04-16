@@ -1,6 +1,7 @@
 package com.yuanzhy.sqldog.server.storage.disk;
 
 import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.model.DataExtent;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Persistence;
@@ -41,7 +42,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
         this.persistence = PersistenceFactory.get();
     }
     @Override
-    public Object[] insert(Map<String, Object> values) {
+    public synchronized Object[] insert(Map<String, Object> values) {
         // check
         this.checkData(values);
         // generate pk
@@ -73,7 +74,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
      */
     private void insertInternal(Map<String, Object> row) {
         List<Byte> dataBytes = transformToBinary(row);
-        DataPage dataPage = persistence.getInsertableData(tablePath);
+        DataPage dataPage = persistence.getInsertablePage(tablePath);
         byte[] pageBuf = dataPage.getData();
         short freeStart = ByteUtil.toShort(pageBuf, StorageConst.FREE_START_OFFSET);
         short freeEnd = ByteUtil.toShort(pageBuf, StorageConst.FREE_END_OFFSET);
@@ -81,12 +82,12 @@ public class DiskTableData extends AbstractTableData implements TableData {
             // 生成一个新的 page 追加到文件末尾，这里还复用pageBuf减少垃圾回收压力。随后后面的数据还是上一页的，但是FREE_START等标志位是正确的
             fillPageBuf(dataBytes, pageBuf, StorageConst.DATA_START_OFFSET, StorageConst.PAGE_SIZE);
             // dataPage.getOffset() + StorageConst.PAGE_SIZE == file.length
-            DataPage newDataPage = new DataPage(dataPage.getFileId(), dataPage.getOffset() + 1, pageBuf);
-            persistence.writeData(tablePath, newDataPage);
+            DataPage newDataPage = new DataPage(dataPage.getPageId(), dataPage.getOffset() + 1, pageBuf);
+            persistence.writePage(tablePath, newDataPage);
         } else { // page 空间够用, 在当前 page 空闲区写入数据
             fillPageBuf(dataBytes, pageBuf, freeStart, freeEnd);
             // 将当前 page 回写文件
-            persistence.writeData(tablePath, dataPage);
+            persistence.writePage(tablePath, dataPage);
         }
     }
 
@@ -249,12 +250,12 @@ public class DiskTableData extends AbstractTableData implements TableData {
     }
 
     @Override
-    public int updateBy(SqlUpdate sqlUpdate) {
+    public synchronized int updateBy(SqlUpdate sqlUpdate) {
         return 0;
     }
 
     @Override
-    public void truncate() {
+    public synchronized void truncate() {
         persistence.delete(persistence.resolvePath(tablePath, StorageConst.TABLE_DATA_PATH));
         persistence.delete(persistence.resolvePath(tablePath, StorageConst.TABLE_INDEX_PATH));
     }
@@ -268,10 +269,14 @@ public class DiskTableData extends AbstractTableData implements TableData {
         int nullBytesCount = nullableCount % 8 > 0 ? nullableCount / 8 + 1 : nullableCount / 8;
 
         List<Object[]> data = new ArrayList<>();
-        DataPage dataPage = persistence.readData(tablePath);
-        while (dataPage != null) {
-            data.addAll(transformToData(dataPage.getData(), nullBytesCount));
-            dataPage = persistence.readData(tablePath, dataPage.getFileId(), dataPage.getOffset() + 1);
+        DataExtent dataExtent = persistence.readExtent(tablePath);
+        while (dataExtent != null) {
+            int pageOffset = 0;
+            byte[] pageBuf;
+            while ((pageBuf = dataExtent.getPage(pageOffset++)) != null) {
+                data.addAll(transformToData(pageBuf, nullBytesCount));
+            }
+            dataExtent = persistence.readExtent(tablePath, dataExtent.getFileId(), dataExtent.getOffset() + 1);
         }
         return data;
     }
@@ -401,7 +406,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
     }
 
     @Override
-    public void addColumn(Column column) {
+    public synchronized void addColumn(Column column) {
         optimizing = true;
         try {
             this.alterColumn(column, -1);
@@ -411,7 +416,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
     }
 
     @Override
-    public void dropColumn(Column column, int deleteIndex) {
+    public synchronized void dropColumn(Column column, int deleteIndex) {
         optimizing = true;
         try {
             this.alterColumn(column, deleteIndex);
@@ -421,8 +426,9 @@ public class DiskTableData extends AbstractTableData implements TableData {
     }
 
     private void alterColumn(Column column, int deleteIndex) {
-        DataPage oldDataPage = persistence.readData(tablePath);
-        if (oldDataPage == null) return; // 没有数据，直接返回
+        DataPage pataPage = persistence.readPage(tablePath);
+//        DataExtent oldDataExtend = persistence.readExtent(tablePath);
+        if (pataPage == null) return; // 没有数据，直接返回
         Set<String> colNameSet = table.getColumns().keySet();
         int nullableCount = (int)table.getColumns().values().stream().filter(Column::isNullable).count();
         int nullBytesCount = nullableCount % 8 > 0 ? nullableCount / 8 + 1 : nullableCount / 8;
@@ -430,26 +436,30 @@ public class DiskTableData extends AbstractTableData implements TableData {
         // 旧数据移入临时目录
         persistence.move(tablePath, tmpTablePath);
         // 读取临时目录的旧数据，向正式目录写入新数据
-        oldDataPage = persistence.readData(tmpTablePath);
+        DataExtent oldDataExtend = persistence.readExtent(tmpTablePath);
         Map<String, Object> row = new LinkedHashMap<>();
         boolean isAdd = deleteIndex < 0;
-        while (oldDataPage != null) {
-            List<Object[]> data = transformToData(oldDataPage.getData(), nullBytesCount);
-            for (Object[] d : data) {
-                int i = 0;
-                for (String colName : colNameSet) {
-                    if (deleteIndex == i) {
-                        i++;
-                        continue;
+        while (oldDataExtend != null) {
+            byte[] byteBuf;
+            int pageOffset = 0;
+            while ((byteBuf = oldDataExtend.getPage(pageOffset++)) != null) {
+                List<Object[]> data = transformToData(byteBuf, nullBytesCount);
+                for (Object[] d : data) {
+                    int i = 0;
+                    for (String colName : colNameSet) {
+                        if (deleteIndex == i) {
+                            i++;
+                            continue;
+                        }
+                        row.put(colName, d[i++]);
                     }
-                    row.put(colName, d[i++]);
-                }
-                if (isAdd) {
-                    row.put(column.getName(), column.defaultValue());
+                    if (isAdd) {
+                        row.put(column.getName(), column.defaultValue());
+                    }
+                    this.insertInternal(row);
                 }
             }
-            this.insertInternal(row);
-            oldDataPage = persistence.readData(tablePath, oldDataPage.getFileId(), oldDataPage.getOffset() + 1);
+            oldDataExtend = persistence.readExtent(tablePath, oldDataExtend.getFileId(), oldDataExtend.getOffset() + 1);
         }
         persistence.delete(tmpTablePath);
     }
