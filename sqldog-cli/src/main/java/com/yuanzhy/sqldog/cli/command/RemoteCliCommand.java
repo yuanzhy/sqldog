@@ -21,6 +21,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 /**
@@ -29,7 +30,12 @@ import java.util.stream.Collectors;
  * @date 2021/11/6
  */
 public abstract class RemoteCliCommand implements CliCommand, Closeable {
+
+    final int MORE_MOD = 20;
+
     protected final Executor executor;
+
+    private int moreBatch;
 
     public RemoteCliCommand(String host, int port, String username, String password) {
         // login
@@ -85,13 +91,29 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
             // TODO 优化大数据量分页展示功能
             String[] headers = result.getLabels();
             List<Object[]> data = result.getData();
-            final int LEN = 20;
-            FormatterUtil.translateLabel(headers);
-            String out = FormatterUtil.joinByVLine(LEN, headers) + "\n" +
-                    FormatterUtil.genHLine(LEN, headers.length) + "\n" +
-                    data.stream().map(o -> toString(o, LEN)).collect(Collectors.joining("\n")) + "\n\n" +
-                    "(" + result.getRows() + " rows)";
-            System.out.println(out);
+
+            int pages = data.size() / MORE_MOD + (data.size() % MORE_MOD == 0 ? 0 : 1);
+            if (pages <= 1) {
+                printSinglePage(headers, data);
+                return;
+            }
+
+            printSinglePage(headers, data);
+            moreBatch++;
+            Scanner scanner = new Scanner(System.in);
+            while (moreBatch < pages) {
+                System.out.print("-- more -- ");
+                String command = scanner.nextLine();
+                if (StringUtils.isBlank(command) || " ".equals(command)) {
+                    printSinglePage(headers, data);
+                    moreBatch++;
+                } else if (StringUtils.startsWithAny(command, "q")) {
+                    moreBatch = 0;
+                    break;
+                }
+            }
+            System.out.println("(total -> " + result.getRows() + " rows)");
+            moreBatch = 0;
         } else { // other
             String[] headers = result.getLabels();
             List<Object[]> data = result.getData();
@@ -150,6 +172,19 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
              */
 
         }
+    }
+
+    private void printSinglePage(String[] headers, List<Object[]> data) {
+        int start = moreBatch * MORE_MOD;
+        int end = (moreBatch + 1) * MORE_MOD;
+        end = end > data.size() ? data.size() : end;
+        List<Object[]> pageData = data.subList(start, end);
+        final int LEN = 20;
+        FormatterUtil.translateLabel(headers);
+        String out = FormatterUtil.joinByVLine(LEN, headers) + "\n" +
+                FormatterUtil.genHLine(LEN, headers.length) + "\n" +
+                pageData.stream().map(o -> toString(o, LEN)).collect(Collectors.joining("\n"));
+        System.out.println(out);
     }
 
     private String toString(Object[] values, int maxLen) {
