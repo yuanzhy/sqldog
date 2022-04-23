@@ -8,8 +8,6 @@ import org.apache.commons.io.comparator.NameFileComparator;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.yuanzhy.sqldog.core.rmi.Response;
-
 /**
  * @author yuanzhy
  * @version 1.0
@@ -80,8 +78,7 @@ public class FileCliCommand extends RemoteCliCommand {
             }
         } else {
             String[] sqls = text.split(";\n");
-            Response response = executor.execute(sqls);
-            printResponse(response);
+            execute(Boolean.FALSE, conn.createStatement(), sqls);
         }
     }
 }

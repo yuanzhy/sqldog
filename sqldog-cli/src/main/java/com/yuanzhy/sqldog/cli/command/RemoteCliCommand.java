@@ -1,28 +1,24 @@
 package com.yuanzhy.sqldog.cli.command;
 
 import com.yuanzhy.sqldog.cli.util.FormatterUtil;
-import com.yuanzhy.sqldog.core.constant.Consts;
-import com.yuanzhy.sqldog.core.constant.StatementType;
-import com.yuanzhy.sqldog.core.rmi.Executor;
-import com.yuanzhy.sqldog.core.rmi.RMIServer;
-import com.yuanzhy.sqldog.core.rmi.Response;
-import com.yuanzhy.sqldog.core.sql.Constraint;
-import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.DateUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Closeable;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.Date;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 
 /**
  * @author yuanzhy
@@ -33,114 +29,30 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
 
     final int MORE_MOD = 20;
 
-    protected final Executor executor;
-
-    private int moreBatch;
+    protected final Connection conn;
 
     public RemoteCliCommand(String host, int port, String username, String password) {
         // login
-        Executor executor;
+        Connection conn;
         try {
-            Registry registry = LocateRegistry.getRegistry(host, port);
-            RMIServer rmiServer = (RMIServer) registry.lookup(Consts.SERVER_NAME);
-            executor = rmiServer.connect(username, password);
-        } catch (RemoteException | NotBoundException e) {
+            Class.forName("com.yuanzhy.sqldog.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:sqldog://" + host + ":" + port, username, password);
+        } catch (ClassNotFoundException | SQLException e) {
             printError(e);
             throw new RuntimeException("");
         }
-        this.executor = executor;
+        this.conn = conn;
     }
 
     protected final void executeAndExit(String... sql) {
         try {
-            Response response = executor.execute(sql);
-            printResponse(response);
-        } catch (RemoteException e) {
+            execute(Boolean.FALSE, conn.createStatement(), sql);
+        } catch (SQLException e) {
             printError(e);
         } finally {
             close();
         }
     }
-
-    protected void printResponse(Response response) {
-        if (StringUtils.isNotEmpty(response.getMessage())) {
-            System.out.println(response.getMessage());
-        }
-        SqlResult[] results = response.getResults();
-        if (results == null) {
-            return;
-        }
-        for (SqlResult result : results) {
-            printResult(result);
-        }
-
-    }
-
-    private void printResult(SqlResult result) {
-        if (result.getType() == StatementType.DDL) {
-            System.out.println("SUCCESS");
-        } else if (result.getType() == StatementType.DML) {
-            System.out.println("(" + result.getRows() + " rows)");
-        } else if (result.getType() == StatementType.DCL) {
-            // 暂未实现
-            System.out.println();
-        } else if (result.getType() == StatementType.DTL) {
-            // 暂未实现
-            System.out.println();
-        } else if (result.getType() == StatementType.DQL) {
-            // TODO 优化大数据量分页展示功能
-            String[] headers = result.getLabels();
-            List<Object[]> data = result.getData();
-
-            int pages = data.size() / MORE_MOD + (data.size() % MORE_MOD == 0 ? 0 : 1);
-            if (pages <= 1) {
-                printSinglePage(headers, data);
-                return;
-            }
-
-            printSinglePage(headers, data);
-            moreBatch++;
-            Scanner scanner = new Scanner(System.in);
-            while (moreBatch < pages) {
-                System.out.print("-- more -- ");
-                String command = scanner.nextLine();
-                if (StringUtils.isBlank(command) || " ".equals(command)) {
-                    printSinglePage(headers, data);
-                    moreBatch++;
-                } else if (StringUtils.startsWithAny(command, "q")) {
-                    moreBatch = 0;
-                    break;
-                }
-            }
-            System.out.println("(total -> " + result.getRows() + " rows)");
-            moreBatch = 0;
-        } else { // other
-            String[] headers = result.getLabels();
-            List<Object[]> data = result.getData();
-            if (data == null) {
-                String out = result.getSchema();
-                if (StringUtils.isNotEmpty(result.getTable())) {
-                    out += "." + result.getTable();
-                }
-                System.out.println(out);
-            } else if (headers == null) {
-                System.out.println(data.get(0)[0]);
-            } else {
-                final int LEN = 15;
-                FormatterUtil.translateLabel(headers);
-                String out = FormatterUtil.joinByVLine(LEN, headers) + "\n" +
-                        FormatterUtil.genHLine(LEN, headers.length) + "\n" +
-                        data.stream().map(o -> toString(o, LEN)).collect(Collectors.joining("\n")) + "\n";
-                Constraint[] constraints = result.getConstraints();
-                if (constraints != null) {
-                    out += "Constraint:\n";
-                    for (Constraint c : constraints) {
-                        out += "    \"" + c.getName() + "\" " + c.getType() + " (" + FormatterUtil.join(c.getColumnNames(), ",") + ")\n";
-                    }
-                }
-                System.out.println(out);
-
-            }
 
             /*
                        List of databases
@@ -170,22 +82,6 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
                 Indexes:
                     "company_pkey" PRIMARY KEY, btree (id)
              */
-
-        }
-    }
-
-    private void printSinglePage(String[] headers, List<Object[]> data) {
-        int start = moreBatch * MORE_MOD;
-        int end = (moreBatch + 1) * MORE_MOD;
-        end = end > data.size() ? data.size() : end;
-        List<Object[]> pageData = data.subList(start, end);
-        final int LEN = 20;
-        FormatterUtil.translateLabel(headers);
-        String out = FormatterUtil.joinByVLine(LEN, headers) + "\n" +
-                FormatterUtil.genHLine(LEN, headers.length) + "\n" +
-                pageData.stream().map(o -> toString(o, LEN)).collect(Collectors.joining("\n"));
-        System.out.println(out);
-    }
 
     private String toString(Object[] values, int maxLen) {
         String[] result = new String[values.length];
@@ -221,8 +117,8 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
     @Override
     public void close() {
         try {
-            executor.close();
-        } catch (RemoteException e) {
+            conn.close();
+        } catch (SQLException e) {
             printError(e);
         }
     }
@@ -248,4 +144,141 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
 //            throw new RuntimeException(e);
 //        }
 //    }
+
+    public void execute(boolean useMore, Statement stmt, String... sqls) throws SQLException {
+        for (int i = 0; i < sqls.length; i++) {
+            String[] arr = sqls[i].split("(;\\s+\n)");
+            for (String sql : arr) {
+                if (StringUtils.isBlank(sql)) {
+                    continue;
+                }
+                String tmp = StringUtils.upperCase(sql);
+                tmp = tmp.replace(";", "");
+                tmp = tmp.replace(" \\s{2,}+", "\\s");
+                tmp = tmp.trim();
+                String[] tmpArr = tmp.split("\\s");
+                DatabaseMetaData dbmd = conn.getMetaData();
+                String catalog = conn.getCatalog();
+                String schema = conn.getSchema();
+                if ("SHOW".equals(tmpArr[0])) {
+                    String sqlSuffix = tmpArr[1];
+                    if ("DATABASES".equals(sqlSuffix)) {
+                        printResultSet(dbmd.getCatalogs(), useMore);
+                    } else if ("SCHEMAS".equals(sqlSuffix)) {
+                        printResultSet(dbmd.getSchemas(), useMore);
+                    } else if ("TABLES".equals(sqlSuffix)) {
+                        printResultSet(dbmd.getTables(catalog, schema, null, null), useMore);
+                    } else if ("SEARCH_PATH".equals(sqlSuffix)) {
+                        System.out.println(schema);
+                    } else if ("TABLETYPES".equals(sqlSuffix)) {
+                        printResultSet(dbmd.getTableTypes(), useMore);
+                    } else if ("TYPEINFO".equals(sqlSuffix)) {
+                        printResultSet(dbmd.getTypeInfo(), useMore);
+                    } else if ("FUNCTIONS".equals(sqlSuffix)) {
+                        printResultSet(dbmd.getFunctions(catalog, schema, null), useMore);
+                    } else {
+                        System.out.println("not supported: " + sql);
+                    }
+                } else if (tmp.startsWith("SET CLIENT_ENCODING")) {
+                    // 默认都使用UTF-8
+                } else if (StringUtils.equalsAny(tmpArr[0], "USE", "SET SEARCH_PATH TO")) {
+                    String schemaName = tmpArr[1];
+                    conn.setSchema(schemaName);
+                    System.out.println(schemaName);
+                } else if (StringUtils.equalsAny(tmpArr[0], "\\D", "DESC")) {
+                    if (tmpArr.length == 1) { // 说明是\d, 列出所有表
+                        printResultSet(dbmd.getTables(catalog, schema, null, null), useMore);
+                    } else {
+                        String tableName = tmpArr[1];
+                        printResultSet(dbmd.getColumns(catalog, schema, tableName, null), useMore);
+                        // TODO 输出索引
+//                        printResultSet(dbmd.getPrimaryKeys(catalog, schema, tableName), true);
+//                        printResultSet(dbmd.getIndexInfo(catalog, schema, tableName, false, false), true);
+                    }
+                } else {
+                    boolean result = stmt.execute(sql);
+                    if (result) {
+                        printResultSet(stmt.getResultSet(), useMore);
+                    } else {
+                        int rowCount = stmt.getUpdateCount();
+                        System.out.println("SUCCESS (" + rowCount + " rows)");
+                    }
+                }
+            }
+        }
+        stmt.close();
+    }
+
+    private void printResultSet(ResultSet rs, boolean useMore) throws SQLException {
+        if (rs == null) {
+            System.out.println("EMPTY RESULTSET");
+            return;
+        }
+        rs.last();
+        int rowNum = rs.getRow();
+        rs.beforeFirst();
+        if (rowNum == 0) {
+            System.out.println("NO DATA");
+            return;
+        }
+        ResultSetMetaData metaData = rs.getMetaData();
+        // 获取需要显示列的索引
+        List<Integer> showColumnIndex = getShowColumnIndex(metaData);
+        List<String> headerList = new ArrayList<>();
+        for (int c : showColumnIndex) {
+            headerList.add(metaData.getColumnLabel(c));
+        }
+        String[] headers = headerList.toArray(new String[showColumnIndex.size()]);
+        final int LEN = 20;
+        FormatterUtil.translateLabel(headers);
+        String out = FormatterUtil.joinByVLine(LEN, headers) + "\n" +
+                FormatterUtil.genHLine(LEN, headers.length);
+        System.out.println(out);
+        int index = 1;
+        while (rs.next()) {
+            List<Object> line = new ArrayList<>();
+            for (int c : showColumnIndex) {
+                line.add(rs.getObject(c));
+            }
+            Object[] data = line.toArray();
+            System.out.println(toString(data, LEN));
+            if (rowNum <= MORE_MOD || !useMore) {
+                continue;
+            }
+            // 输出到一页
+            if (index == MORE_MOD) {
+                index = 1; // 重置行号
+                Scanner scanner = new Scanner(System.in);
+                System.out.println("-- more -- ");
+                String command = scanner.nextLine();
+                if (StringUtils.isBlank(command) || " ".equals(command)) {
+                    continue;
+                }
+                if (StringUtils.startsWithAny(command, "q")) {
+                    break;
+                }
+                scanner.close();
+            } else {
+                index++;
+            }
+        }
+        System.out.println("(total -> " + rowNum + " rows)");
+    }
+
+    private List<Integer> getShowColumnIndex(ResultSetMetaData metaData) throws SQLException {
+        // show tables不展示的列 TABLE_CAT,
+        String notShowHead = "TYPE_CAT,TYPE_SCHEM,SELF_REFERENCING_COL_NAME,REF_GENERATION";
+        // show columns不展示的列
+        notShowHead += ",DATA_TYPE,BUFFER_LENGTH,DECIMAL_DIGITS,NUM_PREC_RADIX,COLUMN_DEF,SQL_DATA_TYPE,SQL_DATETIME_SUB," +
+                "CHAR_OCTET_LENGTH,ORDINAL_POSITION,NULLABLE,SCOPE_CATALOG,SCOPE_SCHEMA,SCOPE_TABLE,SOURCE_DATA_TYPE,IS_AUTOINCREMENT,IS_GENERATEDCOLUMN";
+        List<String> notShowList = Arrays.asList(notShowHead.split(","));
+        int count = metaData.getColumnCount();
+        List<Integer> showColumnIndex = new ArrayList<>();
+        for (int c = 1; c <= count; c++) {
+            if (!notShowList.contains(metaData.getColumnLabel(c))) {
+                showColumnIndex.add(c);
+            }
+        }
+        return showColumnIndex;
+    }
 }

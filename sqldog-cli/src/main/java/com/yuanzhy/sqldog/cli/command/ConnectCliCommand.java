@@ -1,10 +1,10 @@
 package com.yuanzhy.sqldog.cli.command;
 
 import com.yuanzhy.sqldog.core.constant.Consts;
-import com.yuanzhy.sqldog.core.rmi.Response;
+
 import org.apache.commons.lang3.StringUtils;
 
-import java.rmi.RemoteException;
+import java.sql.SQLException;
 import java.util.Scanner;
 
 /**
@@ -17,8 +17,8 @@ public class ConnectCliCommand extends RemoteCliCommand {
     public ConnectCliCommand(String host, int port, String username, String password) {
         super(host, port, username, password);
         try {
-            System.out.println("Welcome to sqldog " + executor.getVersion());
-        } catch (RemoteException e) {
+            System.out.println("Welcome to sqldog " + conn.getMetaData().getDatabaseProductVersion());
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
@@ -33,11 +33,11 @@ public class ConnectCliCommand extends RemoteCliCommand {
                 if (StringUtils.startsWithAny(command, "quit", "\\q", "exit")) {
                     close();
                     scanner.close();
+                    System.exit(0);
                     break;
                 }
-                Response response = executor.execute(command);
-                printResponse(response);
-            } catch (RemoteException e) {
+                execute(Boolean.TRUE, conn.createStatement(), command);
+            } catch (SQLException e) {
                 printError(e);
             }
         }
