@@ -1,13 +1,16 @@
 package com.yuanzhy.sqldog.server.storage.disk;
 
+import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.common.model.DataExtent;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
 import com.yuanzhy.sqldog.server.common.model.Location;
 import com.yuanzhy.sqldog.server.core.Column;
+import com.yuanzhy.sqldog.server.core.Constraint;
 import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.core.Table;
 import com.yuanzhy.sqldog.server.core.TableData;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.server.core.constant.DataType;
 import com.yuanzhy.sqldog.server.storage.base.AbstractTableData;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
@@ -18,6 +21,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -25,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 存储设计：
@@ -43,7 +48,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
         super(table);
         this.tablePath = tablePath;
         this.persistence = PersistenceFactory.get();
-        tableIndex = new DiskTableIndex(tablePath);
+        tableIndex = new DiskTableIndex(table, tablePath);
     }
     @Override
     public synchronized Object[] insert(Map<String, Object> values) {
@@ -51,21 +56,28 @@ public class DiskTableData extends AbstractTableData implements TableData {
         this.checkData(values);
         // generate pk
         Object[] pkValues = generatePkValues(values);
-        // check pk TODO
-//        String pkValue = Arrays.stream(pkValues).map(Object::toString).collect(Collectors.joining(UNITED_SEP));
-//        Asserts.isFalse(pkSet.contains(pkValue), "Primary key conflict：" + Arrays.stream(pkValues).map(Object::toString).collect(Collectors.joining(", ")));
-//        pkSet.add(pkValue);
+        // check pk
+        if (pkValues != null) {
+            String[] pkNames = table.getPkColumnName();
+            byte[][] bytes = new byte[pkValues.length][];
+            for (int i = 0; i < pkValues.length; i++) {
+                bytes[i] = valueToBytes(table.getColumn(pkNames[i]), pkValues[i]);
+            }
+            Asserts.isFalse(tableIndex.isConflict(pkNames, bytes), "Primary key conflict：" + Arrays.stream(pkValues).map(Object::toString).collect(Collectors.joining(", ")));
+        }
 
         // check constraint
-//        this.checkConstraint(values); TODO
-//        for (Constraint c : table.getConstraints()) {
-//            String[] columnNames = c.getColumnNames();
-//            if (c.getType() == ConstraintType.UNIQUE) {
-//                String uniqueKey = uniqueColName(columnNames);
-//                String uniColValue = uniqueColValue(columnNames, values);
-//                uniqueMap.computeIfAbsent(uniqueKey, k -> new HashSet<>()).add(uniColValue);
-//            }
-//        }
+        for (Constraint c : table.getConstraints()) {
+            String[] columnNames = c.getColumnNames();
+            if (c.getType() == ConstraintType.UNIQUE) {
+                byte[][] bytes = new byte[columnNames.length][];
+                for (int i = 0; i < columnNames.length; i++) {
+                    bytes[i] = valueToBytes(table.getColumn(columnNames[i]), values.get(columnNames[i]));
+                }
+                // TODO unique冲突提醒优化
+                Asserts.isFalse(tableIndex.isConflict(columnNames, bytes), "Unique key conflict：" + Arrays.stream(columnNames).map(Object::toString).collect(Collectors.joining(", ")));
+            }
+        }
         // add data
         Map<String, Object> row = normalizeData(values);
         DataPage dataPage = this.insertData(row);

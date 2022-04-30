@@ -23,6 +23,5 @@
 - insert判重
 - update + delete
 - 查询优化 - calcite接口
-- CLI重构为JDBC
 - 协议重构，Java RMI -> PG
 - 写入缓存（提升批量DML性能）
