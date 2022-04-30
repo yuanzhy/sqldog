@@ -4,6 +4,7 @@ import com.yuanzhy.sqldog.core.exception.PersistenceException;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.common.model.DataExtent;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
+import com.yuanzhy.sqldog.server.common.model.IndexPage;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Collections;
@@ -54,17 +55,17 @@ public interface Persistence {
      * @param offset    偏移量
      * @return DataPage: nullable
      */
-    DataPage readPage(String tablePath, String pageId, int offset) throws PersistenceException;
+    DataPage readPage(String tablePath, short fileId, int offset) throws PersistenceException;
 
     /**
-     * 读取一个数据区
+     * 读取一个数据区, 需要大量tableScan的情况建议按区读取
      * @param tablePath table路径
      * @param fileId    文件标识
      * @param offset    偏移量
      * @return
      * @throws PersistenceException
      */
-    DataExtent readExtent(String tablePath, String fileId, int offset) throws PersistenceException;
+    DataExtent readExtent(String tablePath, short fileId, int offset) throws PersistenceException;
 
     /**
      * 获取可插入的数据页
@@ -98,12 +99,37 @@ public interface Persistence {
     byte[] writeExtraData(String tablePath, byte[] bytes) throws PersistenceException;
 
     /**
+     * 对应位置写入索引页，相当于覆盖一个页
+     * @throws PersistenceException
+     */
+    void writeIndex(String tablePath, String colName, IndexPage indexPage) throws PersistenceException;
+
+    /**
+     * 追加索引，并返回位置，相当于新增一个页
+     * @param tablePath
+     * @param colName
+     * @param newBuf
+     * @return
+     * @throws PersistenceException
+     */
+    IndexPage writeIndex(String tablePath, String colName, byte[] newBuf) throws PersistenceException;
+
+    /**
+     * 读取索引页
+     * @param tablePath  table路径
+     * @param colName    列名
+     * @param fileId     fileId
+     * @param offset     页偏移
+     * @return
+     */
+    IndexPage readIndex(String tablePath, String colName, short fileId, int offset) throws PersistenceException;
+    /**
      * 读取第一个文件的一个数据区
      * @param tablePath table路径
      * @param offset    偏移量
      * @return
      */
-    default DataExtent readExtent(String tablePath, int offset) {
+    default DataExtent readExtent(String tablePath, int offset) throws PersistenceException {
         return readExtent(tablePath, StorageConst.TABLE_DEF_FILE_ID, offset);
     }
     /**
@@ -111,7 +137,7 @@ public interface Persistence {
      * @param tablePath table路径
      * @return
      */
-    default DataExtent readExtent(String tablePath) {
+    default DataExtent readExtent(String tablePath) throws PersistenceException {
         return readExtent(tablePath, 0);
     }
     /**
@@ -132,12 +158,21 @@ public interface Persistence {
     default DataPage readPage(String tablePath) throws PersistenceException {
         return readPage(tablePath,0);
     }
+
+    default IndexPage readIndex(String tablePath, String colName) throws PersistenceException {
+        return readIndex(tablePath, colName, StorageConst.INDEX_DEF_FILE_ID);
+    }
+
+    default IndexPage readIndex(String tablePath, String colName, short fileId) throws PersistenceException {
+        return readIndex(tablePath, colName, StorageConst.INDEX_DEF_FILE_ID, 0);
+    }
+
     /**
      *
      * @param paths 各个域的名称
      * @return storagePath
      */
-    String resolvePath(String... paths);
+    String resolvePath(Object... paths);
 
     default String resolvePath(Base base, String... extraPaths) {
         LinkedList<String> list = new LinkedList<>();

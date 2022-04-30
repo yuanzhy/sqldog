@@ -50,7 +50,7 @@ abstract class UnregisteredDriver implements Driver {
         }
         String host = props.getProperty(HOST_PROPERTY_KEY);
         int port = Integer.parseInt(props.getProperty(PORT_PROPERTY_KEY));
-        String schema = props.getProperty(SCHEMA_PROPERTY_KEY);
+        String schema = props.getProperty(SCHEMA_PROPERTY_KEY, "PUBLIC");
         return new ConnectionImpl(host, port, schema, info);
     }
 
@@ -77,7 +77,7 @@ abstract class UnregisteredDriver implements Driver {
         portProp.required = false;
         portProp.description = "Port number of Sqldog Server";
 
-        DriverPropertyInfo schemaProp = new DriverPropertyInfo(SCHEMA_PROPERTY_KEY, info.getProperty(SCHEMA_PROPERTY_KEY, ""));
+        DriverPropertyInfo schemaProp = new DriverPropertyInfo(SCHEMA_PROPERTY_KEY, info.getProperty(SCHEMA_PROPERTY_KEY, "PUBLIC"));
         schemaProp.required = false;
         schemaProp.description = "Current Schema name";
 

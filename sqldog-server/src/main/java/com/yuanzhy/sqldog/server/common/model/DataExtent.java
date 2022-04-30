@@ -9,30 +9,25 @@ package com.yuanzhy.sqldog.server.common.model;
 public class DataExtent {
 
     /** 存储标识 */
-    private final String fileId;
+    private final short fileId;
     /** extent offset */
     private final int offset;
     /** 数据区 16K*64=1M */
-//    private final DataPage[] dataPages;
     private final byte[][] pages;
 
-    public DataExtent(String fileId, int offset, byte[][] pages) {
+    public DataExtent(short fileId, int offset, byte[][] pages) {
         this.fileId = fileId;
         this.offset = offset;
         this.pages = pages;
     }
 
-    public String getFileId() {
+    public short getFileId() {
         return fileId;
     }
 
     public int getOffset() {
         return offset;
     }
-
-//    public DataPage[] getDataPages() {
-//        return dataPages;
-//    }
 
     public byte[] getPage(int pageOffset) {
         if (0 <= pageOffset && pageOffset < pages.length) {

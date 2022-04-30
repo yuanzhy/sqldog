@@ -16,6 +16,7 @@ import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
 import com.yuanzhy.sqldog.server.storage.memory.MemoryTable;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,6 +29,8 @@ import java.util.Set;
 public class DiskTable extends MemoryTable implements Table, Persistable {
     private final String storagePath;
     private final Persistence persistence;
+
+    private Map<String, Column> oldColumns = null;
 
     protected DiskTable(Base parent, String tablePath) {
         super(parent);
@@ -82,8 +85,14 @@ public class DiskTable extends MemoryTable implements Table, Persistable {
 
     @Override
     public void addColumn(Column column) {
-        super.addColumn(column);
-        this.persistence();
+        // adding
+        this.oldColumns = new LinkedHashMap<>(columnMap);
+        try {
+            super.addColumn(column);
+            this.persistence();
+        } finally {
+            this.oldColumns = null;
+        }
     }
 
     @Override
@@ -109,6 +118,14 @@ public class DiskTable extends MemoryTable implements Table, Persistable {
     public void drop() {
         super.drop();
         persistence.delete(storagePath);
+    }
+
+    public Map<String, Column> getOldColumns() {
+        if (this.oldColumns == null) {
+            return super.getColumns();
+        } else {
+            return this.oldColumns;
+        }
     }
 
     @Override

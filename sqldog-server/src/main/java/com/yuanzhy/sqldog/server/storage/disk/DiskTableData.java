@@ -3,6 +3,7 @@ package com.yuanzhy.sqldog.server.storage.disk;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.common.model.DataExtent;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
+import com.yuanzhy.sqldog.server.common.model.Location;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.core.Table;
@@ -35,11 +36,14 @@ public class DiskTableData extends AbstractTableData implements TableData {
 
     private final Persistence persistence;
     private final String tablePath;
+
+    private final DiskTableIndex tableIndex;
     private volatile boolean optimizing = false;
     DiskTableData(Table table, String tablePath) {
         super(table);
         this.tablePath = tablePath;
         this.persistence = PersistenceFactory.get();
+        tableIndex = new DiskTableIndex(tablePath);
     }
     @Override
     public synchronized Object[] insert(Map<String, Object> values) {
@@ -64,36 +68,107 @@ public class DiskTableData extends AbstractTableData implements TableData {
 //        }
         // add data
         Map<String, Object> row = normalizeData(values);
-        this.insertInternal(row);
+        DataPage dataPage = this.insertData(row);
+        // add index
+        if (pkValues != null) {
+            String[] colNames = table.getPkColumnName();
+            for (int i = 0; i < colNames.length; i++) {
+                Column column = table.getColumn(colNames[i]);
+                tableIndex.insertIndex(column, valueToBytes(column, pkValues[i]), dataPage);
+            }
+        }
         return pkValues;
+    }
+
+    private byte[] valueToBytes(Column column, Object value) {
+        switch (column.getDataType()) {
+            case INT:
+            case SERIAL:
+                return ByteUtil.toBytes(((Number) value).intValue());
+            case BIGINT:
+            case BIGSERIAL:
+                return ByteUtil.toBytes(((Number) value).longValue());
+            case SMALLINT:
+            case SMALLSERIAL:
+                return ByteUtil.toBytes(((Number) value).shortValue());
+            case TINYINT:
+                return new byte[]{((Number) value).byteValue()};
+            case FLOAT:
+                return ByteUtil.toBytes(((Number) value).floatValue());
+            case DOUBLE:
+                return ByteUtil.toBytes(((Number) value).doubleValue());
+            case DATE:
+            case TIMESTAMP:
+            case TIME:
+                long v;
+                if (value instanceof Date) {
+                    v = ((Date)value).getTime();
+                } else if (value instanceof Number) {
+                    v = ((Number)value).longValue();
+                } else {
+                    v = Long.parseLong(value.toString());
+                }
+                return ByteUtil.toBytes(v);
+            case BOOLEAN:
+                byte b = (byte)(((Boolean)value) ? 0b1 : 0b0);
+                return new byte[]{b};
+            case BYTEA:
+            case TEXT:
+                byte[] bytes = (value instanceof byte[]) ? (byte[]) value : ByteUtil.toBytes(value.toString());
+                if (bytes.length > StorageConst.LARGE_FIELD_THRESHOLD) {
+                    // 需要存储在外部, 此处只存储代表外部存储的标识
+                    byte[] extraId = persistence.writeExtraData(tablePath, bytes);
+                    return extraId;
+                } else {
+                    // 存储在数据内部，和varchar逻辑一致
+                    short len = (short)bytes.length;
+                    return ArrayUtils.addAll(ByteUtil.toBytes(len), bytes);
+                }
+            case ARRAY:
+            case JSON:
+                throw new UnsupportedOperationException("暂未实现大字段存储");
+            default: // VARCHAR, CHAR, DECIMAL, NUMERIC
+                byte[] strBytes = ByteUtil.toBytes(value.toString());
+                short len = (short)strBytes.length;
+                return ArrayUtils.addAll(ByteUtil.toBytes(len), strBytes);
+        }
     }
 
     /**
      * 内部插入，参数格式已经校验和规范化，不需要再处理了
      * @param row normalizeData
      */
-    private void insertInternal(Map<String, Object> row) {
+    private DataPage insertData(Map<String, Object> row) {
         List<Byte> dataBytes = transformToBinary(row);
         DataPage dataPage = persistence.getInsertablePage(tablePath);
         byte[] pageBuf = dataPage.getData();
         short freeStart = ByteUtil.toShort(pageBuf, StorageConst.FREE_START_OFFSET);
         short freeEnd = ByteUtil.toShort(pageBuf, StorageConst.FREE_END_OFFSET);
-        if (freeEnd - freeStart < dataBytes.size()) {  // 剩余page空间不够存储本条记录
-            // 生成一个新的 page 追加到文件末尾，这里还复用pageBuf减少垃圾回收压力。随后后面的数据还是上一页的，但是FREE_START等标志位是正确的
-            fillPageBuf(dataBytes, pageBuf, StorageConst.DATA_START_OFFSET, StorageConst.PAGE_SIZE);
-            // dataPage.getOffset() + StorageConst.PAGE_SIZE == file.length
-            DataPage newDataPage = new DataPage(dataPage.getPageId(), dataPage.getOffset() + 1, pageBuf);
-            persistence.writePage(tablePath, newDataPage);
-        } else { // page 空间够用, 在当前 page 空闲区写入数据
-            fillPageBuf(dataBytes, pageBuf, freeStart, freeEnd);
-            // 将当前 page 回写文件
-            persistence.writePage(tablePath, dataPage);
+        // ------- 写入数据 -------
+        if (dataBytes.size() >= StorageConst.PAGE_SIZE - 16) {
+            // TODO
+            throw new RuntimeException("单条记录大于一页的情况暂未实现：" + dataBytes.size());
         }
+        if (freeEnd - freeStart < dataBytes.size()) {  // 剩余page空间不够存储本条记录
+            // 生成一个新的 page 追加到文件末尾，这里还复用pageBuf减少垃圾回收压力。虽然后面的数据还是上一页的，但是FREE_START等标志位是正确的
+            Location loction = fillPageBuf(dataBytes, pageBuf, StorageConst.DATA_START_OFFSET, StorageConst.PAGE_SIZE);
+            // dataPage.getOffset() + StorageConst.PAGE_SIZE == file.length
+            DataPage newDataPage = new DataPage(dataPage.getFileId(), dataPage.getOffset() + 1, pageBuf);
+            dataPage = persistence.writePage(tablePath, newDataPage);
+            dataPage.setLocation(loction);
+        } else { // page 空间够用, 在当前 page 空闲区写入数据
+            Location loction = fillPageBuf(dataBytes, pageBuf, freeStart, freeEnd);
+            // 将当前 page 回写文件
+            dataPage = persistence.writePage(tablePath, dataPage);
+            dataPage.setLocation(loction);
+        }
+        return dataPage;
+
     }
 
-    private void fillPageBuf(List<Byte> dataBytes, byte[] pageBuf, short freeStart, short freeEnd) {
+    private Location fillPageBuf(List<Byte> dataBytes, byte[] pageBuf, short freeStart, short freeEnd) {
         // Page Header
-        //  - CHKSUM 未实现
+        //  - CHECKSUM 未实现
         pageBuf[0] = pageBuf[1] = pageBuf[2] = pageBuf[3] = 0;
         //  - FREE_START  FREE_END
 //        pageBuf[4] = (byte)(freeStart >> 8 & 0xff);
@@ -105,6 +180,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
         pageBuf[8] = pageBuf[9] = pageBuf[10] = pageBuf[11] = pageBuf[12] = pageBuf[13] = pageBuf[14] = pageBuf[15] = 0;
 
         // 写入 data (header + data)
+        int locStart = freeStart;
         for (Byte dataByte : dataBytes) {
             pageBuf[freeStart++] = dataByte;
         }
@@ -112,6 +188,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
         byte[] startBytes = ByteUtil.toBytes(freeStart);
         pageBuf[4] = startBytes[0];
         pageBuf[5] = startBytes[1];
+        return new Location((short)locStart, (short)(freeStart - locStart));
     }
 
     /**
@@ -137,68 +214,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
                     ++nullIdx;
                 }
             }
-            switch (column.getDataType()) {
-                case INT:
-                case SERIAL:
-                    addAll(dataList, ByteUtil.toBytes(((Number) value).intValue()));
-                    break;
-                case BIGINT:
-                case BIGSERIAL:
-                    addAll(dataList, ByteUtil.toBytes(((Number) value).longValue()));
-                    break;
-                case SMALLINT:
-                case SMALLSERIAL:
-                    addAll(dataList, ByteUtil.toBytes(((Number) value).shortValue()));
-                    break;
-                case TINYINT:
-                    dataList.add(((Number) value).byteValue());
-                    break;
-                case FLOAT:
-                    addAll(dataList, ByteUtil.toBytes(((Number) value).floatValue()));
-                    break;
-                case DOUBLE:
-                    addAll(dataList, ByteUtil.toBytes(((Number) value).doubleValue()));
-                    break;
-                case DATE:
-                case TIMESTAMP:
-                case TIME:
-                    long v;
-                    if (value instanceof Date) {
-                        v = ((Date)value).getTime();
-                    } else if (value instanceof Number) {
-                        v = ((Number)value).longValue();
-                    } else {
-                        v = Long.parseLong(value.toString());
-                    }
-                    addAll(dataList, ByteUtil.toBytes(v));
-                    break;
-                case BOOLEAN:
-                    byte b = (byte)(((Boolean)value) ? 0b1 : 0b0);
-                    dataList.add(b);
-                    break;
-                case BYTEA:
-                case TEXT:
-                    byte[] bytes = (value instanceof byte[]) ? (byte[]) value : ByteUtil.toBytes(value.toString());
-                    if (bytes.length > StorageConst.LARGE_FIELD_THRESHOLD) {
-                        // 需要存储在外部, 此处只存储代表外部存储的标识
-                        byte[] extraId = persistence.writeExtraData(tablePath, bytes);
-                        addAll(dataList, extraId);
-                    } else {
-                        // 存储在数据内部，和varchar逻辑一致
-                        short len = (short)bytes.length;
-                        addAll(dataList, ByteUtil.toBytes(len));
-                        addAll(dataList, bytes);
-                    }
-                    break;
-                case ARRAY:
-                case JSON:
-                    throw new UnsupportedOperationException("暂未实现大字段存储");
-                default: // VARCHAR, CHAR, DECIMAL, NUMERIC
-                    byte[] strBytes = ByteUtil.toBytes(value.toString());
-                    short len = (short)strBytes.length;
-                    addAll(dataList, ByteUtil.toBytes(len));
-                    addAll(dataList, strBytes);
-            }
+            addAll(dataList, valueToBytes(column, value));
         }
         addFirst(dataList, nullFlags);
         short dataHeader = (short)dataList.size();
@@ -206,6 +222,8 @@ public class DiskTableData extends AbstractTableData implements TableData {
         // Data Header + Data
         return dataList;
     }
+
+
 
     private void addFirst(List<Byte> list, byte[] bytes) {
         for (int i = bytes.length - 1; i >= 0; i--) {
@@ -289,7 +307,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
 
     private List<Object[]> transformToData(byte[] pageBuf, int nullBytesCount) {
         List<Object[]> data = new ArrayList<>();
-        Collection<Column> columns = table.getColumns().values();
+        Collection<Column> columns = diskTable().getOldColumns().values();
         int dataStart = StorageConst.DATA_START_OFFSET;
         short freeStart = ByteUtil.toShort(pageBuf, StorageConst.FREE_START_OFFSET);
         while (dataStart < freeStart) {  // 读取多行数据
@@ -429,12 +447,15 @@ public class DiskTableData extends AbstractTableData implements TableData {
         DataPage pataPage = persistence.readPage(tablePath);
 //        DataExtent oldDataExtend = persistence.readExtent(tablePath);
         if (pataPage == null) return; // 没有数据，直接返回
-        Set<String> colNameSet = table.getColumns().keySet();
-        int nullableCount = (int)table.getColumns().values().stream().filter(Column::isNullable).count();
+        Set<String> colNameSet = diskTable().getOldColumns().keySet();
+        int nullableCount = (int)diskTable().getOldColumns().values().stream().filter(Column::isNullable).count();
         int nullBytesCount = nullableCount % 8 > 0 ? nullableCount / 8 + 1 : nullableCount / 8;
+        String[] pkNames = table.getPkColumnName();
         String tmpTablePath = persistence.resolvePath(tablePath, "tmp");
         // 旧数据移入临时目录
         persistence.move(tablePath, tmpTablePath);
+        // 删除旧索引信息
+        persistence.delete(persistence.resolvePath(tablePath, StorageConst.TABLE_INDEX_PATH));
         // 读取临时目录的旧数据，向正式目录写入新数据
         DataExtent oldDataExtend = persistence.readExtent(tmpTablePath);
         Map<String, Object> row = new LinkedHashMap<>();
@@ -446,21 +467,37 @@ public class DiskTableData extends AbstractTableData implements TableData {
                 List<Object[]> data = transformToData(byteBuf, nullBytesCount);
                 for (Object[] d : data) {
                     int i = 0;
+                    Object[] pkValues = pkNames == null ? null : new Object[pkNames.length];
+                    int pkIndex = 0;
                     for (String colName : colNameSet) {
                         if (deleteIndex == i) {
                             i++;
                             continue;
                         }
                         row.put(colName, d[i++]);
+                        if (ArrayUtils.contains(pkNames, colName)) {
+                            pkValues[pkIndex++] = row.get(colName);
+                        }
                     }
                     if (isAdd) {
                         row.put(column.getName(), column.defaultValue());
                     }
-                    this.insertInternal(row);
+                    DataPage dataPage = this.insertData(row);
+                    // add index
+                    if (pkValues != null) {
+                        for (i = 0; i < pkNames.length; i++) {
+                            Column col = table.getColumn(pkNames[i]);
+                            tableIndex.insertIndex(col, valueToBytes(col, pkValues[i]), dataPage);
+                        }
+                    }
                 }
             }
             oldDataExtend = persistence.readExtent(tablePath, oldDataExtend.getFileId(), oldDataExtend.getOffset() + 1);
         }
         persistence.delete(tmpTablePath);
+    }
+
+    private DiskTable diskTable() {
+        return (DiskTable) table;
     }
 }

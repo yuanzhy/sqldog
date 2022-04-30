@@ -51,7 +51,7 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     private final Set<Statement> openStatements = new HashSet<>();
 
     private String database = "default";
-    private String schema = "";
+    private String schema;
     private boolean isClosed = false;
 
 
@@ -271,8 +271,8 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     @Override
     public void setSchema(String schema) throws SQLException {
         checkClosed();
-        this.schema = schema == null ? "" : schema.trim();
-        this.useSchema();
+        this.schema = schema == null ? "PUBLIC" : schema.trim();
+//        this.useSchema();
     }
 
     @Override

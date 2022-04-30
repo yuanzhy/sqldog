@@ -27,11 +27,10 @@ public class Databases {
     private static final ThreadLocal<String> TL = new ThreadLocal<>();
 
     static {
-        final String DEF_NAME = StorageConst.DEF_DATABASE_NAME;
         if (ConfigUtil.isDisk()) {
             loadDbFromDisk();
         } else {
-            DATABASES.put(DEF_NAME, new DatabaseDecorator(new DatabaseBuilder().name(DEF_NAME).description("sqldog default db").build()));
+            DATABASES.put(StorageConst.DEF_DATABASE_NAME, new DatabaseDecorator(new DatabaseBuilder().name(StorageConst.DEF_DATABASE_NAME).description("sqldog default db").build()));
         }
     }
 
