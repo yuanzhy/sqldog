@@ -202,6 +202,99 @@ public abstract class AbstractTableData implements TableData {
         return sources.stream().filter(fn).collect(Collectors.toSet());
     }
 
+    protected Predicate<Object[]> handleWhere(SqlBasicCall condition) {
+        SqlKind kind = condition.getOperator().getKind();
+        SqlNode left = condition.getOperandList().get(0);
+        SqlNode right = condition.getOperandList().size() > 1 ? condition.getOperandList().get(1): null;
+        if (kind == SqlKind.AND) {
+            Predicate<Object[]> leftPredicate, rightPredicate;
+            if (left instanceof SqlBasicCall) {
+                leftPredicate = handleWhere((SqlBasicCall) left);
+            } else {
+                throw new UnsupportedOperationException("operation not support: " + left.toString());
+            }
+            if (right instanceof SqlBasicCall) {
+                rightPredicate = handleWhere((SqlBasicCall) right);
+            } else {
+                throw new UnsupportedOperationException("operation not support: " + right.toString());
+            }
+            return leftPredicate.and(rightPredicate);
+        } else if (kind == SqlKind.OR) {
+            Predicate<Object[]> leftPredicate, rightPredicate;
+            if (left instanceof SqlBasicCall) {
+                leftPredicate = handleWhere((SqlBasicCall) left);
+            } else {
+                throw new UnsupportedOperationException("operation not support: " + left.toString());
+            }
+            if (right instanceof SqlBasicCall) {
+                rightPredicate = handleWhere((SqlBasicCall) right);
+            } else {
+                throw new UnsupportedOperationException("operation not support: " + right.toString());
+            }
+            return leftPredicate.or(rightPredicate);
+        }
+        if (left instanceof SqlBasicCall) {
+            // where ID + AGE > 15 // 暂不支持
+            throw new UnsupportedOperationException("operation not support: " + left.toString());
+        }
+        String leftString = left.toString();
+        // where TT.ID < 15
+        String colName = leftString.contains(".") ? StringUtils.substringAfter(leftString, ".") : leftString;
+        final int colIndex = table.getColumnIndex(colName);
+        if (colIndex < 0) {
+            throw new IllegalArgumentException("Column not found: " + colName);
+        }
+//        Predicate<Map<String, Object>> fn = null;
+        Predicate<Object[]> fn = null;
+        DataType dt = table.getColumn(colName).getDataType();
+        Object val = parseValue(right, dt);
+        if (kind == SqlKind.BETWEEN) {
+            Object val2 = parseValue(condition.getOperandList().get(2), dt);
+            fn = m -> m[colIndex] != null
+                    && ObjectUtils.compare((Comparable)m[colIndex], (Comparable)val) >= 0
+                    && ObjectUtils.compare((Comparable)m[colIndex], (Comparable)val2) <= 0;
+        } else if (kind == SqlKind.EQUALS) {
+            fn = m -> val != null && val.equals(m[colIndex]);
+        } else if (kind == SqlKind.NOT_EQUALS) {
+            fn = m -> val != null && !val.equals(m[colIndex]);
+        } else if (kind == SqlKind.IN) {
+            fn = m -> m[colIndex] != null && ((List)val).contains(m[colIndex]);
+        } else if (kind == SqlKind.NOT_IN) {
+            fn = m -> m[colIndex] != null && !((List)val).contains(m[colIndex]);
+        } /*else if (kind == SqlKind.EXISTS) {
+
+        } */else if (kind == SqlKind.IS_NULL) {
+            fn = m -> m[colIndex] == null;
+        } else if (kind == SqlKind.IS_NOT_NULL) {
+            fn = m -> m[colIndex] != null;
+        } else if (kind == SqlKind.LESS_THAN) {
+            fn = m -> m[colIndex] != null && ObjectUtils.compare((Comparable)m[colIndex], (Comparable)val) < 0;
+        } else if (kind == SqlKind.LESS_THAN_OR_EQUAL) {
+            fn = m -> m[colIndex] != null && ObjectUtils.compare((Comparable)m[colIndex], (Comparable)val) <= 0;
+        } else if (kind == SqlKind.GREATER_THAN) {
+            fn = m -> m[colIndex] != null && ObjectUtils.compare((Comparable)m[colIndex], (Comparable)val) > 0;
+        } else if (kind == SqlKind.GREATER_THAN_OR_EQUAL) {
+            fn = m -> m[colIndex] != null && ObjectUtils.compare((Comparable)m[colIndex], (Comparable)val) >= 0;
+        } else if (kind == SqlKind.LIKE) {
+            if (val == null) {
+                fn = m -> false;
+            } else {
+                Pattern pattern = Pattern.compile("^" + val.toString().replace("%", ".*").replace("_", ".") + "$");
+                fn = m -> {
+                    Object v = m[colIndex];
+                    if (v == null) {
+                        return false;
+                    }
+                    return pattern.matcher(v.toString()).matches();
+                };
+            }
+        } else {
+            throw new UnsupportedOperationException("operation not support: " + condition.toString());
+        }
+        // TODO + -
+        return fn;
+    }
+
     protected Object parseValue(SqlNode sqlNode, DataType dt) {
         if (sqlNode == null) {
             return null;

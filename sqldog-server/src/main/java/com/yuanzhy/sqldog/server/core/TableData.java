@@ -28,7 +28,14 @@ public interface TableData {
     @Deprecated
     List<Object[]> getData();
 
+    int getCount();
+
     void addColumn(Column column);
 
     void dropColumn(Column column, int deleteIndex);
+
+    /**
+     * 整理表并重建索引，避免存储碎片
+     */
+    void optimize();
 }

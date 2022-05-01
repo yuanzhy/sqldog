@@ -23,6 +23,7 @@ import org.apache.calcite.schema.ModifiableTable;
 import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Statistic;
+import org.apache.calcite.schema.Statistics;
 import org.apache.calcite.schema.impl.AbstractTableQueryable;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.slf4j.Logger;
@@ -55,7 +56,7 @@ public class ScannableCalciteTable extends AbstractQueryableTable implements Sca
 
     @Override
     public Statistic getStatistic() {
-        return super.getStatistic();
+        return Statistics.of(table.getTableData().getCount(), null);
     }
 
     @Override

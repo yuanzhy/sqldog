@@ -13,12 +13,12 @@ public class UpdatedIndex {
     /** 待更新的起始位置 - 字节数 */
     private final int dataStart;
     /** 待更新的值 */
-    private final byte[] value;
+//    private final byte[] value;
 
-    public UpdatedIndex(IndexPage indexPage, int dataStart, byte[] value) {
+    public UpdatedIndex(IndexPage indexPage, int dataStart/*, byte[] value*/) {
         this.indexPage = indexPage;
         this.dataStart = dataStart;
-        this.value = value;
+//        this.value = value;
     }
 
     public IndexPage getIndexPage() {
@@ -29,7 +29,7 @@ public class UpdatedIndex {
         return dataStart;
     }
 
-    public byte[] getValue() {
-        return value;
-    }
+//    public byte[] getValue() {
+//        return value;
+//    }
 }

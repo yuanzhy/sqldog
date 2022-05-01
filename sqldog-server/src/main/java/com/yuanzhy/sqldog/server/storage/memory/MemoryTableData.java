@@ -169,6 +169,11 @@ public class MemoryTableData extends AbstractTableData implements TableData {
     }
 
     @Override
+    public int getCount() {
+        return data.size();
+    }
+
+    @Override
     public void addColumn(Column column) {
         this.data.forEach(row -> row.put(column.getName(), column.defaultValue()));
     }
@@ -176,6 +181,11 @@ public class MemoryTableData extends AbstractTableData implements TableData {
     @Override
     public void dropColumn(Column column, int deleteIndex) {
         this.data.forEach(row -> row.remove(column.getName()));
+    }
+
+    @Override
+    public void optimize() {
+        // do nothing
     }
 
     /**

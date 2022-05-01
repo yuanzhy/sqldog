@@ -32,7 +32,7 @@ public class DiskSchema extends MemorySchema implements Schema, Persistable {
         List<String> tablePaths = persistence.list(storagePath);
         for (String tablePath : tablePaths) {
             Table diskTable = new DiskTable(this, tablePath);
-            this.addTable(diskTable);
+            super.addTable(diskTable);
         }
     }
     public DiskSchema(Base parent, String name, String description) {
@@ -46,6 +46,14 @@ public class DiskSchema extends MemorySchema implements Schema, Persistable {
     public void setDescription(String description) {
         super.setDescription(description);
         this.persistence();
+    }
+
+    @Override
+    public void addTable(Table table) {
+        super.addTable(table);
+        if (table instanceof Persistable) {
+            ((Persistable) table).persistence();
+        }
     }
 
     @Override

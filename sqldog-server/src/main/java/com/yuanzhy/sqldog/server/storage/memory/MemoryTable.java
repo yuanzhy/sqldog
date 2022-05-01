@@ -11,6 +11,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.Set;
 public class MemoryTable extends MemoryBase implements Table {
     /** 列 */
     protected final Map<String, Column> columnMap;
+    protected final Map<String, Integer> columnIndexMap = new HashMap<>();
     /** 约束 */
     protected Constraint primaryKey;
     protected Serial serial;
@@ -49,6 +51,7 @@ public class MemoryTable extends MemoryBase implements Table {
         this.constraint = constraint;
         this.serial = serial;
         this.initTableData();
+        this.updateColumnIndex();
     }
 
     protected void initTableData() {
@@ -58,6 +61,7 @@ public class MemoryTable extends MemoryBase implements Table {
     @Override
     public void drop() {
         this.columnMap.clear();
+        this.updateColumnIndex();
         this.constraint.clear();
 //        this.uniqueMap.clear();
         this.getTableData().truncate();
@@ -87,7 +91,7 @@ public class MemoryTable extends MemoryBase implements Table {
         if (constraint != null) {
             r.addAll(constraint);
         }
-        return r.isEmpty() ? Collections.emptyList() : r;
+        return r;
     }
 
     @Override
@@ -111,6 +115,7 @@ public class MemoryTable extends MemoryBase implements Table {
             throw new IllegalArgumentException(column.getName() + " exists");
         }
         this.columnMap.put(column.getName(), column);
+        this.updateColumnIndex();
         getTableData().addColumn(column);
     }
 
@@ -118,6 +123,7 @@ public class MemoryTable extends MemoryBase implements Table {
     public synchronized void dropColumn(String columnName) {
         int deleteIndex = ArrayUtils.indexOf(this.columnMap.keySet().toArray(), columnName);
         Column column = this.columnMap.remove(columnName);
+        this.updateColumnIndex();
         getTableData().dropColumn(column, deleteIndex);
     }
 
@@ -126,5 +132,22 @@ public class MemoryTable extends MemoryBase implements Table {
         Column column = this.getColumn(colName);
         Asserts.notNull(column, colName + " not exists");
         column.setDescription(description);
+    }
+
+    @Override
+    public int getColumnIndex(String columnName) {
+        if (columnIndexMap.isEmpty()) {
+            this.updateColumnIndex();
+        }
+        Integer index = columnIndexMap.get(columnName);
+        return index == null ? -1 : index.intValue();
+    }
+
+    private void updateColumnIndex() {
+        this.columnIndexMap.clear();
+        String[] colNames = this.columnMap.keySet().toArray(new String[0]);
+        for (int i = 0; i < colNames.length; i++) {
+            columnIndexMap.put(colNames[i], i);
+        }
     }
 }

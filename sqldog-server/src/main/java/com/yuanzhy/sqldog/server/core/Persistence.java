@@ -51,7 +51,7 @@ public interface Persistence {
     /**
      * 读取一个数据页
      * @param tablePath table路径
-     * @param pageId    文件标识
+     * @param fileId    文件标识
      * @param offset    偏移量
      * @return DataPage: nullable
      */
@@ -189,4 +189,7 @@ public interface Persistence {
 
     void move(String fromPath, String toPath) throws PersistenceException;
 
+    void writeStatistics(String tablePath, Map<String, Object> data) throws PersistenceException;
+
+    Map<String, Object> readStatistics(String tablePath) throws PersistenceException;
 }

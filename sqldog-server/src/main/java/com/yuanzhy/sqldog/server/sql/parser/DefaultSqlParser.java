@@ -1,5 +1,6 @@
 package com.yuanzhy.sqldog.server.sql.parser;
 
+import com.yuanzhy.sqldog.server.sql.command.OptimizeCommand;
 import org.apache.commons.lang3.StringUtils;
 
 import com.yuanzhy.sqldog.server.sql.SqlCommand;
@@ -77,6 +78,8 @@ public class DefaultSqlParser implements SqlParser {
             return new DeleteCommand(sql);
         } else if (sql.startsWith("SELECT") /*|| sql.startsWith("WITH RECURSIVE")*/) {
             return new SelectCommand(sql);
+        } else if (sql.startsWith("OPTIMIZE")) {
+            return new OptimizeCommand(sql);
         } else if (sql.equals("COMMIT")) {
             return new CommitCommand(sql);
         }

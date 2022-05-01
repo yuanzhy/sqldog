@@ -3,10 +3,13 @@ package com.yuanzhy.sqldog.server.storage.disk;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
 import com.yuanzhy.sqldog.server.common.model.IndexPage;
+import com.yuanzhy.sqldog.server.common.model.Location;
 import com.yuanzhy.sqldog.server.common.model.UpdatedIndex;
 import com.yuanzhy.sqldog.server.core.Column;
+import com.yuanzhy.sqldog.server.core.Constraint;
 import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
 import com.yuanzhy.sqldog.server.util.ByteUtil;
 import org.apache.commons.lang3.ArrayUtils;
@@ -14,6 +17,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author yuanzhy
@@ -23,17 +27,23 @@ import java.util.LinkedList;
 public class DiskTableIndex {
     
     private final Table table;
+
+    private final DiskTableData tableData;
     private final String tablePath;
     private final Persistence persistence;
-    DiskTableIndex(Table table, String tablePath) {
+    DiskTableIndex(Table table, String tablePath, DiskTableData tableData) {
         this.table = table;
         this.tablePath = tablePath;
+        this.tableData = tableData;
         this.persistence = PersistenceFactory.get();
     }
 
     public boolean isConflict(String[] colNames, byte[][] values) {
         for (int i = 0; i < colNames.length; i++) {
             IndexPage rootPage = persistence.readIndex(tablePath, colNames[i]);
+            if (rootPage == null) {
+                return false;
+            }
             Column column = table.getColumn(colNames[i]);
             IndexPage leafPage = findLeafIndex(rootPage, column, values[i], null);
             byte[] leafBuf = leafPage.getData();
@@ -195,17 +205,22 @@ public class DiskTableIndex {
                 }
             }
         }
+        updateBranchIndex(colName, value, updateBranchType, toBeUpdated, changedPage);
+    }
+
+    private void updateBranchIndex(String colName, byte[] value, int updateBranchType, LinkedList<UpdatedIndex> toBeUpdated, IndexPage leafPage) {
         if (updateBranchType == 0) {
             return;
         }
         for (int i = 0; i < toBeUpdated.size(); i++) {
-            final IndexPage lowerIndex = i == 0 ? changedPage : toBeUpdated.get(i - 1).getIndexPage();
+            final IndexPage lowerIndex = i == 0 ? leafPage : toBeUpdated.get(i - 1).getIndexPage();
             final UpdatedIndex updatedIndex = toBeUpdated.get(i);
+//            final byte[] value = updatedIndex.getValue();
             final byte[] updateBuf = updatedIndex.getIndexPage().getData();
             final byte level = updateBuf[StorageConst.INDEX_LEVEL_START];
-            dataStart = updatedIndex.getDataStart(); // 待插入的位置，【值-索引地址值】
-            freeStart = ByteUtil.toShort(updateBuf, StorageConst.FREE_START_OFFSET);
-            freeEnd = ByteUtil.toShort(updateBuf, StorageConst.FREE_END_OFFSET);
+            final int dataStart = updatedIndex.getDataStart(); // 待插入的位置，【值-索引地址值】
+            final int freeStart = ByteUtil.toShort(updateBuf, StorageConst.FREE_START_OFFSET);
+            final int freeEnd = ByteUtil.toShort(updateBuf, StorageConst.FREE_END_OFFSET);
             final int branchValCount = value.length + 2 + 4; // 2数据长度，4索引地址长度
             if (updateBranchType == 1) { // 替换最小值情况
                 int minValLen = ByteUtil.toShort(updateBuf, dataStart);
@@ -230,6 +245,7 @@ public class DiskTableIndex {
                     IndexPage page1 = persistence.writeIndex(tablePath, colName, newBuf1);
                     if (i == toBeUpdated.size() - 1) {
                         // 当前是根节点了，需要升级 =======================================
+                        IndexPage rootPage = updatedIndex.getIndexPage();
                         IndexPage page2 = persistence.writeIndex(tablePath, colName, updateBuf); // 将原根写入其他位置, 把0号位置让给新根
                         byte[] rootBuf = rootPage.getData();
                         rootBuf[StorageConst.INDEX_LEVEL_START] = (byte)(level+1); // 写入level
@@ -244,7 +260,7 @@ public class DiskTableIndex {
                     } else {
                         // 父索引需要新增了, 改为2. 前置索引改为新增的索引
                         updateBranchType = 2;
-                        toBeUpdated.set(i, new UpdatedIndex(page1, StorageConst.INDEX_BRANCH_START, value));
+                        toBeUpdated.set(i, new UpdatedIndex(page1, StorageConst.INDEX_BRANCH_START));
                     }
                 }
             } else {
@@ -266,11 +282,11 @@ public class DiskTableIndex {
                         // 2. 写入值   最小值 直接写入第一页
                         writeIndexValue(lowerIndex, value, dataStart, newBuf1);
                         page1 = persistence.writeIndex(tablePath, colName, newBuf1); // 第一页为新增的，返回地址相关信息
-                        toBeUpdated.set(i, new UpdatedIndex(page1, dataStart, value));
+                        toBeUpdated.set(i, new UpdatedIndex(page1, dataStart));
                     } else { // 最大值和中间值 逻辑类似. 可能会有拷贝到第二页的数据为空的情况, 即参数5长度为0
                         final byte[] newBuf2 = IndexPage.newBuffer(level);
                         // 拷贝1后面的数据到2
-                        System.arraycopy(leafBuf, dataStart, newBuf2, StorageConst.INDEX_BRANCH_START, freeStart - dataStart);
+                        System.arraycopy(updateBuf, dataStart, newBuf2, StorageConst.INDEX_BRANCH_START, freeStart - dataStart);
                         int freeStart1 = dataStart;
                         int freeStart2 = StorageConst.INDEX_BRANCH_START + freeStart - dataStart;
                         // 判断够不够写入的
@@ -289,10 +305,11 @@ public class DiskTableIndex {
                         // 写入新页2 和 原页
                         page2 = persistence.writeIndex(tablePath, colName, newBuf2);
                         persistence.writeIndex(tablePath, colName, updatedIndex.getIndexPage());
-                        toBeUpdated.set(i, new UpdatedIndex(page2, freeStart2, value));
+                        toBeUpdated.set(i, new UpdatedIndex(page2, freeStart2));
                     }
                     if (i == toBeUpdated.size() - 1) {
                         // 当前是根节点了，需要升级 =======================================
+                        IndexPage rootPage = updatedIndex.getIndexPage();
                         if (page1 == null) { // 谁为空谁就是原根
                             page1 = persistence.writeIndex(tablePath, colName, updateBuf); // 将原根写入其他位置, 把0号位置让给新根
                         } else {
@@ -391,15 +408,16 @@ public class DiskTableIndex {
         int compared = compare(column, value, existsVal);
         if (compared == 0) {
             // 和最小值相等，叶子长度+1
-            int dataAddrLen = ByteUtil.toInt(leafBuf, dataStart);
-            dataStart += 4 + 8 * dataAddrLen; // 跳过地址长度，定位到数据地址的开头
-            IndexPage nextPage = null;
-            while (dataStart > StorageConst.PAGE_SIZE) {
-                nextPage = IndexPage.fromAddress(leafBuf, StorageConst.INDEX_LEAF_NEXT_PAGE);
-                nextPage = persistence.readIndex(tablePath, column.getName(), nextPage.getFileId(), nextPage.getOffset());
-                dataStart -= StorageConst.PAGE_SIZE;
-            }
-            return new LeafResult(false, dataStart, nextPage);
+//            int dataAddrLen = ByteUtil.toInt(leafBuf, dataStart);
+//            dataStart += 4 + 8 * dataAddrLen; //
+//            IndexPage nextPage = null;
+//            while (dataStart > StorageConst.PAGE_SIZE) {
+//                nextPage = IndexPage.fromAddress(leafBuf, StorageConst.INDEX_LEAF_NEXT_PAGE);
+//                nextPage = persistence.readIndex(tablePath, column.getName(), nextPage.getFileId(), nextPage.getOffset());
+//                dataStart -= StorageConst.PAGE_SIZE;
+//            }
+            dataStart += 4; // 跳过地址长度，定位到数据地址的开头
+            return new LeafResult(false, dataStart, null);
         } else if (compared < 0) {
             // 比最小值还小，直接插入最左边.
             dataStart -= 2 + valLength; // 指针移动到上一条记录的最后
@@ -441,17 +459,21 @@ public class DiskTableIndex {
                 dataStart -= 2 + valLength; // 找到比插入的值大的了，这时寻找前一个值的地址
             } // else { // 遍历到最后还没有，说明新插入的值是最大的，直接取最后的位置，即dataStart == freeStart}
             if (compare(column, value, existsVal) == 0) {
-                return new LeafResult(false, dataStart, nextPage);
+                // 等值的情况，定位到数据地址值开头，不等值的情况定位再数据地址的末尾 ==========================
+                return new LeafResult(false, dataStart + 2 + valLength + 4, nextPage);
             }
             return new LeafResult(true, dataStart, nextPage);
         }
 //        return dataStart;
     }
 
+//    private IndexPage findLeafIndex(IndexPage pPage, Column column, byte[] value) {
+//        return findLeafIndex(pPage, column, value, null);
+//    }
     // 寻找叶子节点，并收集需要更新的树枝节点信息
     private IndexPage findLeafIndex(IndexPage pPage, Column column, byte[] value, LinkedList<UpdatedIndex> toBeUpdated) {
         byte[] buf = pPage.getData();
-        int freeStart = buf[StorageConst.FREE_START_OFFSET];
+        int freeStart = ByteUtil.toShort(buf, StorageConst.FREE_START_OFFSET);
         int dataStart = StorageConst.INDEX_BRANCH_START;
         byte[] existsVal;
         int valLength = ByteUtil.toShort(buf, dataStart);
@@ -462,12 +484,12 @@ public class DiskTableIndex {
         if (compared == 0) {
             // 取相等的地址值
             if (toBeUpdated != null)
-                toBeUpdated.addFirst(new UpdatedIndex(pPage, dataStart+4, value)); // 跳过地址值
+                toBeUpdated.addFirst(new UpdatedIndex(pPage, dataStart - valLength - 2)); // 树枝节点等值情况取值的开头
         } else if (compared < 0) {
             // 比最小值还小，直接插入最左边.
             dataStart -= 2 + valLength; // 指针移动到上一条记录的最后
             if (toBeUpdated != null)
-                toBeUpdated.addFirst(new UpdatedIndex(pPage, dataStart, value));
+                toBeUpdated.addFirst(new UpdatedIndex(pPage, dataStart));
             if (dataStart == StorageConst.INDEX_BRANCH_START) { // 前面已经没有数据了，直接取第一条数据对应的索引地址
                 dataStart += 2 + valLength;
             } else {
@@ -490,12 +512,18 @@ public class DiskTableIndex {
                 existsVal = ArrayUtils.subarray(buf, dataStart, dataStart += valLength);
             }
             // 获取前一个值对应的索引地址
-            if (found) {
-                dataStart -= 2 + valLength; // 找到比插入的值大的了，这时寻找前一个值的地址
+            boolean eq = compare(column, value, existsVal) == 0;
+            if (found) { // 等值的情况，树枝节点定位到值的开头，不等值的情况定位前一个地址的末尾 ==========================
+                dataStart -= 2 + valLength; // 找到比插入的值大的了，这时寻找前一个值的地址 末尾
             } // else { // 遍历到最后还没有，说明新插入的值是最大的，直接找最后一页的地址}
-            if (toBeUpdated != null)
-                toBeUpdated.addFirst(new UpdatedIndex(pPage, dataStart, value));
-            dataStart -= 4;
+            if (toBeUpdated != null) {
+                toBeUpdated.addFirst(new UpdatedIndex(pPage, dataStart));
+            }
+            if (eq) {
+                dataStart += 2 + valLength; // 等值，跳到等值的索引地址值位置
+            } else {
+                dataStart -= 4; // 不等，跳到前一个值的索引地址值位置
+            }
         }
         // 获取 索引地址值
         fileId = ByteUtil.toShort(buf, dataStart);
@@ -549,11 +577,82 @@ public class DiskTableIndex {
         }
     }
 
-    private class LeafResult {
-        boolean isNew; // 是否新增，如果有相同的索引值，则为false
-        int dataStart;
+    public void deleteIndex(List<DiskTableData.RowResult> rowList, DataPage dataPage) { // TODO TEST
+        for (Constraint constraint : table.getConstraints()) {
+            if (constraint.getType() != ConstraintType.PRIMARY_KEY
+                    && constraint.getType() != ConstraintType.UNIQUE) {
+                // TODO 暂只支持主键和唯一索引
+                continue;
+            }
+            String[] colNames = constraint.getColumnNames();
+            for (int i = 0; i < colNames.length; i++) {
+                Column column = table.getColumn(colNames[i]);
+                IndexPage rootPage = persistence.readIndex(tablePath, colNames[i]);
+                int idx = table.getColumnIndex(colNames[i]);
+                for (DiskTableData.RowResult rr : rowList) {
+                    final byte[] value = tableData.valueToBytes(column, rr.row[idx]);
+                    final LinkedList<UpdatedIndex> toBeUpdated = new LinkedList<>();
+                    IndexPage leafPage = findLeafIndex(rootPage, column, value, toBeUpdated);
+                    byte[] leafBuf = leafPage.getData();
+                    int freeStart = ByteUtil.toShort(leafBuf, StorageConst.FREE_START_OFFSET);
+                    LeafResult lr = findLeafStart(column, value, leafBuf);
+                    if (lr.isNew) {
+                        continue; // 没找到，不处理了
+                    }
+                    dataPage.setLocation(new Location((short) rr.start, (short) (rr.end - rr.start)));
+                    byte[] dataAddr = dataPage.toAddress(); // 8位地址数据
+                    int dataStart = lr.dataStart;
+                    final int addrLen = ByteUtil.toInt(leafBuf, dataStart - 4);
+                    int loop = 0;
+                        // 没有跳页
+                    byte[] dataAddr2;
+                    boolean notFound = false;
+                    do {
+                        if (loop++ >= addrLen) {
+                            notFound = true;
+                            break; // 遍历到头了还没找到
+                        }
+                        if (dataStart >= freeStart) {
+                            IndexPage nextPage = IndexPage.fromAddress(leafBuf, StorageConst.INDEX_LEAF_NEXT_PAGE);
+                            leafPage = persistence.readIndex(tablePath, column.getName(), nextPage.getFileId(), nextPage.getOffset());
+                            leafBuf = leafPage.getData();
+                            freeStart = ByteUtil.toShort(leafBuf, StorageConst.FREE_START_OFFSET);
+                            dataStart = StorageConst.INDEX_LEAF_START;
+                        }
+                        dataAddr2 = ArrayUtils.subarray(leafBuf, dataStart, dataStart += 8);
+                    } while (!Arrays.equals(dataAddr, dataAddr2));
+                    if (notFound) {
+                        continue;
+                    }
+                    int _len;
+                    boolean needUpdateBranch = false;
+                    if (addrLen == 1) { // 只有一个长度, 需要连数据也一起删掉
+                        _len = 8 + 4 + value.length + 2; // 一条索引数据的总长度
+                        if (dataStart - _len == StorageConst.INDEX_LEAF_START) {
+                            needUpdateBranch = true;
+                            // 是最小值了，需要同时删除树枝索引的最小值
+                        }
+                    } else {
+                        _len = 8;
+                    }
+                    // 从索引中删除该地址
+                    System.arraycopy(leafBuf, dataStart, leafBuf, dataStart - _len, freeStart - dataStart);
+                    updateFreeStart(freeStart - _len, leafBuf);
+                    persistence.writeIndex(tablePath, colNames[i], leafPage);
+                    if (needUpdateBranch) {
+                        short valLen = ByteUtil.toShort(leafBuf, StorageConst.INDEX_LEAF_START);
+                        byte[] minValue = ArrayUtils.subarray(leafBuf, StorageConst.INDEX_LEAF_START + 2, StorageConst.INDEX_LEAF_START + 2 + valLen);
+                        updateBranchIndex(column.getName(), minValue, 1, toBeUpdated, leafPage);
+                    }
+                }
+            }
+        }
+    }
 
-        IndexPage leafPage;
+    private class LeafResult {
+        final boolean isNew; // 是否新增，如果有相同的索引值，则为false
+        final int dataStart;
+        final IndexPage leafPage;
         LeafResult(boolean isNew, int dataStart) {
             this(isNew, dataStart, null);
         }

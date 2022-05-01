@@ -15,7 +15,10 @@ import com.yuanzhy.sqldog.server.core.constant.DataType;
 import com.yuanzhy.sqldog.server.storage.base.AbstractTableData;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
 import com.yuanzhy.sqldog.server.util.ByteUtil;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDelete;
+import org.apache.calcite.sql.SqlLiteral;
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -23,12 +26,14 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -43,12 +48,19 @@ public class DiskTableData extends AbstractTableData implements TableData {
     private final String tablePath;
 
     private final DiskTableIndex tableIndex;
+
+    private volatile int count = 0;
     private volatile boolean optimizing = false;
     DiskTableData(Table table, String tablePath) {
         super(table);
         this.tablePath = tablePath;
         this.persistence = PersistenceFactory.get();
-        tableIndex = new DiskTableIndex(table, tablePath);
+        tableIndex = new DiskTableIndex(table, tablePath, this);
+        // 初始化统计信息
+        Map<String, Object> statMap = persistence.readStatistics(tablePath);
+        if (statMap.containsKey("count")) {
+            this.count = (int) statMap.get("count");
+        }
     }
     @Override
     public synchronized Object[] insert(Map<String, Object> values) {
@@ -89,10 +101,17 @@ public class DiskTableData extends AbstractTableData implements TableData {
                 tableIndex.insertIndex(column, valueToBytes(column, pkValues[i]), dataPage);
             }
         }
+        count++;
+        saveStatistics();
         return pkValues;
     }
 
-    private byte[] valueToBytes(Column column, Object value) {
+    private void saveStatistics() {
+        // TODO 后续可能会有其他统计信息
+        persistence.writeStatistics(tablePath, Collections.singletonMap("count", count));
+    }
+
+    byte[] valueToBytes(Column column, Object value) {
         switch (column.getDataType()) {
             case INT:
             case SERIAL:
@@ -210,8 +229,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
      */
     private List<Byte> transformToBinary(Map<String, Object> row) {
         LinkedList<Byte> dataList = new LinkedList<>();
-        int nullableCount = (int)table.getColumns().values().stream().filter(Column::isNullable).count();
-        int nullBytesCount = nullableCount % 8 > 0 ? nullableCount / 8 + 1 : nullableCount / 8;
+        int nullBytesCount = getNullBytesCount();
         byte[] nullFlags = new byte[nullBytesCount];
         int nullIdx = 0;
         for (Map.Entry<String, Object> entry : row.entrySet()) {
@@ -250,38 +268,145 @@ public class DiskTableData extends AbstractTableData implements TableData {
 
     @Override
     public synchronized int deleteBy(SqlDelete sqlDelete) {
-        int count = 0;
-//        SqlNode condition = sqlDelete.getCondition();
-//        if (condition == null) {
-//            count = data.size();
-//            this.truncate();
-//        } else if (condition instanceof SqlBasicCall) {
-//            Set<Map<String, Object>> dataList = handleWhere(data, (SqlBasicCall)condition);
-//            count = dataList.size();
-//            String[] pkNames = table.getPkColumnName();
-//            for (Map<String, Object> row : dataList) {
-//                // 删除主键索引
-//                if (pkNames != null) {
-//                    pkSet.remove(uniqueColValue(pkNames, row));
-//                }
-//                // 删除唯一索引
-//                for (Constraint c : table.getConstraints()) {
-//                    String[] columnNames = c.getColumnNames();
-//                    if (c.getType() == ConstraintType.UNIQUE) {
-//                        uniqueMap.getOrDefault(uniqueColName(columnNames), Collections.emptySet()).remove(uniqueColValue(columnNames, row));
-//                    }
-//                }
-//            }
-//            data.removeAll(dataList);
-//        } else {
-//            throw new UnsupportedOperationException("not supported: " + condition);
-//        }
-        return count;
+        int _count = 0;
+        SqlNode condition = sqlDelete.getCondition();
+        if (condition == null) {
+            _count = count;
+            this.truncate();
+        } else if (condition instanceof SqlBasicCall) {
+            final int nullBytesCount = getNullBytesCount();
+            // 判断是不是简单条件， 比如 where ID = '1'
+            boolean simpleCondition = false;
+            if (simpleCondition) { //
+                // TODO 基于索引删除的情况再议，等查询优化完成后在弄吧
+            } else { // 没有索引，全表扫描的删吧
+                Predicate<Object[]> predicate = handleWhere((SqlBasicCall)condition);
+                DataPage dataPage = persistence.readPage(tablePath);
+                while (dataPage != null) {
+                    _count += deleteByCondition(dataPage, nullBytesCount, predicate);
+                    dataPage = persistence.readPage(tablePath, dataPage.getFileId(), dataPage.getOffset() + 1);
+                }
+            }
+        } else {
+            throw new UnsupportedOperationException("not supported: " + condition);
+        }
+        // 更新总数
+        if (_count > 0) {
+            count -= _count;
+            this.saveStatistics();
+        }
+        return _count;
     }
 
     @Override
     public synchronized int updateBy(SqlUpdate sqlUpdate) {
-        return 0;
+        List<String> colList = sqlUpdate.getTargetColumnList().stream().map(SqlNode::toString).collect(Collectors.toList());
+        if (table.getPrimaryKey() != null) {
+            for (String columnName : table.getPrimaryKey().getColumnNames()) { // TODO 更新主键字段
+                Asserts.isFalse(colList.contains(columnName), "Temporary unsupported update primary key");
+            }
+        }
+        for (Constraint c : table.getConstraints()) {
+            if (c.getType() == ConstraintType.UNIQUE) {
+                for (String columnName : c.getColumnNames()) { // TODO 更新唯一字段
+                    Asserts.isFalse(colList.contains(columnName), "Temporary unsupported update unique key");
+                }
+            }
+        }
+        int _count = 0;
+        List<Object> valList = new ArrayList<>(colList.size());
+        for (int i = 0; i < colList.size(); i++) {
+            Column column = table.getColumn(colList.get(i));
+            SqlNode s = sqlUpdate.getSourceExpressionList().get(i);
+            if (!(s instanceof SqlLiteral)) {
+                throw new UnsupportedOperationException("not supported: " + s.toString());
+            }
+            Object val = parseValue(s, column.getDataType());
+            if (!column.isNullable() && val == null) {
+                throw new IllegalArgumentException("'" + column.getName() + "' is not null");
+            }
+            val = checkVal(column, val);
+            valList.add(val);
+        }
+
+        SqlNode condition = sqlUpdate.getCondition();
+        Predicate<Object[]> predicate;
+        if (condition == null) {
+            predicate = (o) -> true;
+        } else if (condition instanceof SqlBasicCall) { // TODO 基于索引的更新等查询优化后再实现
+            predicate = handleWhere((SqlBasicCall) condition);
+        } else {
+            throw new UnsupportedOperationException("not supported: " + condition);
+        }
+        DataPage dataPage = persistence.readPage(tablePath);
+        int nullBytesCount = getNullBytesCount();
+        while (dataPage != null) {
+            _count += updateByCondition(dataPage, nullBytesCount, predicate, colList, valList);
+            dataPage = persistence.readPage(tablePath, dataPage.getFileId(), dataPage.getOffset() + 1);
+        }
+        return _count;
+    }
+
+    private int updateByCondition(DataPage dataPage, int nullBytesCount, Predicate<Object[]> predicate, List<String> colList, List<Object> valList) {
+        int _count = 0;
+        final byte[] pageBuf = dataPage.getData();
+        final Collection<Column> columns = table.getColumns().values();
+        int dataStart = StorageConst.DATA_START_OFFSET;
+        short freeStart = ByteUtil.toShort(pageBuf, StorageConst.FREE_START_OFFSET);
+        List<RowResult> deletedDatas = new ArrayList<>();
+        List<Map<String, Object>> insertedDatas = new ArrayList<>();
+        while (dataStart < freeStart) {  // 读取多行数据
+            RowResult rr = readRow(pageBuf, columns, dataStart, nullBytesCount);
+            dataStart = rr.end;
+            if (rr.row == null) { // 说明是删除的记录
+                continue;
+            }
+            if (predicate.test(rr.row)) { // 符合更新条件，弄它
+                Map<String, Object> newRow = toMap(rr.row, columns);
+                for (int i = 0; i < colList.size(); i++) {
+                    String colName = colList.get(i);
+                    Object val = valList.get(i);
+                    newRow.put(colName, val);
+                }
+                List<Byte> newRowBytes = transformToBinary(newRow);
+                if (newRowBytes.size() == rr.end - rr.start) { // update后长度没变，直接复用原来的位置. 索引也不用更新了
+                    int _start = rr.start;
+                    for (Byte dataByte : newRowBytes) {
+                        pageBuf[_start++] = dataByte;
+                    }
+                } else { // 长度变了，删除原来的 插入一个新的
+                    // TODO 这个可以实现为只要一页能放下就动态调节
+                    short dataHeader = ByteUtil.toShort(pageBuf, rr.start);
+                    dataHeader |= 0x8000; // 变为删除
+                    byte[] dataHeaderBytes = ByteUtil.toBytes(dataHeader);
+                    pageBuf[rr.start] = dataHeaderBytes[0];
+                    pageBuf[rr.start + 1] = dataHeaderBytes[1];
+                    deletedDatas.add(rr);
+                    // 新增一条记录
+                    insertedDatas.add(newRow);
+                }
+                _count++;
+            }
+        }
+        if (_count > 0) {
+            persistence.writePage(tablePath, dataPage);
+            if (!deletedDatas.isEmpty()) {
+                tableIndex.deleteIndex(deletedDatas, dataPage);
+            }
+            for (Map<String, Object> insertedData : insertedDatas) {
+                this.insertData(insertedData);
+            }
+        }
+        return _count;
+    }
+
+    private Map<String, Object> toMap(Object[] row, Collection<Column> columns) {
+        int i = 0;
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (Column column : columns) {
+            map.put(column.getName(), row[i++]);
+        }
+        return map;
     }
 
     @Override
@@ -311,10 +436,67 @@ public class DiskTableData extends AbstractTableData implements TableData {
         return data;
     }
 
+    @Override
+    public int getCount() {
+        return count;
+    }
+
+    private int getNullBytesCount() {
+        int nullableCount = (int)table.getColumns().values().stream().filter(Column::isNullable).count();
+        return nullableCount % 8 > 0 ? nullableCount / 8 + 1 : nullableCount / 8;
+    }
+
     private void checkTableState() {
         if (optimizing) {
             throw new IllegalStateException("Table Optimizing ...");
         }
+    }
+
+//    private List<Map<String, Object>> transformToMap(byte[] pageBuf, int nullBytesCount) {
+//        String[] colNames = table.getColumns().keySet().toArray(new String[0]);
+//        return transformToData(pageBuf, nullBytesCount).stream().map(o -> {
+//            Map<String, Object> m = new LinkedHashMap<>();
+//            for (int i = 0; i < colNames.length; i++) {
+//                m.put(colNames[i], o[i]);
+//            }
+//            return m;
+//        }).collect(Collectors.toList());
+//    }
+
+    /**
+     * 删除一页中符合条件的记录
+     * @param dataPage        数据页
+     * @param nullBytesCount  null字段byte数
+     * @param predicate       条件
+     * @return 删除数量
+     */
+    private int deleteByCondition(DataPage dataPage, int nullBytesCount, Predicate<Object[]> predicate) {
+        final byte[] pageBuf = dataPage.getData();
+        final Collection<Column> columns = table.getColumns().values();
+        int dataStart = StorageConst.DATA_START_OFFSET;
+        short freeStart = ByteUtil.toShort(pageBuf, StorageConst.FREE_START_OFFSET);
+        List<RowResult> deletedDatas = new ArrayList<>();
+        while (dataStart < freeStart) {  // 读取多行数据
+            RowResult rr = readRow(pageBuf, columns, dataStart, nullBytesCount);
+            dataStart = rr.end;
+            if (rr.row == null) { // 说明是删除的记录
+                continue;
+            }
+            if (predicate.test(rr.row)) { // 符合删除条件，干掉它
+                short dataHeader = ByteUtil.toShort(pageBuf, rr.start);
+                dataHeader |= 0x8000; // 变为删除
+                byte[] dataHeaderBytes = ByteUtil.toBytes(dataHeader);
+                pageBuf[rr.start] = dataHeaderBytes[0];
+                pageBuf[rr.start + 1] = dataHeaderBytes[1];
+                deletedDatas.add(rr);
+            }
+        }
+        if (!deletedDatas.isEmpty()) { // 有删除的情况，持久化以下
+            persistence.writePage(tablePath, dataPage);
+            // 同时删除索引
+            tableIndex.deleteIndex(deletedDatas, dataPage);
+        }
+        return deletedDatas.size();
     }
 
     private List<Object[]> transformToData(byte[] pageBuf, int nullBytesCount) {
@@ -323,116 +505,129 @@ public class DiskTableData extends AbstractTableData implements TableData {
         int dataStart = StorageConst.DATA_START_OFFSET;
         short freeStart = ByteUtil.toShort(pageBuf, StorageConst.FREE_START_OFFSET);
         while (dataStart < freeStart) {  // 读取多行数据
-            short dataHeader = ByteUtil.toShort(new byte[]{pageBuf[dataStart++], pageBuf[dataStart++]});
-            boolean deleted = ((dataHeader >> 15) & 0b1) == 1;
-            if (deleted) continue;
-            int end = dataStart + (dataHeader & 0b0111111111111111);
-            // 读取nullFlag
-            byte[] nullFlags = new byte[nullBytesCount];
+            RowResult rr = readRow(pageBuf, columns, dataStart, nullBytesCount);
+            dataStart = rr.end;
+            if (rr.row == null) { // 说明是删除的记录
+                continue;
+            }
+            data.add(rr.row);
+        }
+        return data;
+    }
+
+    private RowResult readRow(byte[] pageBuf, Collection<Column> columns, final int start, final int nullBytesCount) {
+        int dataStart = start;
+        short dataHeader = ByteUtil.toShort(pageBuf, dataStart);
+        dataStart += 2;
+        final int end = dataStart + (dataHeader & 0b0111111111111111);
+        boolean deleted = ((dataHeader >> 15) & 0b1) == 1;
+        if (deleted) {
+            return new RowResult(start, end, null);
+        }
+        Object[] row = new Object[columns.size()];
+        // 读取nullFlag
+        byte[] nullFlags = new byte[nullBytesCount];
 //            for (int i = nullBytesCount - 1; i >= 0; i--) {
 //                nullFlags[i] = pageBuf[dataStart++];
 //            }
-            for (int i = 0; i < nullBytesCount; i++) {
-                nullFlags[i] = pageBuf[dataStart++];
-            }
-            // 读数据
-            Object[] row = new Object[columns.size()];
-            while (dataStart < end) { // 读取一行数据
-                int colIdx = 0;
-                int nullIdx = 0;
-                for (Column column : columns) {
-                    if (column.isNullable()) {
-                        byte nullBit = (byte) Math.pow(2, nullIdx % 8);
-                        if (nullBit == (nullFlags[nullIdx / 8] & nullBit)) { // null位为1，说明对应的值为空
-                            nullIdx++;
-                            colIdx++;
-                            continue;
-                        }
+        for (int i = 0; i < nullBytesCount; i++) {
+            nullFlags[i] = pageBuf[dataStart++];
+        }
+        // 读数据
+        while (dataStart < end) { // 读取一行数据
+            int colIdx = 0;
+            int nullIdx = 0;
+            for (Column column : columns) {
+                if (column.isNullable()) {
+                    byte nullBit = (byte) Math.pow(2, nullIdx % 8);
+                    if (nullBit == (nullFlags[nullIdx / 8] & nullBit)) { // null位为1，说明对应的值为空
                         nullIdx++;
+                        colIdx++;
+                        continue;
                     }
-                    switch (column.getDataType()) {
-                        case INT:
-                        case SERIAL:
+                    nullIdx++;
+                }
+                switch (column.getDataType()) {
+                    case INT:
+                    case SERIAL:
 //                                row[colIdx++] = ByteUtil.toInt(ArrayUtils.subarray(pageBuf, dataStart, dataStart += 4));
-                            row[colIdx++] = ByteUtil.toInt(pageBuf, dataStart);
-                            dataStart += 4;
-                            break;
-                        case BIGINT:
-                        case BIGSERIAL:
-                            row[colIdx++] = ByteUtil.toLong(pageBuf, dataStart);
-                            dataStart += 8;
-                            break;
-                        case SMALLINT:
-                        case SMALLSERIAL:
-                            row[colIdx++] = ByteUtil.toShort(pageBuf, dataStart);
+                        row[colIdx++] = ByteUtil.toInt(pageBuf, dataStart);
+                        dataStart += 4;
+                        break;
+                    case BIGINT:
+                    case BIGSERIAL:
+                        row[colIdx++] = ByteUtil.toLong(pageBuf, dataStart);
+                        dataStart += 8;
+                        break;
+                    case SMALLINT:
+                    case SMALLSERIAL:
+                        row[colIdx++] = ByteUtil.toShort(pageBuf, dataStart);
+                        dataStart += 2;
+                        break;
+                    case TINYINT:
+                        row[colIdx++] = pageBuf[dataStart++];
+                        break;
+                    case FLOAT:
+                        row[colIdx++] = ByteUtil.toFloat(pageBuf, dataStart);
+                        dataStart += 4;
+                        break;
+                    case DOUBLE:
+                        row[colIdx++] = ByteUtil.toDouble(pageBuf, dataStart);
+                        dataStart += 8;
+                        break;
+                    case DATE:
+                        row[colIdx++] = new java.sql.Date(ByteUtil.toLong(pageBuf, dataStart));
+                        dataStart += 8;
+                        break;
+                    case TIMESTAMP:
+                        row[colIdx++] = new java.sql.Timestamp(ByteUtil.toLong(pageBuf, dataStart));
+                        dataStart += 8;
+                        break;
+                    case TIME:
+                        row[colIdx++] = new java.sql.Time(ByteUtil.toLong(pageBuf, dataStart));
+                        dataStart += 8;
+                        break;
+                    case BOOLEAN:
+                        row[colIdx++] = pageBuf[dataStart++] == 1;
+                        break;
+                    case BYTEA:
+                    case TEXT:
+                        short fileId = ByteUtil.toShort(pageBuf, dataStart);
+                        boolean extra = 0x1000 == (fileId & 0x1000);
+                        if (extra) {
+                            byte[] extraId = ArrayUtils.subarray(pageBuf, dataStart, dataStart += 8);
+                            byte[] bytes = persistence.readExtraData(tablePath, extraId);
+                            row[colIdx++] = column.getDataType() == DataType.TEXT ? ByteUtil.toString(bytes) : bytes;
+                        } else {
+                            short len = ByteUtil.toShort(pageBuf, dataStart);
                             dataStart += 2;
-                            break;
-                        case TINYINT:
-                            row[colIdx++] = pageBuf[dataStart++];
-                            break;
-                        case FLOAT:
-                            row[colIdx++] = ByteUtil.toFloat(pageBuf, dataStart);
-                            dataStart += 4;
-                            break;
-                        case DOUBLE:
-                            row[colIdx++] = ByteUtil.toDouble(pageBuf, dataStart);
-                            dataStart += 8;
-                            break;
-                        case DATE:
-                            row[colIdx++] = new java.sql.Date(ByteUtil.toLong(pageBuf, dataStart));
-                            dataStart += 8;
-                            break;
-                        case TIMESTAMP:
-                            row[colIdx++] = new java.sql.Timestamp(ByteUtil.toLong(pageBuf, dataStart));
-                            dataStart += 8;
-                            break;
-                        case TIME:
-                            row[colIdx++] = new java.sql.Time(ByteUtil.toLong(pageBuf, dataStart));
-                            dataStart += 8;
-                            break;
-                        case BOOLEAN:
-                            row[colIdx++] = pageBuf[dataStart++] == 1;
-                            break;
-                        case BYTEA:
-                        case TEXT:
-                            short fileId = ByteUtil.toShort(pageBuf, dataStart);
-                            boolean extra = 0x1000 == (fileId & 0x1000);
-                            if (extra) {
-                                byte[] extraId = ArrayUtils.subarray(pageBuf, dataStart, dataStart += 8);
-                                byte[] bytes = persistence.readExtraData(tablePath, extraId);
-                                row[colIdx++] = column.getDataType() == DataType.TEXT ? ByteUtil.toString(bytes) : bytes;
+                            if (column.getDataType() == DataType.TEXT) {
+                                row[colIdx++] = ByteUtil.toString(pageBuf, dataStart, len);
+                                dataStart += len;
                             } else {
-                                short len = ByteUtil.toShort(pageBuf, dataStart);
-                                dataStart += 2;
-                                if (column.getDataType() == DataType.TEXT) {
-                                    row[colIdx++] = ByteUtil.toString(pageBuf, dataStart, len);
-                                    dataStart += len;
-                                } else {
-                                    row[colIdx++] = ArrayUtils.subarray(pageBuf, dataStart, dataStart += len);
-                                }
+                                row[colIdx++] = ArrayUtils.subarray(pageBuf, dataStart, dataStart += len);
                             }
-                            break;
-                        case ARRAY:
-                        case JSON:
-                            throw new UnsupportedOperationException("暂未实现大字段存储");
-                        case DECIMAL:
-                        case NUMERIC:
-                            int len = ByteUtil.toShort(pageBuf, dataStart);
-                            dataStart += 2;
-                            row[colIdx++] = new BigDecimal(ByteUtil.toString(pageBuf, dataStart, len));
-                            dataStart += len;
-                            break;
-                        default: // VARCHAR, CHAR
-                            len = ByteUtil.toShort(pageBuf, dataStart);
-                            dataStart += 2;
-                            row[colIdx++] = ByteUtil.toString(pageBuf, dataStart, len);
-                            dataStart += len;
-                    }
+                        }
+                        break;
+                    case ARRAY:
+                    case JSON:
+                        throw new UnsupportedOperationException("暂未实现大字段存储");
+                    case DECIMAL:
+                    case NUMERIC:
+                        int len = ByteUtil.toShort(pageBuf, dataStart);
+                        dataStart += 2;
+                        row[colIdx++] = new BigDecimal(ByteUtil.toString(pageBuf, dataStart, len));
+                        dataStart += len;
+                        break;
+                    default: // VARCHAR, CHAR
+                        len = ByteUtil.toShort(pageBuf, dataStart);
+                        dataStart += 2;
+                        row[colIdx++] = ByteUtil.toString(pageBuf, dataStart, len);
+                        dataStart += len;
                 }
             }
-            data.add(row);
         }
-        return data;
+        return new RowResult(start, end, row);
     }
 
     @Override
@@ -455,6 +650,16 @@ public class DiskTableData extends AbstractTableData implements TableData {
         }
     }
 
+    @Override
+    public void optimize() {
+        optimizing = true;
+        try {
+            this.alterColumn(null, -1);
+        } finally {
+            optimizing = false;
+        }
+    }
+
     private void alterColumn(Column column, int deleteIndex) {
         DataPage pataPage = persistence.readPage(tablePath);
 //        DataExtent oldDataExtend = persistence.readExtent(tablePath);
@@ -471,7 +676,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
         // 读取临时目录的旧数据，向正式目录写入新数据
         DataExtent oldDataExtend = persistence.readExtent(tmpTablePath);
         Map<String, Object> row = new LinkedHashMap<>();
-        boolean isAdd = deleteIndex < 0;
+        boolean isAdd = column != null && deleteIndex < 0;
         while (oldDataExtend != null) {
             byte[] byteBuf;
             int pageOffset = 0;
@@ -511,5 +716,16 @@ public class DiskTableData extends AbstractTableData implements TableData {
 
     private DiskTable diskTable() {
         return (DiskTable) table;
+    }
+
+    class RowResult {
+        final int start;
+        final int end;
+        final Object[] row;
+        RowResult(int start, int end, Object[] row) {
+            this.start = start;
+            this.end = end;
+            this.row = row;
+        }
     }
 }

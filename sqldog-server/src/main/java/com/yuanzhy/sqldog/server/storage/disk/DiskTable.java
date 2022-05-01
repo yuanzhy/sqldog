@@ -68,7 +68,7 @@ public class DiskTable extends MemoryTable implements Table, Persistable {
         super(parent, name, columnMap, primaryKey, constraint, serial);
         this.persistence = PersistenceFactory.get();
         this.storagePath = persistence.resolvePath(this);
-        this.persistence();
+//        this.persistence();
         super.tableData = new DiskTableData(this, storagePath);
     }
 

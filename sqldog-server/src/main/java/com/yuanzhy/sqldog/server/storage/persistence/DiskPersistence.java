@@ -325,6 +325,30 @@ public class DiskPersistence implements Persistence {
         }
     }
 
+    @Override
+    public void writeStatistics(String tablePath, Map<String, Object> data) throws PersistenceException {
+        String output = codec.encode(data);
+        try {
+            FileUtils.writeStringToFile(new File(resolvePath(rootPath, tablePath, StorageConst.STATISTICS_NAME)), output, StorageConst.CHARSET);
+        } catch (IOException e) {
+            throw new PersistenceException(e);
+        }
+    }
+
+    @Override
+    public Map<String, Object> readStatistics(String tablePath) throws PersistenceException {
+        File f = new File(resolvePath(rootPath, tablePath, StorageConst.STATISTICS_NAME));
+        if (!f.exists()) {
+            return Collections.emptyMap();
+        }
+        try {
+            String data = FileUtils.readFileToString(f, StorageConst.CHARSET);
+            return codec.decode(data);
+        } catch (IOException e) {
+            throw new PersistenceException(e);
+        }
+    }
+
     private String indexFileName(String colName, int fileId) {
         return colName + StorageConst.TABLE_INDEX_NAME_SEP + fileId;
     }

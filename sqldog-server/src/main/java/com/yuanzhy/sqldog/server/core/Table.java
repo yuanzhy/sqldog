@@ -29,6 +29,6 @@ public interface Table extends Base {
 
     void updateColumnDescription(String colName, String substringBetween);
 
-//    Query getQuery();
+    int getColumnIndex(String columnName);
 
 }
