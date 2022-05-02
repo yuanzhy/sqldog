@@ -13,5 +13,5 @@ public interface SqlCommand {
      */
     SqlResult execute();
 
-    void currentSchema(String schema);
+    void defaultSchema(String schema);
 }

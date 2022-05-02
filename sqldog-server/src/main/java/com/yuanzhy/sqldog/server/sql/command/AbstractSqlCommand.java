@@ -17,7 +17,8 @@ public abstract class AbstractSqlCommand implements SqlCommand {
 
     protected final String sql;
 
-    protected Schema schema;
+    protected Schema defaultSchema;
+    protected Schema sqlSchema;
     protected Table table;
 
     public AbstractSqlCommand(String sql) {
@@ -25,11 +26,19 @@ public abstract class AbstractSqlCommand implements SqlCommand {
     }
 
     @Override
-    public void currentSchema(String schema) {
+    public void defaultSchema(String schema) {
         if (schema != null) {
-            this.schema = Databases.getDefault().getSchema(schema);
-            checkSchema();
+            this.defaultSchema = Databases.getDefault().getSchema(schema);
+            Asserts.notNull(this.defaultSchema, "current schema is unset");
+            Databases.currSchema(schema); // 此处还得调用以下，给CalciteSqlParser使用
         }
+    }
+
+    /**
+     * 获取当前语句的schema, 如果sql中没指定则获取default
+     */
+    protected Schema currSchema() {
+        return sqlSchema == null ? defaultSchema : sqlSchema;
     }
 
     protected void parseSchema(String sqlSuffix) {
@@ -38,19 +47,13 @@ public abstract class AbstractSqlCommand implements SqlCommand {
             String schemaName = StringUtils.substringBefore(schemaTable, ".");
             schemaName = stripQuotes(schemaName);
 //        final String tableName = StringUtils.substringAfter(schemaTable, ".");
-            schema = Databases.getDefault().getSchema(schemaName);
-            Asserts.notNull(schema, schemaName + " not exists");
-        } else {
-            checkSchema();
+            sqlSchema = Databases.getDefault().getSchema(schemaName);
+            Asserts.notNull(sqlSchema, schemaName + " not exists");
         }
     }
 
     protected String stripQuotes(String sqlIdentify) {
         return StringUtils.strip(sqlIdentify, "\"` ");
-    }
-
-    protected void checkSchema() {
-        Asserts.notNull(schema, "current schema is unset");
     }
 
     protected String parseTableName(String sqlSuffix) {
@@ -68,7 +71,7 @@ public abstract class AbstractSqlCommand implements SqlCommand {
     protected void parseSchemaTable(String sqlSuffix) {
         this.parseSchema(sqlSuffix);
         String tableName = parseTableName(sqlSuffix);
-        table = schema.getTable(tableName);
+        table = currSchema().getTable(tableName);
         Asserts.notNull(table, tableName + " not exists");
     }
 

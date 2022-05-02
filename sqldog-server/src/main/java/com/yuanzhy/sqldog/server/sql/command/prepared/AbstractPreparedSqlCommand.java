@@ -8,6 +8,8 @@ import java.sql.SQLException;
 
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.sql.PreparedSqlCommand;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Calcites;
@@ -21,7 +23,7 @@ import com.yuanzhy.sqldog.server.util.Databases;
 public abstract class AbstractPreparedSqlCommand implements PreparedSqlCommand {
 
     protected final String preparedSql;
-//    protected String currentSchema;
+    protected Schema defaultSchema;
     protected PreparedStatement ps;
     public AbstractPreparedSqlCommand(String preparedSql) {
         this.preparedSql = preparedSql;
@@ -33,12 +35,12 @@ public abstract class AbstractPreparedSqlCommand implements PreparedSqlCommand {
     }
 
     @Override
-    public void currentSchema(String schema) {
-        Databases.currSchema(schema);
-        //if (schema != null) {
-        //    this.schema = Databases.getDefault().getSchema(schema);
-        //    checkSchema();
-        //}
+    public void defaultSchema(String schema) {
+        if (schema != null) {
+            this.defaultSchema = Databases.getDefault().getSchema(schema);
+            Asserts.notNull(this.defaultSchema, "current schema is unset");
+            Databases.currSchema(schema); // 此处还得调用以下，给CalciteSqlParser使用
+        }
     }
 
     @Override

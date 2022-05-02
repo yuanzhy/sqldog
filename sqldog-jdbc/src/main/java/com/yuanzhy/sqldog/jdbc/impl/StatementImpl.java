@@ -32,7 +32,7 @@ class StatementImpl extends AbstractStatement implements Statement {
     private int maxRows = Integer.MAX_VALUE;
     private int queryTimeout = 60; // TODO 暂不支持cancel, 先放个1分钟超时
     private int direction = ResultSet.FETCH_FORWARD;
-    private int fetchSize = 0;
+    private int fetchSize = 200;
     private boolean escapeProcessing = false;
     private boolean poolable = true;
     private boolean closeOnCompletion = false;
@@ -59,7 +59,7 @@ class StatementImpl extends AbstractStatement implements Statement {
     protected void executeInternal(String sql) throws SQLException {
         beforeExecute();
         try {
-            SqlResult sqlResult = connection.execute(sql, queryTimeout);
+            SqlResult sqlResult = connection.execute(this, sql);
             this.handleResult(sqlResult);
         } finally {
             afterExecute();
@@ -285,7 +285,7 @@ class StatementImpl extends AbstractStatement implements Statement {
     @Override
     public long[] executeLargeBatch() throws SQLException {
         checkClosed();
-        SqlResult[] results = this.connection.execute(sqlList, queryTimeout);
+        SqlResult[] results = this.connection.execute(this, sqlList.toArray(new String[0]));
         long[] r = new long[results.length];
         for (int i = 0; i < results.length; i++) {
             r[i] = results[i].getRows();

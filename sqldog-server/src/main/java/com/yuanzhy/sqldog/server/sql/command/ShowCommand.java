@@ -47,17 +47,17 @@ public class ShowCommand extends AbstractSqlCommand {
                             Collectors.toList()))
                     .build();
         } else if ("TABLES".equals(sqlSuffix)) {
-            checkSchema();
+//            checkSchema();
             return builder.labels("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "TABLE_TYPE", "REMARKS")
-                    .schema(schema.getName())
-                    .data(schema.getTableNames().stream().map(t -> {
-                        Table table = schema.getTable(t);
-                        return new Object[]{dbName, schema.getName(), table.getName(), TableType.TABLE.getName(), table.getDescription()}; }).collect(Collectors.toList())
+                    .schema(currSchema().getName())
+                    .data(currSchema().getTableNames().stream().map(t -> {
+                        Table table = currSchema().getTable(t);
+                        return new Object[]{dbName, currSchema().getName(), table.getName(), TableType.TABLE.getName(), table.getDescription()}; }).collect(Collectors.toList())
                     )
                     .build();
         } else if ("SEARCH_PATH".equals(sqlSuffix)) {
-            checkSchema();
-            return builder.schema(schema.getName()).build();
+//            checkSchema();
+            return builder.schema(currSchema().getName()).build();
         }  else if ("TABLETYPES".equals(sqlSuffix)) {
             /**
              * Retrieves the table types available in this database.  The results

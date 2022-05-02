@@ -1,9 +1,12 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
 import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.core.constant.RequestType;
 import com.yuanzhy.sqldog.core.rmi.Executor;
 import com.yuanzhy.sqldog.core.rmi.RMIServer;
+import com.yuanzhy.sqldog.core.rmi.Request;
 import com.yuanzhy.sqldog.core.rmi.Response;
+import com.yuanzhy.sqldog.core.rmi.impl.RequestBuilder;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.jdbc.Driver;
 import com.yuanzhy.sqldog.jdbc.SQLError;
@@ -52,7 +55,7 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
 
     private String database = "default";
     private String schema;
-    private boolean isClosed = false;
+    private volatile boolean isClosed = false;
 
 
     public ConnectionImpl(String host, int port, String schema, Properties info) throws SQLException {
@@ -69,16 +72,6 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
         }
         this.executor = executor;
         setSchema(schema);
-    }
-
-    protected void useSchema() throws SQLException {
-        if (!schema.isEmpty()) {
-            try {
-                executor.execute("USE " + schema);
-            } catch (RemoteException e) {
-                throw SQLError.wrapEx(e);
-            }
-        }
     }
 
     @Override
@@ -271,7 +264,7 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     @Override
     public void setSchema(String schema) throws SQLException {
         checkClosed();
-        this.schema = schema == null ? "PUBLIC" : schema.trim();
+        this.schema = schema == null ? "PUBLIC" : schema.trim().toUpperCase();
 //        this.useSchema();
     }
 
@@ -301,15 +294,38 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
 
     @Override
     public void close(Statement statement) {
+        if (this.isClosed) {
+            return;
+        }
         this.openStatements.remove(statement);
     }
 
+
     @Override
-    public SqlResult[] execute(List<String> sqls, int timeoutSecond) throws SQLException {
+    public SqlResult[] execute(Request request) throws SQLException {
+        try {
+            Response response = executor.execute(request);
+            if (response.isSuccess()) {
+                return response.getResults();
+            }
+            throw new RuntimeException(response.getMessage());
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public SqlResult execute(Statement statement, String sql) throws SQLException {
+        return execute(statement, new String[]{sql})[0];
+    }
+
+    @Override
+    public SqlResult[] execute(Statement statement, String... sqls) throws SQLException {
         checkClosed();
+        int timeoutSecond = statement.getQueryTimeout();
         if (timeoutSecond > 0) {
             // TODO 超时实现草率，待完善
-            Future<SqlResult[]> future = POOL.submit(() -> executeInternal(sqls));
+            Future<SqlResult[]> future = POOL.submit(() -> executeInternal(statement, sqls));
             try {
                 return future.get(timeoutSecond, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
@@ -323,34 +339,7 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
             }
         } else {
             try {
-                return executeInternal(sqls);
-            } catch (Exception e) {
-                throw SQLError.wrapEx(e);
-            }
-        }
-    }
-
-
-    @Override
-    public SqlResult execute(String sql, int timeoutSecond) throws SQLException {
-        checkClosed();
-        if (timeoutSecond > 0) {
-            // TODO 超时实现草率，待完善
-            Future<SqlResult> future = POOL.submit(() -> executeInternal(sql));
-            try {
-                return future.get(timeoutSecond, TimeUnit.SECONDS);
-            } catch (TimeoutException e) {
-                throw new SQLTimeoutException("timeout");
-            } catch (Exception e) {
-                throw SQLError.wrapEx(e);
-            } finally {
-                // 如果该任务已经完成，将没有影响
-                // 如果任务正在运行，将因为中断而被取消
-                future.cancel(true); // interrupt if running
-            }
-        } else {
-            try {
-                return executeInternal(sql);
+                return executeInternal(statement, sqls);
             } catch (Exception e) {
                 throw SQLError.wrapEx(e);
             }
@@ -358,9 +347,13 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     }
 
     @Override
-    public SqlResult prepareExecute(String preparedSql) throws SQLException {
+    public SqlResult prepareExecute(PreparedStatement statement, String preparedId, String preparedSql) throws SQLException {
+        Request request = new RequestBuilder(RequestType.PREPARED_QUERY)
+                .schema(getSchema()).timeout(statement.getQueryTimeout()).fetchSize(statement.getFetchSize())
+                .preparedId(preparedId).sqls(preparedSql)
+                .buildPrepared();
         try {
-            Response response = executor.prepare(preparedSql);
+            Response response = executor.execute(request);
             if (response.isSuccess()) {
                 return response.getResult();
             }
@@ -371,40 +364,18 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     }
 
     @Override
-    public SqlResult[] executePrepared(String preparedSql, List<Object[]> parameterList) throws SQLException {
-        // TODO timeout
-        try {
-            Response response = executor.executePrepared(preparedSql, parameterList.toArray(new Object[0][]));
-            if (response.isSuccess()) {
-                return response.getResults();
-            }
-            throw new SQLException(response.getMessage());
-        } catch (RemoteException e) {
-            throw SQLError.wrapEx(e);
-        }
+    public SqlResult[] executePrepared(PreparedStatement statement, String preparedId, String preparedSql, List<Object[]> parameterList) throws SQLException {
+        Request request = new RequestBuilder(RequestType.PREPARED_PARAMETER)
+                .schema(getSchema()).timeout(statement.getQueryTimeout()).fetchSize(statement.getFetchSize())
+                .preparedId(preparedId).sqls(preparedSql).parameters(parameterList)
+                .buildPrepared();
+        return execute(request);
     }
 
-    private SqlResult[] executeInternal(List<String> sqls) {
-        try {
-            Response response = executor.execute(sqls.toArray(new String[0]));
-            if (response.isSuccess()) {
-                return response.getResults();
-            }
-            throw new RuntimeException(response.getMessage());
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private SqlResult executeInternal(String sql) {
-        try {
-            Response response = executor.execute(sql);
-            if (response.isSuccess()) {
-                return response.getResult();
-            }
-            throw new RuntimeException(response.getMessage());
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+    private SqlResult[] executeInternal(Statement statement, String... sqls) throws SQLException {
+        Request request = new RequestBuilder(RequestType.SIMPLE_QUERY)
+                .schema(getSchema()).fetchSize(statement.getFetchSize()).timeout(statement.getQueryTimeout())
+                .sqls(sqls).build();
+        return execute(request);
     }
 }

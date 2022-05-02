@@ -24,13 +24,18 @@ import java.util.Map;
 public class Databases {
     // TODO 默认先只支持单实例库
     private static final Map<String, Database> DATABASES = new HashMap<>();
+    @Deprecated
     private static final ThreadLocal<String> TL = new ThreadLocal<>();
 
     static {
         if (ConfigUtil.isDisk()) {
             loadDbFromDisk();
         } else {
-            DATABASES.put(StorageConst.DEF_DATABASE_NAME, new DatabaseDecorator(new DatabaseBuilder().name(StorageConst.DEF_DATABASE_NAME).description("sqldog default db").build()));
+            // 创建一个default库和PUBLIC schema
+            Database db = new DatabaseDecorator(new DatabaseBuilder().name(StorageConst.DEF_DATABASE_NAME).description("sqldog default db").build());
+            Schema schema = new SchemaBuilder().name(StorageConst.DEF_SCHEMA_NAME).description("The default schema").parent(db).build();
+            db.addSchema(schema);
+            DATABASES.put(db.getName(), db);
         }
     }
 
@@ -60,10 +65,12 @@ public class Databases {
         return DATABASES.get(name);
     }
 
+    @Deprecated
     public static String currSchema() {
         return TL.get();
     }
 
+    @Deprecated
     public static void currSchema(String schemaName) {
         if (StringUtils.isEmpty(schemaName)) {
             TL.remove();

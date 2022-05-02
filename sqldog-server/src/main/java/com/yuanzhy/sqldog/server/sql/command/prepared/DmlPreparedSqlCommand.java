@@ -41,7 +41,7 @@ public class DmlPreparedSqlCommand extends AbstractPreparedSqlCommand implements
         } else {
             throw new UnsupportedOperationException("not supported: " + sql);
         }
-        command.currentSchema(Databases.currSchema());
+        command.defaultSchema(defaultSchema.getName());
         return command;
     }
 

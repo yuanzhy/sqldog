@@ -100,7 +100,7 @@ public class ScannableCalciteTable extends AbstractQueryableTable implements Sca
                     builder.add(entry.getKey(), SqlTypeName.VARCHAR, Integer.MAX_VALUE);
                     break;
                 case DATE:
-                    builder.add(entry.getKey(), SqlTypeName.TIMESTAMP);
+                    builder.add(entry.getKey(), SqlTypeName.DATE);
                     break;
                 case TIME:
                     builder.add(entry.getKey(), SqlTypeName.TIME);

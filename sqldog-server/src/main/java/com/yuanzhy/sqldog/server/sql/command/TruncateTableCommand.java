@@ -21,6 +21,6 @@ public class TruncateTableCommand extends AbstractSqlCommand {
         String sqlSuffix = sql.substring("TRUNCATE TABLE ".length());
         super.parseSchemaTable(sqlSuffix);
         table.getTableData().truncate();
-        return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(table.getName()).build();
+        return new SqlResultBuilder(StatementType.DDL).schema(currSchema().getName()).table(table.getName()).build();
     }
 }

@@ -30,7 +30,7 @@ public class SetCommand extends AbstractSqlCommand {
             throw new UnsupportedOperationException("not supported: " + sql);
         }
         Asserts.hasText(schemaName, "Illegal schema name");
-        currentSchema(schemaName);
+        defaultSchema(schemaName);
         return new SqlResultBuilder(StatementType.OTHER).schema(schemaName).build();
     }
 }

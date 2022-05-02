@@ -1,8 +1,10 @@
 package com.yuanzhy.sqldog.jdbc;
 
+import com.yuanzhy.sqldog.core.rmi.Request;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
@@ -18,30 +20,19 @@ public interface SqldogConnection extends Connection {
     void checkClosed() throws SQLException;
 
     void close(Statement statement);
+
+    SqlResult[] execute(Request request) throws SQLException;
+
+    SqlResult[] execute(Statement statement, String... sqls) throws SQLException;
+
     /**
      * 执行sql
+     * @param statement statement
      * @param sql  sql
      * @return
      * @throws SQLException
      */
-    default SqlResult execute(String sql) throws SQLException {
-        return execute(sql, 0);
-    }
-
-    default SqlResult[] execute(List<String> sqls) throws SQLException {
-        return execute(sqls, 0);
-    }
-
-    SqlResult[] execute(List<String> sqls, int timeoutSecond) throws SQLException;
-
-    /**
-     * 执行sql
-     * @param sql  sql
-     * @param timeoutSecond 超时时间
-     * @return
-     * @throws SQLException
-     */
-    SqlResult execute(String sql, int timeoutSecond) throws SQLException;
+    SqlResult execute(Statement statement, String sql) throws SQLException;
 
     /**
      * prepared
@@ -49,12 +40,12 @@ public interface SqldogConnection extends Connection {
      * @return
      * @throws SQLException
      */
-    SqlResult prepareExecute(String preparedSql) throws SQLException;
+    SqlResult prepareExecute(PreparedStatement statement, String preparedId, String preparedSql) throws SQLException;
 
-    default SqlResult executePrepared(String preparedSql, Object[] parameter) throws SQLException {
-        SqlResult[] results = executePrepared(preparedSql, Collections.singletonList(parameter));
+    default SqlResult executePrepared(PreparedStatement statement, String preparedId, String preparedSql, Object[] parameter) throws SQLException {
+        SqlResult[] results = executePrepared(statement, preparedId, preparedSql, Collections.singletonList(parameter));
         return results == null ? null : results[0];
     }
 
-    SqlResult[] executePrepared(String preparedSql, List<Object[]> parameterList) throws SQLException;
+    SqlResult[] executePrepared(PreparedStatement statement, String preparedId, String preparedSql, List<Object[]> parameterList) throws SQLException;
 }

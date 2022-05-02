@@ -30,6 +30,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.UUID;
 
 /**
  *
@@ -40,6 +41,7 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     private final int autoGenerateKey;
     private final String preparedSql;
+    private final String preparedId;
     private final ResultSetMetaData rsmd;
     private final ParameterMetaData pmd;
     private final int parameterCount;
@@ -57,6 +59,7 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
         super(connection, schema, resultSetType, resultSetConcurrency, ResultSet.HOLD_CURSORS_OVER_COMMIT);
         checkNullOrEmpty(preparedSql);
         this.preparedSql = preparedSql;
+        this.preparedId = UUID.randomUUID().toString();
         this.autoGenerateKey = autoGenerateKey;
         String noCommentSql = SqlUtil.stripComments(preparedSql, "'\"", "'\"", true, false, true, true).trim();
         if (Util.startsWithIgnoreCaseAndWs(noCommentSql, "INSERT ")
@@ -71,7 +74,7 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
             throw new SQLException("Not supported PreparedStatement: " + preparedSql);
         }
 //        this.firstStatementChar = Util.firstAlphaCharUc(preparedSql, Util.findStartOfStatement(preparedSql));
-        SqlResult result = this.connection.prepareExecute(preparedSql);
+        SqlResult result = this.connection.prepareExecute(this, preparedId, preparedSql);
         this.rsmd = new ResultSetMetaDataImpl(result.getColumns());
         this.pmd = new ParameterMetaDataImpl(result.getParams());
         this.parameterCount = this.pmd.getParameterCount();
@@ -81,7 +84,7 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
     private void executeInternal() throws SQLException {
         beforeExecute();
         try {
-            SqlResult sqlResult = connection.executePrepared(preparedSql, parameter);
+            SqlResult sqlResult = connection.executePrepared(this, preparedId, preparedSql, parameter);
             this.handleResult(sqlResult);
         } finally {
             afterExecute();
@@ -332,7 +335,7 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
     @Override
     public long[] executeLargeBatch() throws SQLException {
         checkClosed();
-        SqlResult[] results = this.connection.executePrepared(preparedSql, parameterList);
+        SqlResult[] results = this.connection.executePrepared(this, preparedId, preparedSql, parameterList);
         long[] r = new long[results.length];
         for (int i = 0; i < results.length; i++) {
             r[i] = results[i].getRows();

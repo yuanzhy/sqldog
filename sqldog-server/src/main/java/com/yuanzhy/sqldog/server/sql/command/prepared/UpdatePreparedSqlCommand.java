@@ -113,7 +113,7 @@ public class UpdatePreparedSqlCommand extends AbstractSqlCommand implements Prep
             SqlUpdate sqlUpdate = (SqlUpdate) Calcites.getPanner().parse(sql);
             replacePlaceHolder(sqlUpdate, parameter, new AtomicInteger(0));
             int rows = table.getTableData().updateBy(sqlUpdate);
-            return new SqlResultBuilder(StatementType.DML).schema(schema.getName()).table(table.getName()).rows(rows).build();
+            return new SqlResultBuilder(StatementType.DML).schema(currSchema().getName()).table(table.getName()).rows(rows).build();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -121,7 +121,7 @@ public class UpdatePreparedSqlCommand extends AbstractSqlCommand implements Prep
 
     @Override
     public SqlResult execute() {
-        return new SqlResultBuilder(StatementType.DML).schema(schema.getName()).table(table.getName())
+        return new SqlResultBuilder(StatementType.DML).schema(currSchema().getName()).table(table.getName())
                 /*.columns(columns)*/.params(params).build();
     }
 
@@ -232,11 +232,6 @@ public class UpdatePreparedSqlCommand extends AbstractSqlCommand implements Prep
             default:
                 throw SqlUtil.notImplemented();
         }
-    }
-
-    @Override
-    public void currentSchema(String schema) {
-        Databases.currSchema(schema);
     }
 
     @Override

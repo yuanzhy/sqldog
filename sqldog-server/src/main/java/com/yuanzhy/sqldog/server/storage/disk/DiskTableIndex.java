@@ -18,6 +18,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author yuanzhy
@@ -167,6 +168,7 @@ public class DiskTableIndex {
                     final byte[] newBuf1 = IndexPage.newLeafBuffer();
                     // 2. 写入值   最小值 直接写入第一页
                     dataStart = writeIndexValue(dataPage, value, dataStart, newBuf1);
+                    updateFreeStart(dataStart, newBuf1);
                     // 更新1的Next为2, prev为2的prev
                     System.arraycopy(leafPage.toAddress(), 0, newBuf1, StorageConst.INDEX_LEAF_NEXT_PAGE, 4); // 1 next
                     System.arraycopy(leafBuf, StorageConst.INDEX_LEAF_PREV_PAGE, newBuf1, StorageConst.INDEX_LEAF_PREV_PAGE, 4); // 1 prev
@@ -280,7 +282,8 @@ public class DiskTableIndex {
                     if (dataStart == StorageConst.INDEX_BRANCH_START) {
                         final byte[] newBuf1 = IndexPage.newBuffer(level);
                         // 2. 写入值   最小值 直接写入第一页
-                        writeIndexValue(lowerIndex, value, dataStart, newBuf1);
+                        int _freeStart = writeIndexValue(lowerIndex, value, dataStart, newBuf1);
+                        updateFreeStart(_freeStart, newBuf1);
                         page1 = persistence.writeIndex(tablePath, colName, newBuf1); // 第一页为新增的，返回地址相关信息
                         toBeUpdated.set(i, new UpdatedIndex(page1, dataStart));
                     } else { // 最大值和中间值 逻辑类似. 可能会有拷贝到第二页的数据为空的情况, 即参数5长度为0
@@ -577,7 +580,69 @@ public class DiskTableIndex {
         }
     }
 
-    public void deleteIndex(List<DiskTableData.RowResult> rowList, DataPage dataPage) { // TODO TEST
+    public void updateIndexAddr(List<Map<DiskTableData.RowResult, Integer>> rowList, DataPage dataPage) {
+        for (Constraint constraint : table.getConstraints()) {
+            if (constraint.getType() != ConstraintType.PRIMARY_KEY
+                    && constraint.getType() != ConstraintType.UNIQUE) {
+                // TODO 暂只支持主键和唯一索引
+                continue;
+            }
+            String[] colNames = constraint.getColumnNames();
+            for (int i = 0; i < colNames.length; i++) {
+                Column column = table.getColumn(colNames[i]);
+                IndexPage rootPage = persistence.readIndex(tablePath, colNames[i]);
+                int idx = table.getColumnIndex(colNames[i]);
+                for (Map<DiskTableData.RowResult, Integer> map : rowList) {
+                    Map.Entry<DiskTableData.RowResult, Integer> entry = map.entrySet().iterator().next();
+                    final DiskTableData.RowResult rr = entry.getKey();
+                    final int newEnd = entry.getValue();
+                    final byte[] value = tableData.valueToBytes(column, rr.row[idx]);
+                    final LinkedList<UpdatedIndex> toBeUpdated = new LinkedList<>();
+                    IndexPage leafPage = findLeafIndex(rootPage, column, value, toBeUpdated);
+                    byte[] leafBuf = leafPage.getData();
+                    int freeStart = ByteUtil.toShort(leafBuf, StorageConst.FREE_START_OFFSET);
+                    LeafResult lr = findLeafStart(column, value, leafBuf);
+                    if (lr.isNew) {
+                        continue; // 没找到，不处理了
+                    }
+                    dataPage.setLocation(new Location((short) rr.start, (short) (rr.end - rr.start)));
+                    byte[] oldDataAddr = dataPage.toAddress(); // 8位地址数据
+                    int dataStart = lr.dataStart;
+                    final int addrLen = ByteUtil.toInt(leafBuf, dataStart - 4);
+                    int loop = 0;
+                    // 没有跳页
+                    byte[] dataAddr2;
+                    boolean notFound = false;
+                    do {
+                        if (loop++ >= addrLen) {
+                            notFound = true;
+                            break; // 遍历到头了还没找到
+                        }
+                        if (dataStart >= freeStart) {
+                            IndexPage nextPage = IndexPage.fromAddress(leafBuf, StorageConst.INDEX_LEAF_NEXT_PAGE);
+                            leafPage = persistence.readIndex(tablePath, column.getName(), nextPage.getFileId(), nextPage.getOffset());
+                            leafBuf = leafPage.getData();
+                            freeStart = ByteUtil.toShort(leafBuf, StorageConst.FREE_START_OFFSET);
+                            dataStart = StorageConst.INDEX_LEAF_START;
+                        }
+                        dataAddr2 = ArrayUtils.subarray(leafBuf, dataStart, dataStart += 8);
+                    } while (!Arrays.equals(oldDataAddr, dataAddr2));
+                    if (notFound) {
+                        continue;
+                    }
+                    dataStart -= 8;
+                    // 直接写入覆盖旧的地址值
+                    dataPage.setLocation(new Location((short) rr.start, (short) (newEnd - rr.start)));
+                    for (byte b : dataPage.toAddress()) {
+                        leafBuf[dataStart++] = b;
+                    }
+                    persistence.writeIndex(tablePath, colNames[i], leafPage);
+                }
+            }
+        }
+    }
+
+    public void deleteIndex(List<DiskTableData.RowResult> rowList, DataPage dataPage) {
         for (Constraint constraint : table.getConstraints()) {
             if (constraint.getType() != ConstraintType.PRIMARY_KEY
                     && constraint.getType() != ConstraintType.UNIQUE) {

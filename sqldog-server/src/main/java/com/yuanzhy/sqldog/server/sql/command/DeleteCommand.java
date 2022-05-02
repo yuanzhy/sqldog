@@ -26,7 +26,7 @@ public class DeleteCommand extends AbstractSqlCommand {
             SqlDelete sqlDelete = (SqlDelete) sqlNode;
             super.parseSchemaTable(sqlDelete.getTargetTable().toString());
             int rows = table.getTableData().deleteBy(sqlDelete);
-            return new SqlResultBuilder(StatementType.DML).schema(schema.getName()).table(table.getName()).rows(rows).build();
+            return new SqlResultBuilder(StatementType.DML).schema(currSchema().getName()).table(table.getName()).rows(rows).build();
         } catch (SqlParseException /*| ValidationException*/ e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }

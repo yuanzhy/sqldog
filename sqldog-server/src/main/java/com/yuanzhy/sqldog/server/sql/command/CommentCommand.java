@@ -27,9 +27,9 @@ public class CommentCommand extends AbstractSqlCommand {
         if (type.startsWith("SCHEMA")) {
             String sqlSuffix = type.substring("SCHEMA ".length());
             String schemaName = StringUtils.substringBefore(sqlSuffix, " ").trim();
-            schema = Databases.getDefault().getSchema(schemaName);
-            Asserts.notNull(schema, schemaName + " not found");
-            schema.setDescription(StringUtils.substringBetween(sqlSuffix, "'"));
+            sqlSchema = Databases.getDefault().getSchema(schemaName);
+            Asserts.notNull(sqlSchema, schemaName + " not found");
+            sqlSchema.setDescription(StringUtils.substringBetween(sqlSuffix, "'"));
         } else if (type.startsWith("TABLE")) {
             String sqlSuffix = type.substring("TABLE ".length());
             super.parseSchemaTable(sqlSuffix);
@@ -44,6 +44,6 @@ public class CommentCommand extends AbstractSqlCommand {
         } else {
             throw new UnsupportedOperationException("not supported: " + sql);
         }
-        return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(table == null ? null : table.getName()).build();
+        return new SqlResultBuilder(StatementType.DDL).schema(currSchema().getName()).table(table == null ? null : table.getName()).build();
     }
 }

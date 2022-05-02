@@ -70,6 +70,6 @@ public class AlterTableCommand extends AbstractSqlCommand {
         } else {
             throw new UnsupportedOperationException("operation not supported: " + sql);
         }
-        return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(table.getName()).build();
+        return new SqlResultBuilder(StatementType.DDL).schema(currSchema().getName()).table(table.getName()).build();
     }
 }

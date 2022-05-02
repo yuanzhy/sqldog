@@ -27,7 +27,7 @@ public class UpdateCommand extends AbstractSqlCommand {
 //            Calcites.getPanner().validate(update);
             super.parseSchemaTable(update.getTargetTable().toString());
             int rows = table.getTableData().updateBy(update);
-            return new SqlResultBuilder(StatementType.DML).schema(schema.getName()).table(table.getName()).rows(rows).build();
+            return new SqlResultBuilder(StatementType.DML).schema(currSchema().getName()).table(table.getName()).rows(rows).build();
         } catch (SqlParseException /*| ValidationException*/ e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }

@@ -26,14 +26,14 @@ public class OptimizeCommand extends AbstractSqlCommand {
         String tmp = sql.substring("OPTIMIZE ".length());
         if (tmp.startsWith("SCHEMA")) {
             super.parseSchema(tmp);
-            for (String tableName : schema.getTableNames()) {
-                schema.getTable(tableName).getTableData().optimize();
+            for (String tableName : currSchema().getTableNames()) {
+                currSchema().getTable(tableName).getTableData().optimize();
             }
-            return new SqlResultBuilder(StatementType.OTHER).schema(schema.getName()).build();
+            return new SqlResultBuilder(StatementType.OTHER).schema(currSchema().getName()).build();
         } else if (tmp.startsWith("TABLE")) {
             super.parseSchemaTable(tmp);
             table.getTableData().optimize();
-            return new SqlResultBuilder(StatementType.OTHER).schema(schema.getName()).table(table.getName()).build();
+            return new SqlResultBuilder(StatementType.OTHER).schema(currSchema().getName()).table(table.getName()).build();
         } else {
             throw new UnsupportedOperationException("Not supported: " + sql);
         }

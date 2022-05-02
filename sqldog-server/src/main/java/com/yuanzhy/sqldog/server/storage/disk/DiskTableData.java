@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -86,21 +87,15 @@ public class DiskTableData extends AbstractTableData implements TableData {
                 for (int i = 0; i < columnNames.length; i++) {
                     bytes[i] = valueToBytes(table.getColumn(columnNames[i]), values.get(columnNames[i]));
                 }
-                // TODO unique冲突提醒优化
-                Asserts.isFalse(tableIndex.isConflict(columnNames, bytes), "Unique key conflict：" + Arrays.stream(columnNames).map(Object::toString).collect(Collectors.joining(", ")));
+                if (tableIndex.isConflict(columnNames, bytes)) {
+                    String columnValues = Arrays.stream(columnNames).map(n -> Objects.toString(values.get(n))).collect(Collectors.joining(", "));
+                    throw new IllegalArgumentException("Unique key conflict：" + columnValues);
+                }
             }
         }
         // add data
         Map<String, Object> row = normalizeData(values);
-        DataPage dataPage = this.insertData(row);
-        // add index
-        if (pkValues != null) {
-            String[] colNames = table.getPkColumnName();
-            for (int i = 0; i < colNames.length; i++) {
-                Column column = table.getColumn(colNames[i]);
-                tableIndex.insertIndex(column, valueToBytes(column, pkValues[i]), dataPage);
-            }
-        }
+        /*DataPage dataPage = */this.insertData(row);
         count++;
         saveStatistics();
         return pkValues;
@@ -193,8 +188,25 @@ public class DiskTableData extends AbstractTableData implements TableData {
             dataPage = persistence.writePage(tablePath, dataPage);
             dataPage.setLocation(loction);
         }
-        return dataPage;
+        // insert pk index
+        String[] pkNames = table.getPkColumnName();
+        if (pkNames != null) {
+            Set<String> colNameSet = table.getColumns().keySet();
+            Object[] pkValues = new Object[pkNames.length];
+            int pkIndex = 0;
+            for (String colName : colNameSet) {
+                if (ArrayUtils.contains(pkNames, colName)) {
+                    pkValues[pkIndex++] = row.get(colName);
+                }
+            }
+            for (int i = 0; i < pkNames.length; i++) {
+                Column col = table.getColumn(pkNames[i]);
+                tableIndex.insertIndex(col, valueToBytes(col, pkValues[i]), dataPage);
+            }
+        }
+        // TODO insert unique index and other
 
+        return dataPage;
     }
 
     private Location fillPageBuf(List<Byte> dataBytes, byte[] pageBuf, short freeStart, short freeEnd) {
@@ -300,7 +312,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
 
     @Override
     public synchronized int updateBy(SqlUpdate sqlUpdate) {
-        List<String> colList = sqlUpdate.getTargetColumnList().stream().map(SqlNode::toString).collect(Collectors.toList());
+        final List<String> colList = sqlUpdate.getTargetColumnList().stream().map(SqlNode::toString).collect(Collectors.toList());
         if (table.getPrimaryKey() != null) {
             for (String columnName : table.getPrimaryKey().getColumnNames()) { // TODO 更新主键字段
                 Asserts.isFalse(colList.contains(columnName), "Temporary unsupported update primary key");
@@ -352,9 +364,11 @@ public class DiskTableData extends AbstractTableData implements TableData {
         final byte[] pageBuf = dataPage.getData();
         final Collection<Column> columns = table.getColumns().values();
         int dataStart = StorageConst.DATA_START_OFFSET;
-        short freeStart = ByteUtil.toShort(pageBuf, StorageConst.FREE_START_OFFSET);
+        final short freeStart = ByteUtil.toShort(pageBuf, StorageConst.FREE_START_OFFSET);
+        int freeEnd = ByteUtil.toShort(pageBuf, StorageConst.FREE_END_OFFSET);
         List<RowResult> deletedDatas = new ArrayList<>();
         List<Map<String, Object>> insertedDatas = new ArrayList<>();
+        List<Map<RowResult, Integer>> updatedDatas = new ArrayList<>();
         while (dataStart < freeStart) {  // 读取多行数据
             RowResult rr = readRow(pageBuf, columns, dataStart, nullBytesCount);
             dataStart = rr.end;
@@ -374,8 +388,22 @@ public class DiskTableData extends AbstractTableData implements TableData {
                     for (Byte dataByte : newRowBytes) {
                         pageBuf[_start++] = dataByte;
                     }
-                } else { // 长度变了，删除原来的 插入一个新的
-                    // TODO 这个可以实现为只要一页能放下就动态调节
+                }
+//                else if (newRowBytes.size() <= freeEnd - freeStart) {
+//                    // 一页能放下就动态调节 TODO 动态调节这个比较复杂，再议。调节完后面数据的索引就都得调整
+//                    int _start = rr.start;
+//                    final int newEnd = _start + newRowBytes.size();
+//                    System.arraycopy(pageBuf, rr.end, pageBuf, newEnd, freeStart - rr.end);
+//                    for (Byte dataByte : newRowBytes) {
+//                        pageBuf[_start++] = dataByte;
+//                    }
+//                    int _freeStart = freeStart + newRowBytes.size() - (rr.end - rr.start);
+//                    updateFreeStart(_freeStart, pageBuf);
+//                    updatedDatas.add(Collections.singletonMap(rr, newEnd));
+//                    dataStart = newEnd;
+//                }
+                else {
+                    // 删除原来的 插入一个新的
                     short dataHeader = ByteUtil.toShort(pageBuf, rr.start);
                     dataHeader |= 0x8000; // 变为删除
                     byte[] dataHeaderBytes = ByteUtil.toBytes(dataHeader);
@@ -390,6 +418,9 @@ public class DiskTableData extends AbstractTableData implements TableData {
         }
         if (_count > 0) {
             persistence.writePage(tablePath, dataPage);
+//            if (!updatedDatas.isEmpty()) {
+//                tableIndex.updateIndexAddr(updatedDatas,  dataPage);
+//            }
             if (!deletedDatas.isEmpty()) {
                 tableIndex.deleteIndex(deletedDatas, dataPage);
             }
@@ -398,6 +429,12 @@ public class DiskTableData extends AbstractTableData implements TableData {
             }
         }
         return _count;
+    }
+
+    private void updateFreeStart(int freeStart, byte[] newBuf) {
+        byte[] startBytes = ByteUtil.toBytes((short)freeStart);
+        newBuf[StorageConst.FREE_START_OFFSET] = startBytes[0];
+        newBuf[StorageConst.FREE_START_OFFSET+1] = startBytes[1];
     }
 
     private Map<String, Object> toMap(Object[] row, Collection<Column> columns) {
@@ -684,29 +721,17 @@ public class DiskTableData extends AbstractTableData implements TableData {
                 List<Object[]> data = transformToData(byteBuf, nullBytesCount);
                 for (Object[] d : data) {
                     int i = 0;
-                    Object[] pkValues = pkNames == null ? null : new Object[pkNames.length];
-                    int pkIndex = 0;
                     for (String colName : colNameSet) {
                         if (deleteIndex == i) {
                             i++;
                             continue;
                         }
                         row.put(colName, d[i++]);
-                        if (ArrayUtils.contains(pkNames, colName)) {
-                            pkValues[pkIndex++] = row.get(colName);
-                        }
                     }
                     if (isAdd) {
                         row.put(column.getName(), column.defaultValue());
                     }
-                    DataPage dataPage = this.insertData(row);
-                    // add index
-                    if (pkValues != null) {
-                        for (i = 0; i < pkNames.length; i++) {
-                            Column col = table.getColumn(pkNames[i]);
-                            tableIndex.insertIndex(col, valueToBytes(col, pkValues[i]), dataPage);
-                        }
-                    }
+                    this.insertData(row);
                 }
             }
             oldDataExtend = persistence.readExtent(tablePath, oldDataExtend.getFileId(), oldDataExtend.getOffset() + 1);

@@ -6,7 +6,7 @@ import com.yuanzhy.sqldog.server.io.RmiServer;
 import com.yuanzhy.sqldog.server.util.ConfigUtil;
 
 /**
- * mvn clean package -Dmaven.test.skip=true
+ * mvn clean package -DskipTests
  * @author yuanzhy
  * @version 1.0
  * @date 2021/10/31

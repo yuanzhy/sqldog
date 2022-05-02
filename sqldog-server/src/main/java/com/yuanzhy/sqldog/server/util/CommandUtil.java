@@ -1,16 +1,8 @@
 package com.yuanzhy.sqldog.server.util;
 
-import com.yuanzhy.sqldog.server.core.Column;
-import com.yuanzhy.sqldog.server.core.Schema;
-import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.core.constant.DataType;
-
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,32 +27,30 @@ public class CommandUtil {
                 String className = rsmd.getColumnClassName(index);
                 Object value = null;
                 if ("java.sql.Timestamp".equals(className)) {
-                    Long ts = rs.getLong(columnLabel);
-                    if (ts != null) {
-                        Boolean isDate = labelIsDate.computeIfAbsent(columnLabel, k -> {
-                            try {
-                                Schema schema = Databases.getDefault().getSchema(rsmd.getSchemaName(index));
-                                Table table = schema.getTable(rsmd.getTableName(index));
-                                Column column = table.getColumn(rsmd.getColumnName(index));
-                                return column.getDataType() == DataType.DATE;
-                            } catch (SQLException e) {
-                                return false;
-                            }
-                        });
-                        value = isDate ? new Date(ts) : new Timestamp(ts);
-                    }
+                    value = rs.getTimestamp(columnLabel);
+//                    Long ts = rs.getLong(columnLabel);
+//                    if (ts != null) {
+//                        Boolean isDate = labelIsDate.computeIfAbsent(columnLabel, k -> {
+//                            try {
+//                                Schema schema = Databases.getDefault().getSchema(rsmd.getSchemaName(index));
+//                                Table table = schema.getTable(rsmd.getTableName(index));
+//                                Column column = table.getColumn(rsmd.getColumnName(index));
+//                                return column.getDataType() == DataType.DATE;
+//                            } catch (SQLException e) {
+//                                return false;
+//                            }
+//                        });
+//                        value = isDate ? new Date(ts) : new Timestamp(ts);
+//                    }
                 }
-//                    else if ("java.sql.Date".equals(className)) {
-//                        Long date = rs.getLong(columnLabel);
+                    else if ("java.sql.Date".equals(className)) {
+                        value = rs.getDate(columnLabel);
 //                        if (date != null) {
 //                            value = new Date(date.longValue());
 //                        }
-//                    }
-                else if ("java.sql.Time".equals(className)) {
-                    Long time = rs.getLong(columnLabel);
-                    if (time != null) {
-                        value = new Time(time.longValue());
                     }
+                else if ("java.sql.Time".equals(className)) {
+                    value = rs.getTime(columnLabel);
                 } else {
                     value = rs.getObject(columnLabel);
                 }

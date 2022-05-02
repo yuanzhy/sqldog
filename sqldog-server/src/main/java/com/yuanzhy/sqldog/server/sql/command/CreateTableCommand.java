@@ -28,7 +28,7 @@ public class CreateTableCommand extends AbstractSqlCommand {
         super.parseSchema(sqlSuffix);
         final String tableName = parseTableName(sqlSuffix);
         TableBuilder tb = new TableBuilder();
-        tb.name(tableName).parent(schema);
+        tb.name(tableName).parent(currSchema());
         String main = StringUtils.substringAfter(sqlSuffix, "(").trim();
         String colInfoStr = StringUtils.substringBeforeLast(main, ")").trim();
         String halfLine = null;
@@ -70,8 +70,8 @@ public class CreateTableCommand extends AbstractSqlCommand {
         //    comment = StringUtils.strip(comment, "'");
         //    tb.description(comment);
         //}
-        schema.addTable(tb.build());
-        return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(tableName).build();
+        currSchema().addTable(tb.build());
+        return new SqlResultBuilder(StatementType.DDL).schema(currSchema().getName()).table(tableName).build();
     }
 
     private ColumnBuilder handleCol(TableBuilder tb, String rawColInfo) {

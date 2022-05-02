@@ -2,10 +2,13 @@ package com.yuanzhy.sqldog.server.io;
 
 import com.yuanzhy.sqldog.core.SqldogVersion;
 import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.core.constant.RequestType;
 import com.yuanzhy.sqldog.core.rmi.Executor;
+import com.yuanzhy.sqldog.core.rmi.PreparedRequest;
 import com.yuanzhy.sqldog.core.rmi.RMIServer;
+import com.yuanzhy.sqldog.core.rmi.Request;
 import com.yuanzhy.sqldog.core.rmi.Response;
-import com.yuanzhy.sqldog.core.rmi.ResponseImpl;
+import com.yuanzhy.sqldog.core.rmi.impl.ResponseImpl;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.sql.PreparedSqlCommand;
@@ -129,7 +132,7 @@ public class RmiServer implements Server {
         private final int serialNum;
         private final String version;
         private final Map<String, PreparedSqlCommand> preparedSqlCache = new LRUCache<>(50);
-        private String currentSchema = StorageConst.DEF_SCHEMA_NAME;
+//        private String currentSchema = StorageConst.DEF_SCHEMA_NAME;
         ExecutorImpl(String clientHost, int serialNum) {
             this.clientHost = clientHost;
             this.serialNum = serialNum;
@@ -144,8 +147,20 @@ public class RmiServer implements Server {
         }
 
         @Override
-        public Response execute(String... sqls) {
+        public Response execute(Request request) throws RemoteException {
+            if (request.getType() == RequestType.SIMPLE_QUERY) {
+                return this.simpleQuery(request);
+            } else if (request.getType() == RequestType.PREPARED_QUERY) {
+                return this.prepared((PreparedRequest)request);
+            } else if (request.getType() == RequestType.PREPARED_PARAMETER) {
+                return this.preparedQuery((PreparedRequest)request);
+            }
+            throw new IllegalArgumentException("Request Type Not Supported: " + request.getType());
+        }
+
+        private Response simpleQuery(Request request) {
             try {
+                String[] sqls = request.getSql();
                 List<SqlResult> results = new ArrayList<>();
                 for (int i = 0; i < sqls.length; i++) {
                     String[] arr = sqls[i].split("(;\\s+\n)");
@@ -154,11 +169,11 @@ public class RmiServer implements Server {
                             continue;
                         }
                         SqlCommand sqlCommand = sqlParser.parse(sql);
-                        sqlCommand.currentSchema(currentSchema);
+                        sqlCommand.defaultSchema(request.getSchema());
                         SqlResult result = sqlCommand.execute();
-                        if (sqlCommand instanceof SetCommand && result.getSchema() != null) {
-                            this.currentSchema = result.getSchema();
-                        }
+//                        if (sqlCommand instanceof SetCommand && result.getSchema() != null) {
+//                            this.currentSchema = result.getSchema();
+//                        }
                         results.add(result);
                     }
                 }
@@ -169,12 +184,12 @@ public class RmiServer implements Server {
             }
         }
 
-        @Override
-        public Response prepare(String preparedSql) {
-            Databases.currSchema(currentSchema);
+        private Response prepared(PreparedRequest request) {
+            String preparedSql = request.getSql()[0];
+            String preparedId = request.getPrepareId();
             try {
-                PreparedSqlCommand sqlCommand = preparedSqlCache.computeIfAbsent(preparedSql, key -> preparedSqlParser.parse(preparedSql));
-                //sqlCommand.currentSchema(currentSchema);
+                PreparedSqlCommand sqlCommand = preparedSqlCache.computeIfAbsent(preparedId, key -> preparedSqlParser.parse(preparedSql));
+                sqlCommand.defaultSchema(request.getSchema());
                 SqlResult result = sqlCommand.execute();
                 return new ResponseImpl(true, result);
             } catch (Exception e) {
@@ -183,12 +198,11 @@ public class RmiServer implements Server {
             }
         }
 
-        @Override
-        public Response executePrepared(String preparedSql, Object[]... parameters) {
-            Databases.currSchema(currentSchema);
+        private Response preparedQuery(PreparedRequest request) {
+            Object[][] parameters = request.getParameters();
             try {
-                PreparedSqlCommand sqlCommand = preparedSqlCache.computeIfAbsent(preparedSql, key -> preparedSqlParser.parse(preparedSql));
-                //sqlCommand.currentSchema(currentSchema);
+                PreparedSqlCommand sqlCommand = preparedSqlCache.computeIfAbsent(request.getPrepareId(), key -> preparedSqlParser.parse(request.getSql()[0]));
+                sqlCommand.defaultSchema(request.getSchema());
                 SqlResult[] results = new SqlResult[parameters.length];
                 for (int i = 0; i < parameters.length; i++) {
                     results[i] = sqlCommand.execute(parameters[i]);
@@ -201,7 +215,7 @@ public class RmiServer implements Server {
         }
 
         @Override
-        public void close() throws NoSuchObjectException {
+        public void close() {
             for (PreparedSqlCommand sqlCommand : preparedSqlCache.values()) {
                 try {
                     sqlCommand.close();

@@ -5,7 +5,6 @@ import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Calcites;
 import com.yuanzhy.sqldog.server.util.CommandUtil;
-import com.yuanzhy.sqldog.server.util.Databases;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -27,9 +26,6 @@ public class SelectCommand extends AbstractSqlCommand {
     @Override
     public SqlResult execute() {
         try {
-            if (schema != null) {
-                Databases.currSchema(schema.getName());
-            }
             Statement stat = Calcites.getConnection().createStatement();
             ResultSet rs = stat.executeQuery(sql);
             ResultSetMetaData rsmd = rs.getMetaData();

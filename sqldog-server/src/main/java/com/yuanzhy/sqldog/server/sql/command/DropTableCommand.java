@@ -23,16 +23,16 @@ public class DropTableCommand extends AbstractSqlCommand {
             try {
                 sqlSuffix = sqlSuffix.substring("IF EXISTS ".length());
                 super.parseSchemaTable(sqlSuffix);
-                schema.dropTable(table.getName());
+                currSchema().dropTable(table.getName());
                 tableName = table.getName();
             } catch (Exception e) {
                 // ignore
             }
         } else {
             super.parseSchemaTable(sqlSuffix);
-            schema.dropTable(table.getName());
+            currSchema().dropTable(table.getName());
             tableName = table.getName();
         }
-        return new SqlResultBuilder(StatementType.DDL).schema(schema.getName()).table(tableName).build();
+        return new SqlResultBuilder(StatementType.DDL).schema(currSchema().getName()).table(tableName).build();
     }
 }
