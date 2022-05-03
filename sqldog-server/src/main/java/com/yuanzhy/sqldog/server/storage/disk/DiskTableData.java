@@ -14,7 +14,7 @@ import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.server.core.constant.DataType;
 import com.yuanzhy.sqldog.server.storage.base.AbstractTableData;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
-import com.yuanzhy.sqldog.server.util.ByteUtil;
+import com.yuanzhy.sqldog.core.util.ByteUtil;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlLiteral;

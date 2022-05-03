@@ -23,7 +23,7 @@ import com.yuanzhy.sqldog.server.sql.command.SelectCommand;
 import com.yuanzhy.sqldog.server.sql.command.SetCommand;
 import com.yuanzhy.sqldog.server.sql.command.ShowCommand;
 import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
-import com.yuanzhy.sqldog.server.util.ByteUtil;
+import com.yuanzhy.sqldog.core.util.ByteUtil;
 import com.yuanzhy.sqldog.server.util.ConfigUtil;
 
 /**

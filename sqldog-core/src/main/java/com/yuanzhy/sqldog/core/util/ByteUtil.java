@@ -1,8 +1,7 @@
-package com.yuanzhy.sqldog.server.util;
-
-import com.yuanzhy.sqldog.server.common.StorageConst;
+package com.yuanzhy.sqldog.core.util;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author yuanzhy
@@ -13,7 +12,7 @@ public class ByteUtil {
 
     public static byte[] toBytes(String s) {
         try {
-            return s.getBytes(StorageConst.CHARSET);
+            return s.getBytes(StandardCharsets.UTF_8.name());
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -108,7 +107,7 @@ public class ByteUtil {
 
     public static String toString(byte[] bytes, int offset, int len) {
         try {
-            return new String(bytes, offset, len, StorageConst.CHARSET);
+            return new String(bytes, offset, len, StandardCharsets.UTF_8.name());
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }

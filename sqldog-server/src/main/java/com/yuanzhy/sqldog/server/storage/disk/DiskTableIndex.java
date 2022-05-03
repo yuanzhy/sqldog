@@ -11,7 +11,7 @@ import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.core.Table;
 import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
-import com.yuanzhy.sqldog.server.util.ByteUtil;
+import com.yuanzhy.sqldog.core.util.ByteUtil;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.math.BigDecimal;
