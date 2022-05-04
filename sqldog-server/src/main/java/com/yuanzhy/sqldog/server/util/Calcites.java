@@ -12,7 +12,6 @@ import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.schema.impl.ScalarFunctionImpl;
 import org.apache.calcite.sql.parser.SqlParser;
-import org.apache.calcite.sql.parser.impl.SqlParserImpl;
 import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
@@ -39,6 +38,8 @@ public class Calcites {
     private static final FrameworkConfig FRAMEWORK_CONFIG;
     private static final CalciteConnection CONNECTION;
     static {
+//        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"));
+//        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         System.setProperty("saffron.default.charset", ConversionUtil.NATIVE_UTF16_CHARSET_NAME);
         System.setProperty("saffron.default.nationalcharset",ConversionUtil.NATIVE_UTF16_CHARSET_NAME);
         System.setProperty("saffron.default.collation.name",ConversionUtil.NATIVE_UTF16_CHARSET_NAME + "$en_US");
@@ -47,6 +48,7 @@ public class Calcites {
         config.put("parserFactory", "com.yuanzhy.sqldog.server.sql.adapter.CalciteParserFactory");
         config.put("caseSensitive", "false");
         config.put("conformance", "ORACLE_12");
+//        config.put("timeZone", "UTC");
         try {
             Connection conn = DriverManager.getConnection("jdbc:calcite:", config);
             CONNECTION = conn.unwrap(CalciteConnection.class);

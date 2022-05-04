@@ -136,7 +136,7 @@ public class ScannableCalciteTable extends AbstractQueryableTable implements Sca
 
     @Override
     public Collection getModifiableCollection() {
-        return getData();
+        return null;
     }
 
     @Override

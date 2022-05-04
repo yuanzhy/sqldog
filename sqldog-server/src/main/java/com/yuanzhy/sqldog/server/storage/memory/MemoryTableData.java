@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -214,15 +215,23 @@ public class MemoryTableData extends AbstractTableData implements TableData {
         return Arrays.stream(columnNames).map(cn -> String.valueOf(dataRow.get(cn))).collect(Collectors.joining(UNITED_SEP));
     }
 
+    @Override
+    public Iterator<Object[]> iterator() {
+        return new MemoryDataIterator();
+    }
 
-    //    private boolean isMatch(Map<String, Object> row, Map<String, Object> wheres) {
-//        for (Map.Entry<String, Object> whereEntry : wheres.entrySet()) {
-//            Object whereValue = whereEntry.getValue();
-//            Object whereKey = whereEntry.getKey();
-//            if (!Objects.equals(whereValue, row.get(whereKey))) {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
+    private class MemoryDataIterator implements Iterator<Object[]> {
+
+        private int index = -1;
+        @Override
+        public boolean hasNext() {
+            return ++index < data.size();
+        }
+
+        @Override
+        public Object[] next() {
+            Map<String, Object> map = data.get(index);
+            return map.values().toArray();
+        }
+    }
 }

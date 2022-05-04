@@ -27,6 +27,7 @@ public class MemoryTable extends MemoryBase implements Table {
     /** 列 */
     protected final Map<String, Column> columnMap;
     protected final Map<String, Integer> columnIndexMap = new HashMap<>();
+
     /** 约束 */
     protected Constraint primaryKey;
     protected Serial serial;

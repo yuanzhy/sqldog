@@ -1,6 +1,7 @@
 package com.yuanzhy.sqldog.server.storage.disk;
 
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.ByteUtil;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.common.model.DataExtent;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
@@ -14,7 +15,6 @@ import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.server.core.constant.DataType;
 import com.yuanzhy.sqldog.server.storage.base.AbstractTableData;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
-import com.yuanzhy.sqldog.core.util.ByteUtil;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlLiteral;
@@ -28,10 +28,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -50,7 +52,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
 
     private final DiskTableIndex tableIndex;
 
-    private volatile int count = 0;
+    private volatile int count;
     private volatile boolean optimizing = false;
     DiskTableData(Table table, String tablePath) {
         super(table);
@@ -61,6 +63,10 @@ public class DiskTableData extends AbstractTableData implements TableData {
         Map<String, Object> statMap = persistence.readStatistics(tablePath);
         if (statMap.containsKey("count")) {
             this.count = (int) statMap.get("count");
+        } else {
+            // correct  这样实现不太好，先这样吧
+            this.count = this.getData().size();
+            this.saveStatistics();
         }
     }
     @Override
@@ -123,9 +129,18 @@ public class DiskTableData extends AbstractTableData implements TableData {
                 return ByteUtil.toBytes(((Number) value).floatValue());
             case DOUBLE:
                 return ByteUtil.toBytes(((Number) value).doubleValue());
+            case TIME:
+//                int iv;
+//                if (value instanceof Date) {
+//                    iv = (int)((Date)value).getTime();
+//                } else if (value instanceof Number) {
+//                    iv = ((Number)value).intValue();
+//                } else {
+//                    iv = Integer.parseInt(value.toString());
+//                }
+//                return ByteUtil.toBytes(iv);
             case DATE:
             case TIMESTAMP:
-            case TIME:
                 long v;
                 if (value instanceof Date) {
                     v = ((Date)value).getTime();
@@ -285,6 +300,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
         if (condition == null) {
             _count = count;
             this.truncate();
+            return _count;
         } else if (condition instanceof SqlBasicCall) {
             final int nullBytesCount = getNullBytesCount();
             // 判断是不是简单条件， 比如 where ID = '1'
@@ -450,16 +466,15 @@ public class DiskTableData extends AbstractTableData implements TableData {
     public synchronized void truncate() {
         persistence.delete(persistence.resolvePath(tablePath, StorageConst.TABLE_DATA_PATH));
         persistence.delete(persistence.resolvePath(tablePath, StorageConst.TABLE_INDEX_PATH));
+        this.count = 0;
+        this.saveStatistics();
     }
 
     @Override
     @Deprecated
     public List<Object[]> getData() {
         checkTableState();
-        Collection<Column> columns = table.getColumns().values();
-        int nullableCount = (int)columns.stream().filter(Column::isNullable).count();
-        int nullBytesCount = nullableCount % 8 > 0 ? nullableCount / 8 + 1 : nullableCount / 8;
-
+        final int nullBytesCount = getNullBytesCount();
         List<Object[]> data = new ArrayList<>();
         DataExtent dataExtent = persistence.readExtent(tablePath);
         while (dataExtent != null) {
@@ -587,7 +602,6 @@ public class DiskTableData extends AbstractTableData implements TableData {
                 switch (column.getDataType()) {
                     case INT:
                     case SERIAL:
-//                                row[colIdx++] = ByteUtil.toInt(ArrayUtils.subarray(pageBuf, dataStart, dataStart += 4));
                         row[colIdx++] = ByteUtil.toInt(pageBuf, dataStart);
                         dataStart += 4;
                         break;
@@ -613,15 +627,15 @@ public class DiskTableData extends AbstractTableData implements TableData {
                         dataStart += 8;
                         break;
                     case DATE:
-                        row[colIdx++] = new java.sql.Date(ByteUtil.toLong(pageBuf, dataStart));
+                        row[colIdx++] = new java.sql.Date(ByteUtil.toLong(pageBuf, dataStart) + 28800000);
                         dataStart += 8;
                         break;
-                    case TIMESTAMP:
-                        row[colIdx++] = new java.sql.Timestamp(ByteUtil.toLong(pageBuf, dataStart));
+                    case TIMESTAMP: // TODO calcite 坑，先用野路子处理一下
+                        row[colIdx++] = new java.sql.Timestamp(ByteUtil.toLong(pageBuf, dataStart) + 28800000);
                         dataStart += 8;
                         break;
                     case TIME:
-                        row[colIdx++] = new java.sql.Time(ByteUtil.toLong(pageBuf, dataStart));
+                        row[colIdx++] = new java.sql.Time(ByteUtil.toLong(pageBuf, dataStart) + 28800000);
                         dataStart += 8;
                         break;
                     case BOOLEAN:
@@ -743,9 +757,80 @@ public class DiskTableData extends AbstractTableData implements TableData {
         return (DiskTable) table;
     }
 
+    @Override
+    public Iterator<Object[]> iterator() {
+        return new DiskDataIterator();
+    }
+
+    private class DiskDataIterator implements Iterator<Object[]>, AutoCloseable {
+
+        private final int nullBytesCount;
+        private boolean closed = false;
+        private int globalIndex = -1;
+        private int pageIndex;
+        private DataPage dataPage;
+        private List<Object[]> pageData;
+
+        DiskDataIterator() {
+            nullBytesCount = getNullBytesCount();
+            nextData();
+            pageIndex = -1;
+        }
+        @Override
+        public boolean hasNext() {
+            if (closed) {
+                return false;
+            }
+            if (++globalIndex >= count) {
+                this.close();
+                return false;
+            }
+            if (++pageIndex < pageData.size()) {
+                return true;
+            }
+            return nextData();
+        }
+
+        @Override
+        public Object[] next() {
+            if (closed) {
+                throw new NoSuchElementException(table.getName());
+            }
+            return pageData.get(pageIndex);
+        }
+
+        @Override
+        public void close() {
+            dataPage = null;
+            pageData = null;
+            closed = true;
+        }
+
+        private boolean nextData() {
+            checkTableState();
+            if (dataPage == null) {
+                dataPage = persistence.readPage(tablePath);
+            } else {
+                dataPage = persistence.readPage(tablePath, dataPage.getFileId(), dataPage.getOffset() + 1);
+            }
+            if (dataPage == null) {
+                close();
+                return false;
+            } else {
+                pageData = transformToData(dataPage.getData(), nullBytesCount);
+                if (pageData.isEmpty()) { // 最虽的情况，一页数据都被删除了
+                    return nextData();
+                } else {
+                    pageIndex = 0;
+                    return true;
+                }
+            }
+        }
+    }
+
     class RowResult {
-        final int start;
-        final int end;
+        final int start; // start in data page
+        final int end; // end in data page
         final Object[] row;
         RowResult(int start, int end, Object[] row) {
             this.start = start;

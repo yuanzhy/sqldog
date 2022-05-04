@@ -116,9 +116,55 @@ public class CalciteSqlParser extends SqlParserImpl {
         handleTargetTable(sqlSelect.getFrom());
         if (sqlSelect.getWhere() instanceof SqlBasicCall) {
             handleBasicCall((SqlBasicCall) sqlSelect.getWhere());
+            // 处理where条件中的日期
+//            handleCondition((SqlBasicCall) sqlSelect.getWhere());
         }
         replaceGroupByAlias(sqlSelect);
     }
+
+//    private void handleCondition(SqlBasicCall condition) {
+//        SqlKind kind = condition.getOperator().getKind();
+//        SqlNode left = condition.getOperandList().get(0);
+//        SqlNode right = condition.getOperandList().size() > 1 ? condition.getOperandList().get(1): null;
+//        if (kind == SqlKind.AND) {
+//            if (left instanceof SqlBasicCall) {
+//                handleCondition((SqlBasicCall) left);
+//            }
+//            if (right instanceof SqlBasicCall) {
+//                handleCondition((SqlBasicCall) right);
+//            }
+//        } else if (kind == SqlKind.OR) {
+//            if (left instanceof SqlBasicCall) {
+//                handleCondition((SqlBasicCall) left);
+//            }
+//            if (right instanceof SqlBasicCall) {
+//                handleCondition((SqlBasicCall) right);
+//            }
+//        } else {
+//            if (right instanceof SqlTimestampLiteral) {
+//                SqlTimestampLiteral tsLiteral =  (SqlTimestampLiteral) right;
+//                String tsStr = tsLiteral.toValue();
+//                Date d = DateUtils.addHours(DateUtil.parseDatetime(tsStr), -8);
+//                TimestampString ts = TimestampString.fromMillisSinceEpoch(d.getTime());
+//                condition.setOperand(1, SqlLiteral.createTimestamp(ts, 0, SqlParserPos.ZERO));
+//            } else if (right instanceof SqlTimeLiteral) {
+//                SqlTimeLiteral tsLiteral =  (SqlTimeLiteral) right;
+//                String tsStr = tsLiteral.toValue();
+//                Date d = DateUtils.addHours(DateUtil.parseSqlTime(tsStr), -8);
+//                TimeString ts = TimeString.fromMillisOfDay((int)d.getTime());
+//                condition.setOperand(1, SqlLiteral.createTime(ts, 0, SqlParserPos.ZERO));
+//            } else if (right instanceof SqlDateLiteral) {
+//                SqlDateLiteral tsLiteral = (SqlDateLiteral) right;
+//                String tsStr = tsLiteral.toValue();
+//                Date d = DateUtils.addHours(DateUtil.parseSqlDate(tsStr), -8);
+//                Calendar cal = Calendar.getInstance();
+//                cal.setTimeInMillis(d.getTime());
+//                DateString ts = DateString.fromCalendarFields(cal);
+//                condition.setOperand(1, SqlLiteral.createDate(ts, SqlParserPos.ZERO));
+//            }
+//        }
+//
+//    }
 
     private void handleJoin(SqlJoin sqlJoin) {
         if (sqlJoin.getLeft() instanceof SqlBasicCall) {

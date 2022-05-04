@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @version 1.0
  * @date 2021/12/4
  */
+@Deprecated // 和ScannableCalciteTable配套使用的，直接遍历内存全量数据，没有任何优化
 public class ObjectArrayEnumerable extends AbstractEnumerable<Object[]> {
 
     private final AtomicBoolean cancelFlag;

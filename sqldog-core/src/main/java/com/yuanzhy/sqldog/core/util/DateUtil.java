@@ -41,6 +41,10 @@ public class DateUtil {
         return new Time(d.getTime());
     }
 
+    public static java.util.Date parseDatetime(String dateText) {
+         return parse(dateText, TIME_PATTERN);
+    }
+
     public static Timestamp parseTimestamp(String dateText) {
         Date d = parse(dateText, DATETIME_PATTERN, DATE_PATTERN);
         return new Timestamp(d.getTime());
@@ -56,6 +60,10 @@ public class DateUtil {
 
     public static String formatTimestamp(Timestamp timestamp) {
         return new SimpleDateFormat(DATETIME_PATTERN).format(timestamp);
+    }
+
+    public static String formatDatetime(Date date) {
+        return new SimpleDateFormat(DATETIME_PATTERN).format(date);
     }
 //
 //    /**

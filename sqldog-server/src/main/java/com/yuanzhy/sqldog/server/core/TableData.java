@@ -11,7 +11,7 @@ import java.util.Map;
  * @version 1.0
  * @date 2022/4/4
  */
-public interface TableData {
+public interface TableData extends Iterable<Object[]> {
 
     Object[] insert(Map<String, Object> values);
 
