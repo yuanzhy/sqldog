@@ -20,6 +20,7 @@ public class RequestBuilder {
     private int timeout = 60; // 秒
 
     private int fetchSize = 200;
+    private int offset = 0;
     private RequestType type;
     private String preparedId;
     private String[] sqls;
@@ -76,17 +77,22 @@ public class RequestBuilder {
         return this;
     }
 
+    public RequestBuilder offset(int offset) {
+        this.offset = offset;
+        return this;
+    }
+
     public Request build() {
         Asserts.notNull(type, "请求类型不能为空");
 //        Asserts.notNull(sqls, "sqls不能为空");
-        return new RequestImpl(schema, timeout, fetchSize, type, sqls);
+        return new RequestImpl(schema, timeout, fetchSize, offset, type, sqls);
     }
 
     public PreparedRequest buildPrepared() {
         Asserts.notNull(type, "请求类型不能为空");
         Asserts.hasText(preparedId, "preparedId不能为空");
 //        Asserts.notNull(sqls, "sqls不能为空");
-        PreparedRequestImpl req = new PreparedRequestImpl(schema, timeout, fetchSize, type, preparedId, sqls);
+        PreparedRequestImpl req = new PreparedRequestImpl(schema, timeout, fetchSize, offset, type, preparedId, sqls);
         req.parameters = parameters.toArray(new Object[0][]);
         return req;
     }

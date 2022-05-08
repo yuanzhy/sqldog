@@ -26,6 +26,11 @@ public class SelectCommand extends AbstractSqlCommand {
     @Override
     public SqlResult execute() {
         try {
+            // 优化，查询总数的情况下直接给出结果
+            if (sql.startsWith("SELECT COUNT(*) FROM ") && !sql.contains("WHERE") && !sql.contains("GROUP BY")) {
+                super.parseSchemaTable(sql.substring("SELECT COUNT(*) FROM ".length()));
+                return new SqlResultBuilder(StatementType.DQL).rows(1).labels("COUNT(*)").data(table.getTableData().getCount()).build();
+            }
             Statement stat = Calcites.getConnection().createStatement();
             ResultSet rs = stat.executeQuery(sql);
             ResultSetMetaData rsmd = rs.getMetaData();

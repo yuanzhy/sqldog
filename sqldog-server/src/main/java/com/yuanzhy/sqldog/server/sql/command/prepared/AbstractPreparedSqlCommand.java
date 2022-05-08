@@ -39,7 +39,6 @@ public abstract class AbstractPreparedSqlCommand implements PreparedSqlCommand {
         if (schema != null) {
             this.defaultSchema = Databases.getDefault().getSchema(schema);
             Asserts.notNull(this.defaultSchema, "current schema is unset");
-            Databases.currSchema(schema); // 此处还得调用以下，给CalciteSqlParser使用
         }
     }
 

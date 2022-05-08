@@ -35,12 +35,18 @@ import java.util.Objects;
  */
 class ResultSetImpl extends AbstractResultSet implements ResultSet {
 
-    protected final AbstractStatement statement;
-    protected final SqlResult sqlResult;
-    protected final List<Object[]> data;
+
+    protected final StatementImpl statement;
     protected final ResultSetMetaData metaData;
+//    protected final int rows; // 数据总条数
+    private final String sql;
+//    protected final SqlResult sqlResult;
+
+    protected List<Object[]> data;
+    protected int offset = 0; // 数据的 offset
+
     private boolean closed = false;
-    private int fetchSize = 0; // TODO cursor need it
+    private int fetchSize = 0;
     private int direction; // TODO not support
     private boolean wasNull = false;
     /**
@@ -50,26 +56,65 @@ class ResultSetImpl extends AbstractResultSet implements ResultSet {
     protected Map<String, Integer> columnToIndexCache = new HashMap<>();
     private int rowIndex = -1;
 
-    ResultSetImpl(AbstractStatement statement, int direction, int fetchSize, SqlResult sqlResult) {
+    private boolean afterLast = false;
+    private boolean last = false;
+
+    ResultSetImpl(StatementImpl statement, int direction, int fetchSize, SqlResult sqlResult) {
         this.statement = statement;
         this.direction = direction;
-        this.fetchSize = fetchSize;
-        this.sqlResult = sqlResult;
+//        this.sqlResult = sqlResult;
+//        this.rows = (int) sqlResult.getRows(); // 不支持21亿以上的数据，所以此处直接使用int了
         this.data = sqlResult.getData() == null ? Collections.emptyList() : sqlResult.getData();
         this.metaData = new ResultSetMetaDataImpl(sqlResult.getColumns());
+        try {
+            this.setFetchSize(fetchSize);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        this.sql = this.fetchSize > 0 && statement != null ? statement.sql : "";
     }
 
     @Override
     public boolean next() throws SQLException {
-        checkClosed();
         if (isAfterLast()) {
             return false;
         }
         rowIndex++;
-        if (data.size() <= rowIndex) {
-            return false;
+        int diff = data.size() + offset - rowIndex;
+        if (diff > 0) {
+            if (diff == 1 && fetchSize <= 0) {
+                last = true;
+            }
+            return true;
         }
-        return true;
+        // 看看是否支持fetchSize
+        if (fetchSize > 0 && !(statement instanceof PreparedStatementImpl)) { // TODO prepared暂不支持fetchSize, 实现比较复杂
+            if (data.size() < fetchSize) { // 小于说明肯定没有下一页了
+                afterLast = true;
+                last = false;
+                return false;
+            }
+            // 尝试请求下一页
+            offset += fetchSize;
+            SqlResult result;
+//            if (statement instanceof PreparedStatementImpl) {
+//                PreparedStatementImpl ps = (PreparedStatementImpl) statement;
+//                result = statement.connection.executePrepared(ps, offset, ps.preparedId, ps.preparedSql, ps.parameter);
+//            } else {
+                result = statement.connection.execute(statement, offset, sql);
+//            }
+            if (result.getData() == null || result.getData().isEmpty()) { // 没有数据了
+                afterLast = true; // 服务端也没有数据了，游标置到afterLast
+                last = false;
+            } else {
+                this.data = result.getData();
+                return true;
+            }
+        } else {
+            afterLast = true;
+            last = false;
+        }
+        return false;
     }
 
     @Override
@@ -79,6 +124,7 @@ class ResultSetImpl extends AbstractResultSet implements ResultSet {
         }
         this.closed = true;
         this.columnToIndexCache.clear();
+        this.columnToIndexCache = null;
     }
 
     @Override
@@ -295,7 +341,7 @@ class ResultSetImpl extends AbstractResultSet implements ResultSet {
     @Override
     public boolean isAfterLast() throws SQLException {
         checkClosed();
-        return this.data.size() <= rowIndex;
+        return afterLast;
     }
 
     @Override
@@ -307,32 +353,50 @@ class ResultSetImpl extends AbstractResultSet implements ResultSet {
     @Override
     public boolean isLast() throws SQLException {
         checkClosed();
-        return rowIndex - 1 == this.data.size();
+        return last;
+//        return rowIndex - 1 == this.rows;
     }
 
     @Override
     public void beforeFirst() throws SQLException {
         checkScrollType();
         this.rowIndex = -1;
+        afterLast = false;
+        last = false;
     }
 
     @Override
     public void afterLast() throws SQLException {
         checkScrollType();
-        this.rowIndex = data.size();
+        afterLast = true;
+        last = false;
+        if (this.fetchSize > 0) {
+            this.rowIndex = Integer.MAX_VALUE;
+        } else {
+            this.rowIndex = this.data.size();
+        }
     }
 
     @Override
     public boolean first() throws SQLException {
         checkScrollType();
         this.rowIndex = 0;
+        afterLast = false;
+        last = false;
         return !data.isEmpty();
     }
 
     @Override
     public boolean last() throws SQLException {
         checkScrollType();
-        this.rowIndex = data.size() - 1;
+        afterLast = false;
+        last = true;
+        if (this.fetchSize > 0) {
+            this.rowIndex = Integer.MAX_VALUE;
+            return false;
+        } else {
+            this.rowIndex = this.data.size() - 1;
+        }
         return this.rowIndex >= 0;
     }
 
@@ -346,22 +410,28 @@ class ResultSetImpl extends AbstractResultSet implements ResultSet {
     public boolean absolute(int row) throws SQLException {
         checkScrollType();
         checkNum(row);
-        if (row > data.size()) {
+        if (this.fetchSize > 0) {
             return false;
         }
         this.rowIndex = row - 1;
+        if (this.rowIndex >= data.size()) {
+            afterLast = true;
+            last = false;
+            return false;
+        } else if (this.rowIndex - 1 == data.size()) {
+            afterLast = false;
+            last = true;
+        } else {
+            afterLast = false;
+            last = false;
+        }
         return true;
     }
 
     @Override
     public boolean relative(int rows) throws SQLException {
-        checkScrollType();
-        int rowIndex = this.rowIndex + rows;
-        if (rowIndex < 0 || this.data.size() <= rowIndex) {
-            return false;
-        }
-        this.rowIndex = rowIndex;
-        return true;
+        int row = this.rowIndex + rows + 1;
+        return this.absolute(row);
     }
 
     @Override
@@ -392,7 +462,11 @@ class ResultSetImpl extends AbstractResultSet implements ResultSet {
     @Override
     public void setFetchSize(int rows) throws SQLException {
         checkClosed();
-        this.fetchSize = rows;
+        if (direction == ResultSet.FETCH_FORWARD && statement != null
+                && statement.getResultSetType() == ResultSet.TYPE_FORWARD_ONLY
+                && !(statement instanceof PreparedStatementImpl)) {
+            this.fetchSize = rows;
+        }
     }
 
     @Override
@@ -610,7 +684,7 @@ class ResultSetImpl extends AbstractResultSet implements ResultSet {
     }
 
     protected Object[] row() {
-        return data.get(rowIndex);
+        return data.get(rowIndex - offset);
     }
 
     protected final void checkColumnBounds(int columnIndex) throws SQLException {
@@ -626,6 +700,10 @@ class ResultSetImpl extends AbstractResultSet implements ResultSet {
         if (statement.getResultSetType() == ResultSet.TYPE_FORWARD_ONLY) {
             throw new SQLException("Operation not supported for streaming result sets");
         }
+//        if (data.size() != this.rows) {
+//            throw new SQLException("Operation not supported for streaming result sets");
+//        }
+        // 客户端有全量数据，允许游标随意变动
     }
 
     protected void checkNum(int num) throws SQLException {

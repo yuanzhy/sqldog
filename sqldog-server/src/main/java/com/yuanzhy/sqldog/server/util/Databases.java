@@ -1,6 +1,5 @@
 package com.yuanzhy.sqldog.server.util;
 
-import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.server.core.Persistence;
@@ -10,7 +9,6 @@ import com.yuanzhy.sqldog.server.storage.builder.DatabaseBuilder;
 import com.yuanzhy.sqldog.server.storage.builder.SchemaBuilder;
 import com.yuanzhy.sqldog.server.storage.disk.DiskDatabase;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,8 +22,6 @@ import java.util.Map;
 public class Databases {
     // TODO 默认先只支持单实例库
     private static final Map<String, Database> DATABASES = new HashMap<>();
-    @Deprecated
-    private static final ThreadLocal<String> TL = new ThreadLocal<>();
 
     static {
         if (ConfigUtil.isDisk()) {
@@ -65,19 +61,4 @@ public class Databases {
         return DATABASES.get(name);
     }
 
-    @Deprecated
-    public static String currSchema() {
-        return TL.get();
-    }
-
-    @Deprecated
-    public static void currSchema(String schemaName) {
-        if (StringUtils.isEmpty(schemaName)) {
-            TL.remove();
-        } else {
-            Schema schema = getDefault().getSchema(schemaName);
-            Asserts.notNull(schema, "current schema '" + schemaName + "' not exists");
-            TL.set(schemaName);
-        }
-    }
 }

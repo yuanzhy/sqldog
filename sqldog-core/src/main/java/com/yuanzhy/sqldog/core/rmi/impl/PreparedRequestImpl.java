@@ -14,8 +14,8 @@ public class PreparedRequestImpl extends RequestImpl implements PreparedRequest 
 
     Object[][] parameters;
 
-    PreparedRequestImpl(String schema, int timeoutMillis, int fetchSize, RequestType type, String preparedId, String... sql) {
-        super(schema, timeoutMillis, fetchSize, type, sql);
+    PreparedRequestImpl(String schema, int timeoutMillis, int fetchSize, int offset, RequestType type, String preparedId, String... sql) {
+        super(schema, timeoutMillis, fetchSize, offset, type, sql);
         this.preparedId = preparedId;
     }
 

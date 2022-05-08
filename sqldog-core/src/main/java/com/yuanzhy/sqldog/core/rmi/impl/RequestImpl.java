@@ -14,13 +14,15 @@ public class RequestImpl implements Request {
     private final int timeout;
 
     private final int fetchSize;
+    private final int offset;
     private final RequestType type;
     private final String[] sql;
 
-    RequestImpl(String schema, int timeout, int fetchSize, RequestType type, String... sql) {
+    RequestImpl(String schema, int timeout, int fetchSize, int offset, RequestType type, String... sql) {
         this.schema = schema;
         this.timeout = timeout;
         this.fetchSize = fetchSize;
+        this.offset = offset;
         this.type = type;
         this.sql = sql == null ? new String[0] : sql;
     }
@@ -38,6 +40,11 @@ public class RequestImpl implements Request {
     @Override
     public int getFetchSize() {
         return fetchSize;
+    }
+
+    @Override
+    public int getOffset() {
+        return offset;
     }
 
     @Override

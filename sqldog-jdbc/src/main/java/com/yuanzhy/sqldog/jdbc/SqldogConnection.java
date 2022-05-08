@@ -23,17 +23,21 @@ public interface SqldogConnection extends Connection {
 
     SqlResult[] execute(Request request) throws SQLException;
 
-    SqlResult[] execute(Statement statement, String... sqls) throws SQLException;
+    SqlResult[] execute(Statement statement, int offset, String... sqls) throws SQLException;
 
     /**
      * 执行sql
      * @param statement statement
+     * @param offset  offset, use to fetchSize
      * @param sql  sql
      * @return
      * @throws SQLException
      */
-    SqlResult execute(Statement statement, String sql) throws SQLException;
+    SqlResult execute(Statement statement, int offset, String sql) throws SQLException;
 
+    default SqlResult execute(Statement statement, String sql) throws SQLException {
+        return execute(statement, 0, sql);
+    }
     /**
      * prepared
      * @param preparedSql
@@ -42,10 +46,10 @@ public interface SqldogConnection extends Connection {
      */
     SqlResult prepareExecute(PreparedStatement statement, String preparedId, String preparedSql) throws SQLException;
 
-    default SqlResult executePrepared(PreparedStatement statement, String preparedId, String preparedSql, Object[] parameter) throws SQLException {
-        SqlResult[] results = executePrepared(statement, preparedId, preparedSql, Collections.singletonList(parameter));
+    default SqlResult executePrepared(PreparedStatement statement, int offset, String preparedId, String preparedSql, Object[] parameter) throws SQLException {
+        SqlResult[] results = executePrepared(statement, offset, preparedId, preparedSql, Collections.singletonList(parameter));
         return results == null ? null : results[0];
     }
 
-    SqlResult[] executePrepared(PreparedStatement statement, String preparedId, String preparedSql, List<Object[]> parameterList) throws SQLException;
+    SqlResult[] executePrepared(PreparedStatement statement, int offset, String preparedId, String preparedSql, List<Object[]> parameterList) throws SQLException;
 }

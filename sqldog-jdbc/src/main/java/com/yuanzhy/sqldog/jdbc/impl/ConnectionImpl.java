@@ -42,7 +42,7 @@ import java.util.concurrent.TimeoutException;
  */
 public class ConnectionImpl extends AbstractConnection implements SqldogConnection {
 
-    private static final int DEFAULT_RESULT_SET_TYPE = ResultSet.TYPE_SCROLL_INSENSITIVE;
+    private static final int DEFAULT_RESULT_SET_TYPE = ResultSet.TYPE_FORWARD_ONLY;
     private static final int DEFAULT_RESULT_SET_CONCURRENCY = ResultSet.CONCUR_READ_ONLY;
 
     private static final ExecutorService POOL = Executors.newFixedThreadPool(4);
@@ -315,17 +315,17 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     }
 
     @Override
-    public SqlResult execute(Statement statement, String sql) throws SQLException {
-        return execute(statement, new String[]{sql})[0];
+    public SqlResult execute(Statement statement, int offset, String sql) throws SQLException {
+        return execute(statement, offset, new String[]{sql})[0];
     }
 
     @Override
-    public SqlResult[] execute(Statement statement, String... sqls) throws SQLException {
+    public SqlResult[] execute(Statement statement, int offset, String... sqls) throws SQLException {
         checkClosed();
         int timeoutSecond = statement.getQueryTimeout();
         if (timeoutSecond > 0) {
             // TODO 超时实现草率，待完善
-            Future<SqlResult[]> future = POOL.submit(() -> executeInternal(statement, sqls));
+            Future<SqlResult[]> future = POOL.submit(() -> executeInternal(statement, offset, sqls));
             try {
                 return future.get(timeoutSecond, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
@@ -339,7 +339,7 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
             }
         } else {
             try {
-                return executeInternal(statement, sqls);
+                return executeInternal(statement, offset, sqls);
             } catch (Exception e) {
                 throw SQLError.wrapEx(e);
             }
@@ -364,17 +364,17 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     }
 
     @Override
-    public SqlResult[] executePrepared(PreparedStatement statement, String preparedId, String preparedSql, List<Object[]> parameterList) throws SQLException {
-        Request request = new RequestBuilder(RequestType.PREPARED_PARAMETER)
-                .schema(getSchema()).timeout(statement.getQueryTimeout()).fetchSize(statement.getFetchSize())
+    public SqlResult[] executePrepared(PreparedStatement statement, int offset, String preparedId, String preparedSql, List<Object[]> parameterList) throws SQLException {
+        Request request = new RequestBuilder(RequestType.PREPARED_PARAMETER).schema(getSchema())
+                .timeout(statement.getQueryTimeout()).fetchSize(statement.getFetchSize()).offset(offset)
                 .preparedId(preparedId).sqls(preparedSql).parameters(parameterList)
                 .buildPrepared();
         return execute(request);
     }
 
-    private SqlResult[] executeInternal(Statement statement, String... sqls) throws SQLException {
-        Request request = new RequestBuilder(RequestType.SIMPLE_QUERY)
-                .schema(getSchema()).fetchSize(statement.getFetchSize()).timeout(statement.getQueryTimeout())
+    private SqlResult[] executeInternal(Statement statement, int offset, String... sqls) throws SQLException {
+        Request request = new RequestBuilder(RequestType.SIMPLE_QUERY).schema(getSchema())
+                .fetchSize(statement.getFetchSize()).offset(offset).timeout(statement.getQueryTimeout())
                 .sqls(sqls).build();
         return execute(request);
     }

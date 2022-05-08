@@ -29,11 +29,21 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
 
     final int MORE_MOD = 20;
 
-    protected final Connection conn;
+    private final String host;
+    private final int port;
+    private final String username;
+    private final String password;
+    protected Connection conn;
 
     public RemoteCliCommand(String host, int port, String username, String password) {
-        // login
-        Connection conn;
+        this.host = host;
+        this.port = port;
+        this.username = username;
+        this.password = password;
+        this.connect();
+    }
+
+    protected final void connect() {
         try {
             Class.forName("com.yuanzhy.sqldog.jdbc.Driver");
             conn = DriverManager.getConnection("jdbc:sqldog://" + host + ":" + port, username, password);
@@ -41,7 +51,6 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
             printError(e);
             throw new RuntimeException("");
         }
-        this.conn = conn;
     }
 
     protected final void executeAndExit(String... sql) {
@@ -206,7 +215,7 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
                 }
             }
         }
-        stmt.close();
+//        stmt.close();
     }
 
     private void printResultSet(ResultSet rs, boolean useMore) throws SQLException {
@@ -214,10 +223,8 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
             System.out.println("EMPTY RESULTSET");
             return;
         }
-        rs.last();
-        int rowNum = rs.getRow();
-        rs.beforeFirst();
-        if (rowNum == 0) {
+        boolean hasData = rs.next();
+        if (!hasData) {
             System.out.println("NO DATA");
             return;
         }
@@ -234,20 +241,18 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
         String out = FormatterUtil.joinByVLine(LEN, headers) + "\n" +
                 FormatterUtil.genHLine(LEN, headers.length);
         System.out.println(out);
-        int index = 1;
-        while (rs.next()) {
+        int rows = 0;
+        do {
+            rows++;
             List<Object> line = new ArrayList<>();
             for (int c : showColumnIndex) {
                 line.add(rs.getObject(c));
             }
             Object[] data = line.toArray();
             System.out.println(toString(data, LEN));
-            if (rowNum <= MORE_MOD || !useMore) {
-                continue;
-            }
-            // 输出到一页
-            if (index == MORE_MOD) {
-                index = 1; // 重置行号
+
+            // 输出MORE
+            if (useMore && rows % MORE_MOD == 0) {
                 Scanner scanner = new Scanner(System.in);
                 System.out.println("-- more -- ");
                 String command = scanner.nextLine();
@@ -258,11 +263,9 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
                     break;
                 }
                 scanner.close();
-            } else {
-                index++;
             }
-        }
-        System.out.println("(total -> " + rowNum + " rows)");
+        } while (rs.next());
+        System.out.println("(total -> " + rows + " rows)");
     }
 
     private List<Integer> getShowColumnIndex(ResultSetMetaData metaData) throws SQLException {

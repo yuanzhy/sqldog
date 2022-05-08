@@ -40,13 +40,13 @@ import java.util.UUID;
 class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 
     private final int autoGenerateKey;
-    private final String preparedSql;
-    private final String preparedId;
+    final String preparedSql;
+    final String preparedId;
     private final ResultSetMetaData rsmd;
     private final ParameterMetaData pmd;
     private final int parameterCount;
 //    private final char firstStatementChar;
-    private final Object[] parameter;
+    final Object[] parameter;
     private final boolean isDml;
     private final List<Object[]> parameterList = new ArrayList<>();
     PreparedStatementImpl(SqldogConnection connection, String schema, String preparedSql, int resultSetType,
@@ -84,7 +84,7 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
     private void executeInternal() throws SQLException {
         beforeExecute();
         try {
-            SqlResult sqlResult = connection.executePrepared(this, preparedId, preparedSql, parameter);
+            SqlResult sqlResult = connection.executePrepared(this, 0, preparedId, preparedSql, parameter);
             this.handleResult(sqlResult);
         } finally {
             afterExecute();
@@ -335,7 +335,7 @@ class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
     @Override
     public long[] executeLargeBatch() throws SQLException {
         checkClosed();
-        SqlResult[] results = this.connection.executePrepared(this, preparedId, preparedSql, parameterList);
+        SqlResult[] results = this.connection.executePrepared(this, 0, preparedId, preparedSql, parameterList);
         long[] r = new long[results.length];
         for (int i = 0; i < results.length; i++) {
             r[i] = results[i].getRows();

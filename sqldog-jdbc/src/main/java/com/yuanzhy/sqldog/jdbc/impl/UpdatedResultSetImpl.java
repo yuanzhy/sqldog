@@ -26,8 +26,13 @@ import java.sql.Timestamp;
  */
 class UpdatedResultSetImpl extends ResultSetImpl {
     
-    UpdatedResultSetImpl(AbstractStatement statement, int direction, int fetchSize, SqlResult sqlResult) {
+    UpdatedResultSetImpl(StatementImpl statement, int direction, int fetchSize, SqlResult sqlResult) {
         super(statement, direction, fetchSize, sqlResult);
+    }
+
+    @Override
+    public void setFetchSize(int rows) throws SQLException {
+        // updateResultSet not support this feature
     }
 
     @Override

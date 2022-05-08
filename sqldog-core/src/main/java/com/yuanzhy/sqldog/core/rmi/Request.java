@@ -21,6 +21,8 @@ public interface Request extends Serializable {
 
     int getFetchSize();
 
+    int getOffset();
+
     RequestType getType();
 
     String[] getSql();

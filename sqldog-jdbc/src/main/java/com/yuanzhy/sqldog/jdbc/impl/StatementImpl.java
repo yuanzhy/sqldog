@@ -36,8 +36,10 @@ class StatementImpl extends AbstractStatement implements Statement {
     private boolean escapeProcessing = false;
     private boolean poolable = true;
     private boolean closeOnCompletion = false;
-    protected volatile ResultSet rs;
+    protected volatile ResultSetImpl rs;
     protected volatile long rows = -1;
+
+    String sql;
 
     StatementImpl(SqldogConnection connection, String schema, int resultSetType, int resultSetConcurrency, int resultSetHoldability) {
         super(connection);
@@ -59,6 +61,7 @@ class StatementImpl extends AbstractStatement implements Statement {
     protected void executeInternal(String sql) throws SQLException {
         beforeExecute();
         try {
+            this.sql = sql;
             SqlResult sqlResult = connection.execute(this, sql);
             this.handleResult(sqlResult);
         } finally {
@@ -77,9 +80,9 @@ class StatementImpl extends AbstractStatement implements Statement {
             this.rs = null;
 //            this.rows = result.getRows();
         } else {
-            ResultSet rs = resultSetConcurrency == ResultSet.CONCUR_READ_ONLY ?
+            ResultSetImpl rs = resultSetConcurrency == ResultSet.CONCUR_READ_ONLY ?
                     new ResultSetImpl(this, direction, fetchSize, result) :
-                    new UpdatedResultSetImpl(this, direction, fetchSize, result);
+                    new UpdatedResultSetImpl(this, direction, 0, result);
             this.openResultSets.add(rs);
             this.rs = rs;
         }
@@ -238,13 +241,18 @@ class StatementImpl extends AbstractStatement implements Statement {
     public void setFetchSize(int rows) throws SQLException {
         checkClosed();
         checkNum(rows);
-        this.fetchSize = rows;
+        if (this.resultSetConcurrency == ResultSet.CONCUR_READ_ONLY
+                && this.direction == ResultSet.FETCH_FORWARD
+                && this.resultSetType == ResultSet.TYPE_FORWARD_ONLY) {
+            this.fetchSize = rows;
+        }
+        // rs可编辑模式或者逆序模式 不支持fetchSize, 只能一次性获取服务器数据
     }
 
     @Override
     public int getFetchSize() throws SQLException {
         checkClosed();
-        return this.fetchSize;
+        return fetchSize;
     }
 
     @Override
@@ -285,7 +293,7 @@ class StatementImpl extends AbstractStatement implements Statement {
     @Override
     public long[] executeLargeBatch() throws SQLException {
         checkClosed();
-        SqlResult[] results = this.connection.execute(this, sqlList.toArray(new String[0]));
+        SqlResult[] results = this.connection.execute(this, 0, sqlList.toArray(new String[0]));
         long[] r = new long[results.length];
         for (int i = 0; i < results.length; i++) {
             r[i] = results[i].getRows();

@@ -76,7 +76,7 @@ public class SqlResultBuilder {
         return this;
     }
 
-    public SqlResultBuilder  columns(ColumnMetaData... columns) {
+    public SqlResultBuilder columns(ColumnMetaData... columns) {
         this.columns = columns;
         return this;
     }

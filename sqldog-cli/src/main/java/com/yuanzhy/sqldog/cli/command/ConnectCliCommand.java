@@ -5,6 +5,7 @@ import com.yuanzhy.sqldog.core.constant.Consts;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Scanner;
 
 /**
@@ -26,6 +27,13 @@ public class ConnectCliCommand extends RemoteCliCommand {
     @Override
     public void execute() {
         Scanner scanner = new Scanner(System.in);
+        Statement stat;
+        try {
+            stat = conn.createStatement();
+            stat.setFetchSize(MORE_MOD);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         while (true) {
             System.out.print("sqldog> ");
             String command = this.waitCommand(scanner);
@@ -36,7 +44,7 @@ public class ConnectCliCommand extends RemoteCliCommand {
                     System.exit(0);
                     break;
                 }
-                execute(Boolean.TRUE, conn.createStatement(), command);
+                execute(Boolean.TRUE, stat, command);
             } catch (SQLException e) {
                 printError(e);
             }

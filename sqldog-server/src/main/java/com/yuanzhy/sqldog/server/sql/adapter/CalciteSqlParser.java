@@ -1,6 +1,9 @@
 package com.yuanzhy.sqldog.server.sql.adapter;
 
 import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.core.constant.RequestType;
+import com.yuanzhy.sqldog.core.rmi.Request;
+import com.yuanzhy.sqldog.server.util.RequestHolder;
 import org.apache.calcite.sql.SqlAsOperator;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDelete;
@@ -11,6 +14,7 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlNumericLiteral;
 import org.apache.calcite.sql.SqlOrderBy;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
@@ -29,27 +33,36 @@ import java.util.Map;
  */
 public class CalciteSqlParser extends SqlParserImpl {
     private final String schema;
-    public CalciteSqlParser(Reader reader, String schema) {
+    private final int offset;
+    private final int fetchSize;
+
+    public CalciteSqlParser(Reader reader) {
         super(reader);
-        this.schema = schema;
+        Request request = RequestHolder.currRequest();
+        this.schema = request.getSchema();
+        if (request.getType() == RequestType.SIMPLE_QUERY) { // 只有简单查询支持fetchSize特性
+            this.fetchSize = request.getFetchSize();
+            this.offset = request.getOffset();
+        } else {
+            this.fetchSize = 0;
+            this.offset = 0;
+        }
     }
 
     @Override
     public SqlNode parseSqlStmtEof() throws Exception {
         SqlNode sqlNode = super.parseSqlStmtEof();
+        sqlNode = handleFetchSize(sqlNode);
         if (sqlNode.getKind() == SqlKind.ORDER_BY) {
             SqlOrderBy orderBy = (SqlOrderBy) sqlNode;
             SqlNode query = orderBy.query;
             if (query.getKind() == SqlKind.SELECT) {
                 handleSelect((SqlSelect) query);
+            } else if (query.getKind() == SqlKind.UNION) {
+                handleUnion((SqlBasicCall) query);
             }
         } else if (sqlNode.getKind() == SqlKind.UNION) {
-            SqlBasicCall basicCall = (SqlBasicCall) sqlNode;
-            for (SqlNode oper : basicCall.getOperandList()) {
-                if (oper.getKind() == SqlKind.SELECT) {
-                    handleSelect((SqlSelect) oper);
-                }
-            }
+            handleUnion((SqlBasicCall) sqlNode);
         } else if (sqlNode.getKind() == SqlKind.SELECT) {
             handleSelect((SqlSelect) sqlNode);
         } else if (sqlNode.getKind() == SqlKind.INSERT) {
@@ -60,6 +73,74 @@ public class CalciteSqlParser extends SqlParserImpl {
             handleTargetTable(((SqlDelete) sqlNode).getTargetTable());
         }
         return sqlNode;
+    }
+
+    private SqlNode handleFetchSize(SqlNode sqlNode) {
+        if (this.fetchSize <= 0) {
+            return sqlNode;
+        }
+        SqlNode query = sqlNode;
+        SqlNode fetchNode = null, offsetNode = null;
+        SqlNodeList orderList = SqlNodeList.EMPTY;
+        if (sqlNode instanceof SqlOrderBy) {
+            query = ((SqlOrderBy) sqlNode).query;
+            fetchNode = ((SqlOrderBy) sqlNode).fetch;
+            offsetNode = ((SqlOrderBy) sqlNode).offset;
+            orderList = ((SqlOrderBy) sqlNode).orderList;
+        }
+        if (query.getKind() != SqlKind.SELECT && query.getKind() != SqlKind.UNION) {
+            return sqlNode;
+        }
+
+        if (fetchNode == null) {
+            offsetNode = handleOffset(offsetNode);
+            fetchNode = SqlLiteral.createExactNumeric(String.valueOf(this.fetchSize), SqlParserPos.ZERO);
+            sqlNode = new SqlOrderBy(sqlNode.getParserPosition(), query, orderList, offsetNode, fetchNode);
+        } else if (this.offset > 0) {
+            // 原来有limit, 此时如果再次接收到请求则返回空数据
+            fetchNode = SqlLiteral.createExactNumeric(String.valueOf(0), SqlParserPos.ZERO);
+            sqlNode = new SqlOrderBy(sqlNode.getParserPosition(), query, orderList, null, fetchNode);
+        }
+        // 简单处理，原来有limit就先不管了
+//        else if (fetchNode instanceof SqlNumericLiteral) {
+//            Number fetchSize = (Number) ((SqlNumericLiteral) fetchNode).getValue();
+//            offsetNode = handleOffset(offsetNode); // 原有limit小于等于fetchSize, 这时jdbc尝试请求下一页了。也需要处理一下offset
+//            if (this.offset > fetchSize.intValue()) {
+//                // offset 肯定也大于0， 说明是jdbc fetchSize机制的后续请求
+//                // 由于offset已经大于sql本身的limit了，后续请求返回空数据
+//                fetchNode = SqlLiteral.createExactNumeric(String.valueOf(0), SqlParserPos.ZERO);
+//            } else if (fetchSize.intValue() > this.fetchSize) { // 原有limit大于fetchSize, 用fetchSize代替
+//                fetchNode = SqlLiteral.createExactNumeric(String.valueOf(this.fetchSize), SqlParserPos.ZERO);
+//                sqlNode = new SqlOrderBy(sqlNode.getParserPosition(), query, orderList, offsetNode, fetchNode);
+//            } else if (this.offset > 0) {
+//                if (this.offset > this.fetchSize) {
+//
+//                }
+//                sqlNode = new SqlOrderBy(sqlNode.getParserPosition(), query, orderList, offsetNode, fetchNode);
+//            }
+//        }
+        return sqlNode;
+    }
+
+    private SqlNode handleOffset(SqlNode offsetNode) {
+        if (this.offset > 0) {
+            if (offsetNode == null) {
+                offsetNode = SqlLiteral.createExactNumeric(String.valueOf(this.offset), SqlParserPos.ZERO);
+            } else if (offsetNode instanceof SqlNumericLiteral) {
+                Number offset = (Number)((SqlNumericLiteral) offsetNode).getValue();
+                int newOffset = offset.intValue() + this.offset;
+                offsetNode = SqlLiteral.createExactNumeric(String.valueOf(newOffset), SqlParserPos.ZERO);
+            }
+        }
+        return offsetNode;
+    }
+
+    private void handleUnion(SqlBasicCall sqlNode) {
+        for (SqlNode oper : sqlNode.getOperandList()) {
+            if (oper.getKind() == SqlKind.SELECT) {
+                handleSelect((SqlSelect) oper);
+            }
+        }
     }
 
     private void replaceGroupByAlias(SqlSelect sqlSelect) {

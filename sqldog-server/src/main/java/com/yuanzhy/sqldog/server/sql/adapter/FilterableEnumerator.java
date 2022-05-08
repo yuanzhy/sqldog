@@ -5,6 +5,7 @@ import com.google.common.collect.RangeSet;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.linq4j.Enumerator;
 import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
@@ -108,12 +109,14 @@ class FilterableEnumerator implements Enumerator<Object[]> {
             if (left instanceof RexCall) {
                 leftPredicate = handleWhere((RexCall) left);
             } else {
-                throw new UnsupportedOperationException("operation not support: " + left.toString());
+                LOG.warn("operation not support: " + left.toString());
+                return TRUE_PREDICATE;
             }
             if (right instanceof RexCall) {
                 rightPredicate = handleWhere((RexCall) right);
             } else {
-                throw new UnsupportedOperationException("operation not support: " + right.toString());
+                LOG.warn("operation not support: " + right.toString());
+                return TRUE_PREDICATE;
             }
             return leftPredicate.and(rightPredicate);
         } else if (kind == SqlKind.OR) {
@@ -121,12 +124,14 @@ class FilterableEnumerator implements Enumerator<Object[]> {
             if (left instanceof RexCall) {
                 leftPredicate = handleWhere((RexCall) left);
             } else {
-                throw new UnsupportedOperationException("operation not support: " + left.toString());
+                LOG.warn("operation not support: " + left.toString());
+                return TRUE_PREDICATE;
             }
             if (right instanceof RexCall) {
                 rightPredicate = handleWhere((RexCall) right);
             } else {
-                throw new UnsupportedOperationException("operation not support: " + right.toString());
+                LOG.warn("operation not support: " + right.toString());
+                rightPredicate = TRUE_PREDICATE;
             }
             return leftPredicate.or(rightPredicate);
         }
@@ -137,16 +142,12 @@ class FilterableEnumerator implements Enumerator<Object[]> {
 //            throw new UnsupportedOperationException("operation not support: " + left.toString());
             LOG.warn("operation not support: " + left.toString());
             return TRUE_PREDICATE;
+        } else if (right instanceof RexDynamicParam) {
+            return TRUE_PREDICATE;
         }
         final int colIndex = ((RexInputRef)left).getIndex();
         Predicate<Object[]> fn = TRUE_PREDICATE;
-        Comparable rexVal = parseValue(right, colIndex);
-//        if (kind == SqlKind.BETWEEN) {
-//            Object val2 = parseValue(condition.getOperands().get(2), colIndex);
-//            fn = m -> m[colIndex] != null
-//                    && ObjectUtils.compare((Comparable)m[colIndex], (Comparable)rexVal) >= 0
-//                    && ObjectUtils.compare((Comparable)m[colIndex], (Comparable)val2) <= 0;
-//        } else
+        Comparable rexVal = parseValue(right);
         if (kind == SqlKind.EQUALS) {
             fn = m -> compare(m[colIndex], rexVal) == 0;
         } else if (kind == SqlKind.NOT_EQUALS) {
@@ -293,10 +294,9 @@ class FilterableEnumerator implements Enumerator<Object[]> {
         return -1;
     }
 
-    private Comparable parseValue(RexNode rexNode, int colIndex) {
-        // TODO test      select * from schema.test where name between 's' and 'w';
+    private Comparable parseValue(RexNode rexNode/*, int colIndex*/) {
 //        DataType dt = columnArray[colIndex].getDataType();
-        Comparable val;
+        Comparable val = null;
         if (rexNode instanceof RexLiteral) {
             RexLiteral literal = (RexLiteral)rexNode;
 //            if (literal.getTypeName() == SqlTypeName.SARG) {
@@ -314,7 +314,7 @@ class FilterableEnumerator implements Enumerator<Object[]> {
 //            }).collect(Collectors.toList());
 //        }
         else {
-            throw new UnsupportedOperationException("operation not support: " + rexNode.toString());
+            LOG.warn("operation not support: " + rexNode.toString());
         }
         return val;
     }

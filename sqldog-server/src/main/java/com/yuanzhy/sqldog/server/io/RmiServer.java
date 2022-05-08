@@ -14,12 +14,12 @@ import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.sql.PreparedSqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlParser;
-import com.yuanzhy.sqldog.server.sql.command.SetCommand;
 import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
 import com.yuanzhy.sqldog.server.sql.parser.PreparedSqlParser;
 import com.yuanzhy.sqldog.server.util.ConfigUtil;
 import com.yuanzhy.sqldog.server.util.Databases;
 import com.yuanzhy.sqldog.server.util.LRUCache;
+import com.yuanzhy.sqldog.server.util.RequestHolder;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,7 +131,7 @@ public class RmiServer implements Server {
         private final String clientHost;
         private final int serialNum;
         private final String version;
-        private final Map<String, PreparedSqlCommand> preparedSqlCache = new LRUCache<>(50);
+        private final Map<String, PreparedSqlCommand> preparedSqlCache = new LRUCache<>(20);
 //        private String currentSchema = StorageConst.DEF_SCHEMA_NAME;
         ExecutorImpl(String clientHost, int serialNum) {
             this.clientHost = clientHost;
@@ -148,6 +148,7 @@ public class RmiServer implements Server {
 
         @Override
         public Response execute(Request request) throws RemoteException {
+            RequestHolder.currRequest(request);
             if (request.getType() == RequestType.SIMPLE_QUERY) {
                 return this.simpleQuery(request);
             } else if (request.getType() == RequestType.PREPARED_QUERY) {
