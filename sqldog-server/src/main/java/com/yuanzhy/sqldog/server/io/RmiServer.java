@@ -24,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.rmi.ConnectException;
 import java.rmi.NoSuchObjectException;
 import java.rmi.RemoteException;
@@ -33,9 +32,12 @@ import java.rmi.registry.Registry;
 import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -44,11 +46,13 @@ import java.util.Map;
  */
 public class RmiServer implements Server {
     private static final Logger log = LoggerFactory.getLogger(RmiServer.class);
-
+    private static final int TIMEOUT = 1000 * 60 * 10; // 10分钟超时
     private final SqlParser sqlParser = new DefaultSqlParser();
     private final PreparedSqlParser preparedSqlParser = new PreparedSqlParser();
-    private final Map<String, Executor> executors = new HashMap<>();
+    private final Map<String, ExecutorImpl> executors = new ConcurrentHashMap<>();
     private final int maxConnections = ConfigUtil.getIntProperty("server.max-connections");
+
+    private final ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
     private volatile int count = 0;
     @Override
@@ -73,6 +77,17 @@ public class RmiServer implements Server {
             registry.bind(Consts.SERVER_NAME, remoteHandler);
             Databases.getDatabase(StorageConst.DEF_DATABASE_NAME); // 触发一下初始化
             log.info("Sqldog server ready");
+            // 添加定时器
+            ses.scheduleAtFixedRate(() -> {
+                long now = System.currentTimeMillis();
+                try {
+                    executors.values().stream().filter(executor -> now - executor.lastRequest > TIMEOUT).forEach(executor -> {
+                        executor.close();
+                    });
+                } catch (Exception e) {
+                    // ignore
+                }
+            }, 10, 10, TimeUnit.MINUTES);
             // 如果不想再让该对象被继续调用，使用下面一行
             // UnicastRemoteObject.unexportObject(remoteMath, false);
         } catch (Exception e) {
@@ -133,6 +148,7 @@ public class RmiServer implements Server {
         private final String version;
         private final Map<String, PreparedSqlCommand> preparedSqlCache = new LRUCache<>(20);
 //        private String currentSchema = StorageConst.DEF_SCHEMA_NAME;
+        private long lastRequest = System.currentTimeMillis();
         ExecutorImpl(String clientHost, int serialNum) {
             this.clientHost = clientHost;
             this.serialNum = serialNum;
@@ -149,6 +165,7 @@ public class RmiServer implements Server {
         @Override
         public Response execute(Request request) throws RemoteException {
             RequestHolder.currRequest(request);
+            lastRequest = System.currentTimeMillis();
             if (request.getType() == RequestType.SIMPLE_QUERY) {
                 return this.simpleQuery(request);
             } else if (request.getType() == RequestType.PREPARED_QUERY) {
@@ -220,7 +237,7 @@ public class RmiServer implements Server {
             for (PreparedSqlCommand sqlCommand : preparedSqlCache.values()) {
                 try {
                     sqlCommand.close();
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }

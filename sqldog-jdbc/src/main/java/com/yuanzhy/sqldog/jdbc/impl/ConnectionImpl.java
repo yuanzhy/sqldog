@@ -12,6 +12,8 @@ import com.yuanzhy.sqldog.jdbc.Driver;
 import com.yuanzhy.sqldog.jdbc.SQLError;
 import com.yuanzhy.sqldog.jdbc.SqldogConnection;
 
+import java.rmi.ConnectException;
+import java.rmi.NoSuchObjectException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -50,19 +52,26 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     private final String host;
     private final int port;
     private final Properties info;
-    private final Executor executor;
     private final Set<Statement> openStatements = new HashSet<>();
+
+    private Executor executor;
+    private boolean isReconnect = false;
 
     private String database = "default";
     private String schema;
     private volatile boolean isClosed = false;
 
 
+
     public ConnectionImpl(String host, int port, String schema, Properties info) throws SQLException {
         this.host = host;
         this.port = port;
         this.info = info;
-        Executor executor = null;
+        setSchema(schema);
+        connect();
+    }
+
+    private void connect() throws SQLException {
         try {
             Registry registry = LocateRegistry.getRegistry(host, port);
             RMIServer rmiServer = (RMIServer) registry.lookup(Consts.SERVER_NAME);
@@ -70,8 +79,6 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
         } catch (Exception e) {
             throw SQLError.wrapEx(e);
         }
-        this.executor = executor;
-        setSchema(schema);
     }
 
     @Override
@@ -306,10 +313,16 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
         try {
             Response response = executor.execute(request);
             if (response.isSuccess()) {
+                isReconnect = false;
                 return response.getResults();
             }
             throw new RuntimeException(response.getMessage());
         } catch (RemoteException e) {
+            if (!isReconnect && (e instanceof NoSuchObjectException || e instanceof ConnectException)) {
+                connect();
+                isReconnect = true;
+                return execute(request);
+            }
             throw new RuntimeException(e);
         }
     }
@@ -353,12 +366,8 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
                 .preparedId(preparedId).sqls(preparedSql)
                 .buildPrepared();
         try {
-            Response response = executor.execute(request);
-            if (response.isSuccess()) {
-                return response.getResult();
-            }
-            throw new SQLException(response.getMessage());
-        } catch (RemoteException e) {
+            return execute(request)[0];
+        } catch (Exception e) {
             throw SQLError.wrapEx(e);
         }
     }
@@ -378,4 +387,5 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
                 .sqls(sqls).build();
         return execute(request);
     }
+
 }
