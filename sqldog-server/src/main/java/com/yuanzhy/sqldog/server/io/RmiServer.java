@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class RmiServer implements Server {
     private static final Logger log = LoggerFactory.getLogger(RmiServer.class);
-    private static final int TIMEOUT = 1000 * 60 * 10; // 10分钟超时
+    private static final int TIMEOUT = 1000 * 60 * 30; // 30分钟超时
     private final SqlParser sqlParser = new DefaultSqlParser();
     private final PreparedSqlParser preparedSqlParser = new PreparedSqlParser();
     private final Map<String, ExecutorImpl> executors = new ConcurrentHashMap<>();

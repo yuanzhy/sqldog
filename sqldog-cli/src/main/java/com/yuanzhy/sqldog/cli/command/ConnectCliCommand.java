@@ -22,6 +22,7 @@ public class ConnectCliCommand extends RemoteCliCommand {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> close()));
     }
 
     @Override
