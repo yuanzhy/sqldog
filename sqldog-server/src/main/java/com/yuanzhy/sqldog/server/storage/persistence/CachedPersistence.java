@@ -49,7 +49,7 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
                 for (String key : keyList) {
                     persistDataCache(key);
                 }
-                if (insertableDataPageMap.isEmpty()) {
+                if (!keyList.isEmpty() && insertableDataPageMap.isEmpty()) {
                     logger.info("所有数据缓存均已持久化");
                 }
             } catch (Exception e) {
@@ -65,7 +65,7 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
                 for (String key : keyList) {
                     persistIndexCache(key);
                 }
-                if (indexPageMap.isEmpty()) {
+                if (!keyList.isEmpty() && indexPageMap.isEmpty()) {
                     logger.info("所有索引缓存均已持久化");
                 }
             } catch (Exception e) {
