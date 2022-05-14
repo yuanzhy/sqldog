@@ -19,7 +19,7 @@ public class RequestBuilder {
     private String schema = "PUBLIC";
     private int timeout = 60; // 秒
 
-    private int fetchSize = 200;
+    private int fetchSize = 0;
     private int offset = 0;
     private RequestType type;
     private String preparedId;

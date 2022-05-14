@@ -17,7 +17,7 @@ public class PersistenceFactory {
      */
     public static Persistence get() {
         if (ConfigUtil.isDisk()) {
-            return Holder.DISK_PERSISTENCE;
+            return ConfigUtil.useWriteCache() ? Holder.CACHED_PERSISTENCE : Holder.DISK_PERSISTENCE;
         }
 //        else if (ConfigUtil.isMemory()) {
 //        }
@@ -48,5 +48,6 @@ public class PersistenceFactory {
         static final JsonCodec JSON_CODEC = new JsonCodec(getCipher());
         static final SerializeCodec SERIALIZE_CODEC = new SerializeCodec(getCipher());
         static final DiskPersistence DISK_PERSISTENCE = new DiskPersistence(getCodec());
+        static final Persistence CACHED_PERSISTENCE = new CachedPersistence(DISK_PERSISTENCE);
     }
 }

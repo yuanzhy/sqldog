@@ -72,6 +72,10 @@ public class ConfigUtil {
         return "disk".equals(getProperty("server.storage.mode", "disk"));
     }
 
+    public static boolean useWriteCache() {
+        return getBoolProperty("server.storage.writeCache");
+    }
+
     public static boolean isMemory() {
         return "memory".equals(getProperty("server.storage.mode"));
     }

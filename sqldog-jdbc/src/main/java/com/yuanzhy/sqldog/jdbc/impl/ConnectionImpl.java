@@ -67,8 +67,8 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
         this.host = host;
         this.port = port;
         this.info = info;
-        setSchema(schema);
         connect();
+        setSchema(schema);
     }
 
     private void connect() throws SQLException {
@@ -271,8 +271,12 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     @Override
     public void setSchema(String schema) throws SQLException {
         checkClosed();
-        this.schema = schema == null ? "PUBLIC" : schema.trim().toUpperCase();
-//        this.useSchema();
+        if (schema != null) {
+            schema = schema.trim().toUpperCase();
+            execute(new RequestBuilder(RequestType.SIMPLE_QUERY).sqls("SET SEARCH_PATH TO " + schema).build());
+            this.schema = schema;
+        }
+
     }
 
     @Override
@@ -316,14 +320,14 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
                 isReconnect = false;
                 return response.getResults();
             }
-            throw new RuntimeException(response.getMessage());
+            throw new SQLException(response.getMessage());
         } catch (RemoteException e) {
             if (!isReconnect && (e instanceof NoSuchObjectException || e instanceof ConnectException)) {
                 connect();
                 isReconnect = true;
                 return execute(request);
             }
-            throw new RuntimeException(e);
+            throw new SQLException(e);
         }
     }
 
