@@ -15,6 +15,7 @@ import com.yuanzhy.sqldog.core.util.ByteUtil;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,6 +41,8 @@ public class DiskTableIndex {
     }
 
     public boolean isConflict(String[] colNames, byte[][] values) {
+        boolean isUnited = colNames.length > 1;
+        List<LeafResult> list = isUnited ? new ArrayList<>() : null;
         for (int i = 0; i < colNames.length; i++) {
             IndexPage rootPage = persistence.readIndex(tablePath, colNames[i]);
             if (rootPage == null) {
@@ -47,11 +50,32 @@ public class DiskTableIndex {
             }
             Column column = table.getColumn(colNames[i]);
             IndexPage leafPage = findLeafIndex(rootPage, column, values[i], null);
-            byte[] leafBuf = leafPage.getData();
-            LeafResult lr = findLeafStart(column, values[i], leafBuf);
+//            byte[] leafBuf = leafPage.getData();
+            LeafResult lr = findLeafStart(column, values[i], leafPage);
             if (lr.isNew) { // 如果联合唯一有一个是新增的就不会冲突，否则继续匹配下一字段
                 return false;
+            } else if (isUnited) {
+                list.add(lr);
             }
+        }
+        // 如果是联合唯一，查看多个键对应的地址值有没有重复的
+        if (isUnited) {
+            List<Object> mAddrs = new ArrayList<>();
+            for (LeafResult lr : list) {
+                int dataAddrLen = ByteUtil.toInt(lr.leafPage.getData(), lr.dataStart - 4);
+                int ds = lr.dataStart;
+                for (int i = 0; i < dataAddrLen; i++) {
+                    byte[] addr = ArrayUtils.subarray(lr.leafPage.getData(), ds, ds += 8);
+                    for (Object mAddr : mAddrs) {
+                        byte[] existsAddr = (byte[]) mAddr;
+                        if (Arrays.equals(existsAddr, addr)) {
+                            return true;
+                        }
+                    }
+                    mAddrs.add(addr);
+                }
+            }
+            return false;
         }
         return true;
     }
@@ -80,7 +104,7 @@ public class DiskTableIndex {
         // 带更新的树枝索引，按照从下到上（即最后一个为根节点）的顺序
         final LinkedList<UpdatedIndex> toBeUpdated = new LinkedList<>();
         IndexPage leafPage = findLeafIndex(rootPage, column, value, toBeUpdated);
-        final LeafResult lr = findLeafStart(column, value, leafPage.getData());
+        final LeafResult lr = findLeafStart(column, value, leafPage);
         if (lr.leafPage != null) {
             leafPage = lr.leafPage;
         }
@@ -100,6 +124,10 @@ public class DiskTableIndex {
             if (freeEnd - freeStart >= 8) { // 重复的情况只要能放入一个数据地址值就可以了
                 // 数据开始 往后移动
                 System.arraycopy(leafBuf, dataStart, leafBuf, dataStart + 8, freeStart - dataStart);
+                // 地址值数量+1
+                int dataAddrLen = ByteUtil.toInt(leafBuf, dataStart - 4) + 1;
+                byte[] dataAddrLenBytes = ByteUtil.toBytes(dataAddrLen);
+                System.arraycopy(dataAddrLenBytes, 0, leafBuf, dataStart - 4, 4);
                 // 直接插入空出来的位置上   写入 数据地址值
                 // 数据地址值：8字节，其中2字节表示数据文件id，2字节表示页偏移，2字节表示offset，2字节表示length
                 for (byte b : dataPage.toAddress()) {
@@ -401,7 +429,8 @@ public class DiskTableIndex {
         return dataStart;
     }
 
-    private LeafResult findLeafStart(Column column, byte[] value, byte[] leafBuf) {
+    private LeafResult findLeafStart(Column column, byte[] value, IndexPage leafPage) {
+        byte[] leafBuf = leafPage.getData();
         int dataStart = StorageConst.INDEX_LEAF_START;
         int freeStart = ByteUtil.toShort(leafBuf, StorageConst.FREE_START_OFFSET);
         byte[] existsVal;
@@ -420,7 +449,7 @@ public class DiskTableIndex {
 //                dataStart -= StorageConst.PAGE_SIZE;
 //            }
             dataStart += 4; // 跳过地址长度，定位到数据地址的开头
-            return new LeafResult(false, dataStart, null);
+            return new LeafResult(false, dataStart, leafPage);
         } else if (compared < 0) {
             // 比最小值还小，直接插入最左边.
             dataStart -= 2 + valLength; // 指针移动到上一条记录的最后
@@ -429,10 +458,10 @@ public class DiskTableIndex {
 //                    } else {
 //                        dataStart -= 4; // 获取前一个值对应的索引地址
 //                    }
-            return new LeafResult(true, dataStart);
+            return new LeafResult(true, dataStart, leafPage);
         } else { // > 0
             boolean found = true;
-            IndexPage nextPage = null;
+            IndexPage nextPage = leafPage;
             do {
                 int dataAddrLen = ByteUtil.toInt(leafBuf, dataStart);
                 dataStart += 4 + 8 * dataAddrLen;  // 跳过地址值数量
@@ -443,7 +472,7 @@ public class DiskTableIndex {
                         nextPage = persistence.readIndex(tablePath, column.getName(), nextPage.getFileId(), nextPage.getOffset());
                         dataStart -= StorageConst.PAGE_SIZE;
                     }
-                    if (nextPage == null) {
+                    if (nextPage == leafPage) {
                         throw new RuntimeException("数据异常");
                     }
                     leafBuf = nextPage.getData();
@@ -601,7 +630,7 @@ public class DiskTableIndex {
                     IndexPage leafPage = findLeafIndex(rootPage, column, value, toBeUpdated);
                     byte[] leafBuf = leafPage.getData();
                     int freeStart = ByteUtil.toShort(leafBuf, StorageConst.FREE_START_OFFSET);
-                    LeafResult lr = findLeafStart(column, value, leafBuf);
+                    LeafResult lr = findLeafStart(column, value, leafPage);
                     if (lr.isNew) {
                         continue; // 没找到，不处理了
                     }
@@ -660,7 +689,7 @@ public class DiskTableIndex {
                     IndexPage leafPage = findLeafIndex(rootPage, column, value, toBeUpdated);
                     byte[] leafBuf = leafPage.getData();
                     int freeStart = ByteUtil.toShort(leafBuf, StorageConst.FREE_START_OFFSET);
-                    LeafResult lr = findLeafStart(column, value, leafBuf);
+                    LeafResult lr = findLeafStart(column, value, leafPage);
                     if (lr.isNew) {
                         continue; // 没找到，不处理了
                     }
@@ -718,10 +747,6 @@ public class DiskTableIndex {
         final boolean isNew; // 是否新增，如果有相同的索引值，则为false
         final int dataStart;
         final IndexPage leafPage;
-        LeafResult(boolean isNew, int dataStart) {
-            this(isNew, dataStart, null);
-        }
-
         LeafResult(boolean isNew, int dataStart, IndexPage leafPage) {
             this.isNew = isNew;
             this.dataStart = dataStart;

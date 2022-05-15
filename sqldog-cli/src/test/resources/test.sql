@@ -18,3 +18,13 @@ update test set name='哈哈' where id=3;
 select * from schema.test t1 left join schema.test t2 on t1.id=t2.id;
 
 -- select age, string_agg(name, ',') from test group by age;
+
+create table schema.t2(id1 varchar(20), id2 varchar(20), name varchar(20), age int, constraint PK_t2 primary key( id1, id2 ));
+insert into schema.t2 values('1000','1', 'zhangsan', 12);
+insert into schema.t2 values('1000','2', 'lisi', 13);
+insert into schema.t2 values('1000','3', 'wangwu', 16);
+insert into schema.t2 values('1001','1', 'zhangliu', 16);
+insert into schema.t2 values('1001','2', 'zhengqi', 26);
+insert into schema.t2 values('1002','1', 'niuba', 22);
+
+select * from schema.t2;

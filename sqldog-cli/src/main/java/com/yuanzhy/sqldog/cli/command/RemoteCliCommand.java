@@ -127,8 +127,10 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
     public void close() {
         try {
             conn.close();
+            System.exit(0);
         } catch (SQLException e) {
             printError(e);
+            System.exit(1);
         }
     }
 
