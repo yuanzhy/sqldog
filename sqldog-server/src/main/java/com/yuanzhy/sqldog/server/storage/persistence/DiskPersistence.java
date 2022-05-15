@@ -97,7 +97,7 @@ public class DiskPersistence implements Persistence {
         long pos = (long)offset * StorageConst.PAGE_SIZE;
         if (pos >= file.length()) { // pos 已经大于文件大小了，取下一个文件
             short nextFileId = (short)(fileId + 1); // next fileId
-            int nextOffset = (int)((pos - file.length()) / offset);
+            int nextOffset = (int)((pos - file.length()) / StorageConst.PAGE_SIZE);
             return readPage(tablePath, nextFileId, nextOffset);
         }
 

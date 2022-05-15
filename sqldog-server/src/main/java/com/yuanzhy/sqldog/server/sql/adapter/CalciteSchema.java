@@ -15,6 +15,7 @@ import java.util.Map;
  */
 public class CalciteSchema extends AbstractSchema {
 
+    private Map<String, Table> tableMap;
     private final Schema schema;
 
     public CalciteSchema(Schema schema) {
@@ -23,12 +24,15 @@ public class CalciteSchema extends AbstractSchema {
 
     @Override
     protected Map<String, Table> getTableMap() {
-        Map<String, Table> tableMap = new HashMap<>();
-        for (String tableName : schema.getTableNames()) {
+        if (this.tableMap == null) {
+            Map<String, Table> tableMap = new HashMap<>();
+            for (String tableName : schema.getTableNames()) {
 //            tableMap.put(tableName, new ScannableCalciteTable(schema.getTable(tableName)));
-            tableMap.put(tableName, new FilterableCalciteTable(schema.getTable(tableName)));
+                tableMap.put(tableName, new FilterableCalciteTable(schema.getTable(tableName)));
 //            tableMap.put(tableName, new TranslatableCalciteTable(schema.getTable(tableName)));
+            }
+            this.tableMap = Collections.unmodifiableMap(tableMap);
         }
-        return Collections.unmodifiableMap(tableMap);
+        return this.tableMap;
     }
 }

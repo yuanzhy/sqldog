@@ -191,12 +191,13 @@ public class DiskTableData extends AbstractTableData implements TableData {
             throw new RuntimeException("单条记录大于一页的情况暂未实现：" + dataBytes.size());
         }
         if (freeEnd - freeStart < dataBytes.size()) {  // 剩余page空间不够存储本条记录
-            // 生成一个新的 page 追加到文件末尾，这里还复用pageBuf减少垃圾回收压力。虽然后面的数据还是上一页的，但是FREE_START等标志位是正确的
-            Location loction = fillPageBuf(dataBytes, pageBuf, StorageConst.DATA_START_OFFSET, StorageConst.PAGE_SIZE);
+            // 生成一个新的 page 追加到文件末尾
+            byte[] newPageBuf = new byte[StorageConst.PAGE_SIZE];
+            Location location = fillPageBuf(dataBytes, newPageBuf, StorageConst.DATA_START_OFFSET, StorageConst.PAGE_SIZE);
             // dataPage.getOffset() + StorageConst.PAGE_SIZE == file.length
-            DataPage newDataPage = new DataPage(dataPage.getFileId(), dataPage.getOffset() + 1, pageBuf);
+            DataPage newDataPage = new DataPage(dataPage.getFileId(), dataPage.getOffset() + 1, newPageBuf);
             dataPage = persistence.writePage(tablePath, newDataPage);
-            dataPage.setLocation(loction);
+            dataPage.setLocation(location);
         } else { // page 空间够用, 在当前 page 空闲区写入数据
             Location loction = fillPageBuf(dataBytes, pageBuf, freeStart, freeEnd);
             // 将当前 page 回写文件

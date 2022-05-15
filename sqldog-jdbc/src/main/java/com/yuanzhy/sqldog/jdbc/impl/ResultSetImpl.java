@@ -679,7 +679,7 @@ class ResultSetImpl extends AbstractResultSet implements ResultSet {
             throw new SQLException("Before start of result set");
         }
         if (isAfterLast()) {
-            throw new SQLException("After end of result set");
+            throw new SQLException("After end of result set: dataSize=" + data.size() + ", offset=" + offset + ", rowIndex=" + rowIndex);
         }
     }
 

@@ -156,7 +156,12 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
                 cacheObject.lastModified = System.currentTimeMillis();
                 return dataPage;
             }
-            if (dataPage.getOffset() - cacheObject.data.getOffset() == 1) {
+            if (dataPage.getFileId() == cacheObject.data.getFileId()
+                    && dataPage.getOffset() == cacheObject.data.getOffset()) {
+                throw new RuntimeException("数据异常");
+            }
+            if (dataPage.getFileId() == cacheObject.data.getFileId()
+                    && dataPage.getOffset() - cacheObject.data.getOffset() == 1) {
                 // 新写入的一页比insertable大，说明是当前insertable的位置不够了，新开了一页。这个时候需要替换insertablePageCache
                 // 持久化旧的insertablePage
                 super.writePage(tablePath, cacheObject.data);
@@ -182,6 +187,17 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
             logger.debug("命中索引缓存：{}", key);
         }
         return cacheObject.data;
+    }
+
+    @Override
+    public IndexPage writeIndex(String tablePath, String colName, byte[] newBuf) throws PersistenceException {
+        // 如果是写入新页面，则尝试持久化所有缓存避免不一致问题
+        final String indexKeyPrefix = tablePath + Consts.SEPARATOR + colName + Consts.SEPARATOR;
+        String[] keyArr = indexPageMap.keySet().stream().filter(k -> k.startsWith(indexKeyPrefix)).toArray(String[]::new);
+        for (String key : keyArr) {
+            persistIndexCache(key);
+        }
+        return super.writeIndex(tablePath, colName, newBuf);
     }
 
     @Override
@@ -220,21 +236,21 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
             }
         } else if (storagePath.endsWith(StorageConst.TABLE_INDEX_PATH)) {
             String tablePath = StringUtils.substringBeforeLast(storagePath, "/");
-            final String indexKeyPrefix = tablePath.concat(Consts.SEPARATOR);
-            String[] keyArr = indexPageMap.keySet().stream().filter(k -> k.startsWith(indexKeyPrefix)).toArray(String[]::new);
-            for (String key : keyArr) {
-                persistIndexCache(key);
-            }
+            persistIndexCacheByTable(tablePath);
         } else {
             final String possibleTablePath = storagePath;
             if (insertableDataPageMap.containsKey(possibleTablePath)) {
                 persistDataCache(possibleTablePath);
             }
-            final String indexKeyPrefix = possibleTablePath.concat(Consts.SEPARATOR);
-            String[] keyArr = indexPageMap.keySet().stream().filter(k -> k.startsWith(indexKeyPrefix)).toArray(String[]::new);
-            for (String key : keyArr) {
-                persistIndexCache(key);
-            }
+            persistIndexCacheByTable(possibleTablePath);
+        }
+    }
+
+    private void persistIndexCacheByTable(String tablePath) {
+        final String indexKeyPrefix = tablePath.concat(Consts.SEPARATOR);
+        String[] keyArr = indexPageMap.keySet().stream().filter(k -> k.startsWith(indexKeyPrefix)).toArray(String[]::new);
+        for (String key : keyArr) {
+            persistIndexCache(key);
         }
     }
 
@@ -243,6 +259,7 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
         if (storagePath.endsWith(StorageConst.TABLE_DATA_PATH)) {
             String tablePath = StringUtils.substringBeforeLast(storagePath, "/");
             insertableDataPageMap.remove(tablePath);
+            statMap.remove(tablePath);
         } else if (storagePath.endsWith(StorageConst.TABLE_INDEX_PATH)) {
             String tablePath = StringUtils.substringBeforeLast(storagePath, "/");
             final String indexKeyPrefix = tablePath.concat(Consts.SEPARATOR);
@@ -253,6 +270,7 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
         } else {
             final String possibleTablePath = storagePath;
             insertableDataPageMap.remove(possibleTablePath);
+            statMap.remove(possibleTablePath);
             final String indexKeyPrefix = possibleTablePath.concat(Consts.SEPARATOR);
             String[] keyArr = indexPageMap.keySet().stream().filter(k -> k.startsWith(indexKeyPrefix)).toArray(String[]::new);
             for (String key : keyArr) {
@@ -279,11 +297,6 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
         cacheObject = new CacheObject<>(data);
         statMap.put(tablePath, cacheObject);
     }
-
-    //    @Override
-//    public IndexPage writeIndex(String tablePath, String colName, byte[] newBuf) throws PersistenceException {
-//        return super.writeIndex(tablePath, colName, newBuf);
-//    }
 
     private String indexKey(String tablePath, String colName, short fileId, int offset) {
         return tablePath + Consts.SEPARATOR + colName + Consts.SEPARATOR + fileId + Consts.SEPARATOR + offset;
