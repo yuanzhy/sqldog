@@ -190,8 +190,12 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
                     }
                 } else if (tmp.startsWith("SET CLIENT_ENCODING")) {
                     // 默认都使用UTF-8
-                } else if (StringUtils.equalsAny(tmpArr[0], "USE", "SET SEARCH_PATH TO")) {
+                } else if (StringUtils.equals(tmpArr[0], "USE")) {
                     String schemaName = tmpArr[1];
+                    conn.setSchema(schemaName);
+                    System.out.println(schemaName);
+                } else if (tmp.startsWith("SET SEARCH_PATH TO")) {
+                    String schemaName = tmpArr[3];
                     conn.setSchema(schemaName);
                     System.out.println(schemaName);
                 } else if (StringUtils.equalsAny(tmpArr[0], "\\D", "DESC")) {

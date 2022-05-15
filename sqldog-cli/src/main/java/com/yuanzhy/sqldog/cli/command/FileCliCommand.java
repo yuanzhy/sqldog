@@ -44,7 +44,11 @@ public class FileCliCommand extends RemoteCliCommand {
                 }
             }
         } else {
-            execFile(file);
+            try {
+                execFile(file);
+            } catch (Exception e) {
+                printError(e);
+            }
         }
     }
 
@@ -74,7 +78,11 @@ public class FileCliCommand extends RemoteCliCommand {
                     System.out.println("not a sql file : " + sqlFile.getAbsolutePath());
                     continue;
                 }
-                execFile(sqlFile);
+                try {
+                    execFile(sqlFile);
+                } catch (Exception e) {
+                    printError(e);
+                }
             }
         } else {
             String[] sqls = text.split(";\n");
