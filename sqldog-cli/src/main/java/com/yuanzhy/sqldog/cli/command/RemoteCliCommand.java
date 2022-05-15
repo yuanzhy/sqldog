@@ -237,6 +237,11 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
         ResultSetMetaData metaData = rs.getMetaData();
         // 获取需要显示列的索引
         List<Integer> showColumnIndex = getShowColumnIndex(metaData);
+        if (showColumnIndex.isEmpty()) {
+            int rowCount = rs.getStatement().getUpdateCount();
+            System.out.println("SUCCESS (" + rowCount + " rows)");
+            return;
+        }
         List<String> headerList = new ArrayList<>();
         for (int c : showColumnIndex) {
             headerList.add(metaData.getColumnLabel(c));

@@ -283,7 +283,7 @@ public class DiskPersistence implements Persistence {
             lastFile = new File(folder, indexFileName(colName, lastFileId));
         }
         write(lastFile, lastFile.length(), newBuf);
-        int offset = (int)(lastFile.length() / StorageConst.PAGE_SIZE);
+        int offset = (int)(lastFile.length() / StorageConst.PAGE_SIZE) - 1;
         return new IndexPage(lastFileId, offset, newBuf);
     }
 

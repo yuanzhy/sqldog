@@ -296,7 +296,9 @@ public class DiskTableIndex {
             } else {
                 // 新增的情况
                 if (freeEnd - freeStart >= branchValCount) { // 够了, start后的数据右移
-                    System.arraycopy(updateBuf, dataStart, updateBuf, dataStart + branchValCount, freeEnd - dataStart);
+                    if (freeStart != dataStart) {
+                        System.arraycopy(updateBuf, dataStart, updateBuf, dataStart + branchValCount, freeStart - dataStart);
+                    }
                     writeIndexValue(lowerIndex, value, dataStart, updateBuf);
                     updateFreeStart(freeStart + branchValCount, updateBuf);
                     persistence.writeIndex(tablePath, colName, updatedIndex.getIndexPage());

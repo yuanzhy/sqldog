@@ -34,6 +34,11 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
      * value = IndexPage
      */
     private final Map<String, CacheObject<IndexPage>> indexPageMap = new ConcurrentHashMap<>();
+    /**
+     *  key  = tablePath
+     * value = statData
+     */
+    private final Map<String, CacheObject<Map<String, Object>>> statMap = new ConcurrentHashMap<>();
 
     CachedPersistence(Persistence persistence) {
         super(persistence);
@@ -71,35 +76,61 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
             } catch (Exception e) {
                 logger.warn("索引定时任务异常", e);
             }
+            try {
+                keyList.clear();
+                statMap.forEach((key, cacheObject) -> {
+                    if (now - cacheObject.lastModified > SAVE_DELAY) {
+                        keyList.add(key);
+                    }
+                });
+                for (String key : keyList) {
+                    persistStatCache(key);
+                }
+                if (!keyList.isEmpty() && statMap.isEmpty()) {
+                    logger.info("所有统计缓存均已持久化");
+                }
+            } catch (Exception e) {
+                logger.warn("索引定时任务异常", e);
+            }
         }, 1, 1, TimeUnit.MINUTES);
+    }
+
+    private void persistStatCache(String key) {
+        CacheObject<Map<String, Object>> cacheObject = statMap.remove(key);
+        if (cacheObject == null) {
+            logger.error("{} 统计缓存丢失，无法持久化" + key);
+        } else {
+            logger.info("统计缓存持久化：" + key);
+            super.writeStatistics(key, cacheObject.data);
+        }
     }
 
     private void persistIndexCache(String key) {
         CacheObject<IndexPage> cacheObject = indexPageMap.remove(key);
         if (cacheObject == null) {
-            logger.error("{} 缓存丢失，无法持久化" + key);
+            logger.error("{} 索引缓存丢失，无法持久化" + key);
         } else {
-            logger.info("缓存索引持久化：" + key);
+            logger.info("索引缓存持久化：" + key);
             String[] arr = StringUtils.splitByWholeSeparator(key, Consts.SEPARATOR);
-            super.writeIndex(arr[0], arr[1], cacheObject.page);
+            super.writeIndex(arr[0], arr[1], cacheObject.data);
         }
     }
 
     private void persistDataCache(String key) {
         CacheObject<DataPage> cacheObject = insertableDataPageMap.remove(key);
         if (cacheObject == null) {
-            logger.error("{} 缓存丢失，无法持久化" + key);
+            logger.error("{} 数据缓存丢失，无法持久化" + key);
         } else {
-            logger.info("缓存数据持久化：" + key);
-            super.writePage(key, cacheObject.page);
+            logger.info("数据缓存持久化：" + key);
+            super.writePage(key, cacheObject.data);
         }
     }
 
     @Override
     public DataPage readPage(String tablePath, short fileId, int offset) throws PersistenceException {
         CacheObject<DataPage> cacheObject = insertableDataPageMap.get(tablePath);
-        if (cacheObject != null && cacheObject.page.getFileId() == fileId && cacheObject.page.getOffset() == offset) {
-            return cacheObject.page;
+        if (cacheObject != null && cacheObject.data.getFileId() == fileId && cacheObject.data.getOffset() == offset) {
+            return cacheObject.data;
         }
         return super.readPage(tablePath, fileId, offset);
     }
@@ -112,23 +143,23 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
             insertableDataPageMap.put(tablePath, cacheObject);
         } else {
             cacheObject.lastModified = System.currentTimeMillis();
-            logger.info("命中缓存：{}", tablePath);
+            logger.debug("命中数据缓存：{}", tablePath);
         }
-        return cacheObject.page;
+        return cacheObject.data;
     }
 
     @Override
     public DataPage writePage(String tablePath, DataPage dataPage) throws PersistenceException {
         CacheObject<DataPage> cacheObject = insertableDataPageMap.get(tablePath);
         if (cacheObject != null) {
-            if (cacheObject.page == dataPage) { // 如果是和缓存中的一致，则先不写入存储
+            if (cacheObject.data == dataPage) { // 如果是和缓存中的一致，则先不写入存储
                 cacheObject.lastModified = System.currentTimeMillis();
                 return dataPage;
             }
-            if (dataPage.getOffset() - cacheObject.page.getOffset() == 1) {
+            if (dataPage.getOffset() - cacheObject.data.getOffset() == 1) {
                 // 新写入的一页比insertable大，说明是当前insertable的位置不够了，新开了一页。这个时候需要替换insertablePageCache
                 // 持久化旧的insertablePage
-                super.writePage(tablePath, cacheObject.page);
+                super.writePage(tablePath, cacheObject.data);
                 insertableDataPageMap.remove(tablePath);
             }
         }
@@ -148,9 +179,9 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
             indexPageMap.put(key, cacheObject);
         } else {
             cacheObject.lastModified = System.currentTimeMillis();
-            logger.info("命中缓存：{}", key);
+            logger.debug("命中索引缓存：{}", key);
         }
-        return cacheObject.page;
+        return cacheObject.data;
     }
 
     @Override
@@ -158,7 +189,7 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
         String key = indexKey(tablePath, colName, indexPage.getFileId(), indexPage.getOffset());
         CacheObject<IndexPage> cacheObject = indexPageMap.get(key);
         if (cacheObject != null) {
-            if (cacheObject.page != indexPage) { // 如果是和缓存中的一致，则说明哪里出现了问题
+            if (cacheObject.data != indexPage) { // 如果是和缓存中的一致，则说明哪里出现了问题
                 throw new RuntimeException("索引缓存不一致：" + key);
             }
             cacheObject.lastModified = System.currentTimeMillis();
@@ -230,6 +261,25 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
         }
     }
 
+//    @Override
+//    public Map<String, Object> readStatistics(String tablePath) throws PersistenceException {
+//        CacheObject<Map<String, Object>> cacheObject = statMap.get(tablePath);
+//        if (cacheObject != null) {
+//            cacheObject.lastModified = System.currentTimeMillis();
+//            return cacheObject.data;
+//        }
+//        return super.readStatistics(tablePath);
+//    }
+    @Override
+    public void writeStatistics(String tablePath, Map<String, Object> data) throws PersistenceException {
+        CacheObject<Map<String, Object>> cacheObject = statMap.get(tablePath);
+        if (cacheObject != null) {
+            logger.debug("命中统计缓存: {}", tablePath);
+        }
+        cacheObject = new CacheObject<>(data);
+        statMap.put(tablePath, cacheObject);
+    }
+
     //    @Override
 //    public IndexPage writeIndex(String tablePath, String colName, byte[] newBuf) throws PersistenceException {
 //        return super.writeIndex(tablePath, colName, newBuf);
@@ -241,10 +291,10 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
 
     private class CacheObject<T> {
         long lastModified;
-        final T page;
+        final T data;
 
-        CacheObject(T page) {
-            this.page = page;
+        CacheObject(T data) {
+            this.data = data;
             this.lastModified = System.currentTimeMillis();
         }
     }

@@ -35,7 +35,9 @@ public final class FormatterUtil {
             sb.append(StringUtils.repeat("-", maxLength));
             sb.append("-+");
         }
-        sb.deleteCharAt(sb.length() - 1);
+        if (sb.length() > 1) {
+            sb.deleteCharAt(sb.length() - 1);
+        }
         return sb.toString();
     }
 
