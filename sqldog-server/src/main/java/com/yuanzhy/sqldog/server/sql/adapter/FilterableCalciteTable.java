@@ -4,23 +4,38 @@ import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Table;
 import org.apache.calcite.DataContext;
+import org.apache.calcite.adapter.java.AbstractQueryableTable;
 import org.apache.calcite.linq4j.AbstractEnumerable;
 import org.apache.calcite.linq4j.Enumerable;
 import org.apache.calcite.linq4j.Enumerator;
+import org.apache.calcite.linq4j.Linq4j;
+import org.apache.calcite.linq4j.QueryProvider;
+import org.apache.calcite.linq4j.Queryable;
+import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.logical.LogicalTableModify;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.FilterableTable;
+import org.apache.calcite.schema.ModifiableTable;
+import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.Statistics;
 import org.apache.calcite.schema.impl.AbstractTable;
+import org.apache.calcite.schema.impl.AbstractTableQueryable;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Type;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -29,14 +44,14 @@ import java.util.Map;
  * @version 1.0
  * @date 2022/4/4
  */
-public class FilterableCalciteTable extends AbstractTable implements FilterableTable {
+public class FilterableCalciteTable extends AbstractQueryableTable implements FilterableTable, ModifiableTable {
     private static final Logger LOG = LoggerFactory.getLogger(FilterableCalciteTable.class);
-//    private static final Type TYPE = Object[].class;
+    private static final Type TYPE = Object[].class;
 
     private final Table table;
 
     public FilterableCalciteTable(Table table) {
-//        super(TYPE);
+        super(TYPE);
         Asserts.hasEle(table.getColumns(), "column is empty");
         this.table = table;
     }
@@ -172,4 +187,24 @@ public class FilterableCalciteTable extends AbstractTable implements FilterableT
 //        }
 //        return false;
 //    }
+    @Override
+    public Collection getModifiableCollection() {
+    return null;
+}
+
+    @Override
+    public TableModify toModificationRel(RelOptCluster cluster, RelOptTable table, Prepare.CatalogReader catalogReader, RelNode child, TableModify.Operation operation, List<String> updateColumnList, List<RexNode> sourceExpressionList, boolean flattened) {
+        return LogicalTableModify.create(table, catalogReader, child, operation,
+                updateColumnList, sourceExpressionList, flattened);
+    }
+
+    @Override
+    public <T> Queryable<T> asQueryable(QueryProvider queryProvider, SchemaPlus schemaPlus, String tableName) {
+        return new AbstractTableQueryable<T>(queryProvider, schemaPlus, this, tableName) {
+            @Override public Enumerator<T> enumerator() {
+                //noinspection unchecked
+                return (Enumerator<T>) Linq4j.iterableEnumerator(FilterableCalciteTable.this.table.getTableData());
+            }
+        };
+    }
 }

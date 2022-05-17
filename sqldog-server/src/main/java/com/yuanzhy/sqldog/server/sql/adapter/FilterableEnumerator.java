@@ -142,7 +142,7 @@ class FilterableEnumerator implements Enumerator<Object[]> {
 //            throw new UnsupportedOperationException("operation not support: " + left.toString());
             LOG.warn("operation not support: " + left.toString());
             return TRUE_PREDICATE;
-        } else if (right instanceof RexDynamicParam) {
+        } else if (right == null || right instanceof RexDynamicParam) {
             return TRUE_PREDICATE;
         }
         final int colIndex = ((RexInputRef)left).getIndex();

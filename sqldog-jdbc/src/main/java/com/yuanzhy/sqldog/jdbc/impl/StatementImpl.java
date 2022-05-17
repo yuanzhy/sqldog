@@ -76,7 +76,7 @@ class StatementImpl extends AbstractStatement implements Statement {
             // ignore
         }
         this.rows = result.getRows();
-        if (result.getData() == null || result.getData().isEmpty()) {
+        if (result.getData() == null /*|| result.getData().isEmpty()*/) {
             this.rs = null;
 //            this.rows = result.getRows();
         } else {
