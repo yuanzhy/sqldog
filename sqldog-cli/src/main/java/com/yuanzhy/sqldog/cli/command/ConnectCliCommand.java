@@ -45,7 +45,7 @@ public class ConnectCliCommand extends RemoteCliCommand {
                     System.exit(0);
                     break;
                 }
-                execute(Boolean.TRUE, stat, command);
+                execute(true, stat, command);
             } catch (SQLException e) {
                 printError(e);
             }

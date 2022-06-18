@@ -1,9 +1,10 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
-import com.yuanzhy.sqldog.server.core.Schema;
-import com.yuanzhy.sqldog.server.sql.SqlCommand;
-import com.yuanzhy.sqldog.server.core.Table;
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.core.Schema;
+import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.sql.SqlCommand;
 import com.yuanzhy.sqldog.server.storage.builder.ColumnBuilder;
 import com.yuanzhy.sqldog.server.util.Databases;
 import org.apache.commons.lang3.StringUtils;
@@ -27,10 +28,11 @@ public abstract class AbstractSqlCommand implements SqlCommand {
 
     @Override
     public void defaultSchema(String schema) {
-        if (schema != null) {
-            this.defaultSchema = Databases.getDefault().getSchema(schema);
-            Asserts.notNull(this.defaultSchema, "current schema is unset");
+        if (StringUtils.isEmpty(schema)) {
+            schema = StorageConst.DEF_SCHEMA_NAME;
         }
+        this.defaultSchema = Databases.getDefault().getSchema(schema);
+        Asserts.notNull(this.defaultSchema, "current schema is unset");
     }
 
     /**

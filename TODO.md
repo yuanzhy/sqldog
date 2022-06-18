@@ -18,10 +18,17 @@
 - 检查约束
 - 事务
 
-### 近期计划 2022-04
-- 索引
-- insert判重
+### 近期计划 2022-06
+- 索引 --- 还没怎么测, 只支持唯一值
 - update + delete
-- 查询优化 - calcite接口
+- 查询优化 - calcite接口 
+  - 部分实现, 分组和排序还需要fullScan
+  1. filterableTable
+  2. fetchSize
+  3. 不带条件的count(*)
 - 协议重构，Java RMI -> PG
 - 写入缓存（提升批量DML性能）
+
+#### 05-16
+- ~~根据主键删除和更新~~
+- translatable
