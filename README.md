@@ -1,7 +1,6 @@
-= Sqldog
+# sqldog
 
-Sqldog 是一款 Java 开发的简易数据库，支持内存和硬盘存储模式，支持以下功能
-
+Sqldog is a simple RDBMS developed in Java. It supports memory and disk storage mode and supports the following features
 
 * DML SQL（simple）
 * DDL SQL
@@ -9,49 +8,70 @@ Sqldog 是一款 Java 开发的简易数据库，支持内存和硬盘存储模�
 * Simple Select
 * Simple Agg
 
+## Install
 
-[[get-started]]
-== Get started
+1. Install JDK8+ and configure environment variables
+2. Extracting the Release Package to any directory
+3. Configure the bin directory to an environment variable
 
-#### install
-- 解压到任意目录
-- 将 bin 配置到环境变量
-- cmd 中执行 start-server
-- 默认只有一个数据库实例 default
-- 支持多模式，默认模式 public
+## Usage
 
-#### 命令行
-- dsql --help
+### Server
 
-- 连接本机：
+Modify the configuration file "server/config.properties" if needed
+configuration instruction as follows:
+
+- server.storage.mode：Storage mode, Options are "disk", "memory"
+- server.storage.writeCache: Whether to enable write cache. If write cache is enabled, the write speed is greatly increased, disk write is delayed, reduced reliability (only disk mode takes effect)
+- server.storage.path: Data storage path, can be relative or absolute. Relative path is relative to the SQLDOG installation directory (only disk mode takes effect)
+- server.storage.codec：Metadata encoding scheme
+- server.host：Binding host
+- server.port：Binding port
+- server.username：DB username
+- server.password：DB password
+- server.max-connections：Maximum connections
+
+Start the service after configuration
 ```shell
-dsql -U xx -p xx
+dql-server
 ```
-- 列出所有模式
+
+### CLI
+
+- Show help
+```shell
+dsql --help
+```
+
+- Connecting to localhost server
+```shell
+dsql -U [username] -p [password]
+```
+- Lists all schema
 ```shell
 show schemas
 ```
-- 查看当前所在模式
+- Show current schema
 ```shell
 show search_path
 ```
-- 切换模式
+- Switch schema
 ```shell
-use sche_name
+use [schema_name]
 # or
-set search_path to sche_name
+set search_path to [schema_name]
 ```
-- 列出当前模式所有表
+- Lists all tables in the current schema
 ```shell
 show tables
 ```
-- 查看表信息
+- Show table information
 ```shell
-desc table_name
+desc [table_name]
 # or
-\d table_name
+\d [table_name]
 ```
-- 退出命令行
+- Exit the command line
 ```shell
 quit
 # or
@@ -60,15 +80,15 @@ exit
 \q
 ```
 
-#### jdbc
+### JDBC
 
-- 将 jdbc jar 安装到本地仓库
+- Install the "JDBC jar" into the maven local repository
 ```shell
 mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-core -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=./sqldog/jdbc/sqldog-core-1.0-SNAPSHOT.jar
 mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-dialect -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=./sqldog/jdbc/sqldog-dialect-1.0-SNAPSHOT.jar
 mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-jdbc -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=./sqldog/jdbc/sqldog-jdbc-1.0-SNAPSHOT.jar
 ```
-- 引入 maven 依赖
+- Add maven dependency
 ```xml
 <dependency>
     <groupId>com.yuanzhy.sqldog</groupId>
@@ -76,10 +96,18 @@ mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-jdbc -
     <version>1.0-SNAPSHOT</version>
 </dependency>
 ```
-- 配置jdbc
+- Configure JDBC
 ```properties
 url=jdbc:sqldog://127.0.0.1[:2345][/schema_name]
 user=root
 password=123456
 driver-class=com.yuanzhy.sqldog.jdbc.Driver
 ```
+
+## Maintainers
+
+[@yuanzhy](https://github.com/yuanzhy)
+
+## License
+
+[MIT](LICENSE) © yuanzhy
