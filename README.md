@@ -82,7 +82,7 @@ exit
 
 ### JDBC
 
-- Install the "JDBC jar" into the maven local repository
+- Install "JDBC jar" into maven local repository
 ```shell
 mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-core -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=./sqldog/jdbc/sqldog-core-1.0-SNAPSHOT.jar
 mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-dialect -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=./sqldog/jdbc/sqldog-dialect-1.0-SNAPSHOT.jar
