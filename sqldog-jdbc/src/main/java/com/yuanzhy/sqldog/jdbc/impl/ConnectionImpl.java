@@ -61,8 +61,6 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     private String schema;
     private volatile boolean isClosed = false;
 
-
-
     public ConnectionImpl(String host, int port, String schema, Properties info) throws SQLException {
         this.host = host;
         this.port = port;
@@ -311,9 +309,7 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
         this.openStatements.remove(statement);
     }
 
-
-    @Override
-    public SqlResult[] execute(Request request) throws SQLException {
+    protected SqlResult[] execute(Request request) throws SQLException {
         try {
             Response response = executor.execute(request);
             if (response.isSuccess()) {

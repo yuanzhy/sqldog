@@ -106,7 +106,7 @@ driver-class=com.yuanzhy.sqldog.jdbc.Driver
 
 ## 维护者
 
-[@yuanzhy](https://github.com/yuanzhy)
+[@yuanzhy](https://gitee.com/yuanzhy)
 
 ## 使用许可
 

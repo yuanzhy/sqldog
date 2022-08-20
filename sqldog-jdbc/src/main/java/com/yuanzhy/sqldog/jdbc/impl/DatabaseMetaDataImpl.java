@@ -1,11 +1,8 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
 import com.yuanzhy.sqldog.core.constant.Consts;
-import com.yuanzhy.sqldog.core.constant.RequestType;
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.constant.TableType;
-import com.yuanzhy.sqldog.core.rmi.Request;
-import com.yuanzhy.sqldog.core.rmi.impl.RequestBuilder;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.sql.SqlResultImpl;
 import com.yuanzhy.sqldog.core.util.SqlUtil;
@@ -1072,8 +1069,7 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
     }
 
     private ResultSet executeCommand(String cmd) throws SQLException {
-        Request request = new RequestBuilder(RequestType.SIMPLE_QUERY).timeout(5).fetchSize(0).sqls(cmd).build();
-        return new DbmdResultSet(connection.execute(request)[0]);
+        return connection.createStatement().executeQuery(cmd);
     }
 
     private String handlePattern(String pattern) {

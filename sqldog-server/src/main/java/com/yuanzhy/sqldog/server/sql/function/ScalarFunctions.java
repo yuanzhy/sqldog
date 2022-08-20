@@ -109,6 +109,14 @@ public class ScalarFunctions {
         return o1 + seq + o2 + seq + o3;
     }
 
+    public static final String lower(String str) {
+        return str == null ? null : str.toLowerCase();
+    }
+
+    public static final String upper(String str) {
+        return str == null ? null : str.toUpperCase();
+    }
+
     public static final Integer length(String str) {
         return str == null ? null : str.length();
     }
@@ -156,6 +164,9 @@ public class ScalarFunctions {
         return Character.valueOf((char)c.intValue()).toString();
     }
 
+    public static final Double random() {
+        return Math.random();
+    }
 
     public static final String md5(String raw) {
         return DigestUtils.md5Hex(raw);

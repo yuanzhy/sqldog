@@ -38,7 +38,7 @@ public class ColumnSysTable extends AbstractTable implements ScannableTable {
                 for (Column column : table.getColumns().values()) {
                     DataType dt = column.getDataType();
                     SqlTypeName sqlTypeName = SqlTypeName.getNameForJdbcType(dt.getSqlType());
-                    String typeName = sqlTypeName == null ? "" : sqlTypeName.getName();
+                    String typeName = sqlTypeName == null ? dt.name() : sqlTypeName.getName();
                     Integer scale = (dt == DataType.DECIMAL || dt == DataType.NUMERIC) ? column.getScale() : null;
                     int nullable = column.isNullable() ? ResultSetMetaData.columnNullable : ResultSetMetaData.columnNoNulls;
                     String autoIncrement = dt.isSerial() ? YesNo.YES.name() : YesNo.NO.name();

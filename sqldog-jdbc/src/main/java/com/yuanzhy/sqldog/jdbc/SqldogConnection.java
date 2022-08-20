@@ -21,8 +21,6 @@ public interface SqldogConnection extends Connection {
 
     void close(Statement statement);
 
-    SqlResult[] execute(Request request) throws SQLException;
-
     SqlResult[] execute(Statement statement, int offset, String... sqls) throws SQLException;
 
     /**
