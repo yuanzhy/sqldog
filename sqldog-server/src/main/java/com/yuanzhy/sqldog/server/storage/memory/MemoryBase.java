@@ -5,12 +5,14 @@ import com.yuanzhy.sqldog.server.core.Base;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Observable;
+
 /**
  *
  * @author yuanzhy
  * @date 2021-11-02
  */
-public abstract class MemoryBase implements Base {
+public abstract class MemoryBase extends Observable implements Base {
 
     protected final transient Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final transient Base parent;

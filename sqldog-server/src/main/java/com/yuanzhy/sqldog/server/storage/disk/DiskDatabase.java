@@ -40,10 +40,12 @@ public class DiskDatabase extends MemoryDatabase implements Database, Persistabl
         // 从硬盘中初始化子schema
         List<String> schemePaths = persistence.list(databasePath);
         for (String schemePath : schemePaths) {
-            Schema diskSchema = new DiskSchema(this, schemePath);
+            DiskSchema diskSchema = new DiskSchema(this, schemePath);
             this.addSchema(diskSchema);
             // TODO 此处野路子先调用一下，后续看看怎么优化 2022-04-10
-            Calcites.getRootSchema().add(diskSchema.getName(), new CalciteSchema(diskSchema));
+            CalciteSchema calciteSchema = new CalciteSchema(diskSchema);
+            Calcites.getRootSchema().add(diskSchema.getName(), calciteSchema);
+            diskSchema.addObserver(calciteSchema);
         }
     }
 

@@ -6,6 +6,7 @@ import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.sql.adapter.CalciteSchema;
 import com.yuanzhy.sqldog.server.util.Calcites;
 
+import java.util.Observable;
 import java.util.Set;
 
 /**
@@ -42,7 +43,11 @@ public class DatabaseDecorator implements Database {
     @Override
     public void addSchema(Schema schema) {
         delegate.addSchema(schema);
-        Calcites.getRootSchema().add(schema.getName(), new CalciteSchema(schema));
+        CalciteSchema calciteSchema = new CalciteSchema(schema);
+        Calcites.getRootSchema().add(schema.getName(), calciteSchema);
+        if (schema instanceof Observable) {
+            ((Observable) schema).addObserver(calciteSchema);
+        }
     }
 
     @Override

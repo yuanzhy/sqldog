@@ -31,6 +31,7 @@ public class MemorySchema extends MemoryBase implements Schema {
     public void drop() {
         this.tables.forEach((k, v) -> v.drop());
         this.tables.clear();
+        this.deleteObservers();
     }
 
     @Override
@@ -48,12 +49,16 @@ public class MemorySchema extends MemoryBase implements Schema {
             throw new IllegalArgumentException(table.getName() + " exists");
         }
         this.tables.put(table.getName(), table);
+        this.setChanged();
+        this.notifyObservers();
     }
 
     @Override
     public void dropTable(String name) {
         Table table = this.tables.remove(name);
         if (table != null) {
+            this.setChanged();
+            this.notifyObservers();
             table.drop();
         }
     }
