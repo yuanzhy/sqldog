@@ -1,6 +1,5 @@
 package com.yuanzhy.sqldog.jdbc;
 
-import com.yuanzhy.sqldog.core.rmi.Request;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 
 import java.sql.Connection;

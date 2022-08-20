@@ -1,6 +1,7 @@
 package com.yuanzhy.sqldog.server.util;
 
 import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.config.Configs;
 import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.core.Schema;
@@ -24,7 +25,7 @@ public class Databases {
     private static final Map<String, Database> DATABASES = new HashMap<>();
 
     static {
-        if (ConfigUtil.isDisk()) {
+        if (Configs.get().isDisk()) {
             loadDbFromDisk();
         } else {
             // 创建一个default库和PUBLIC schema

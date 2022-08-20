@@ -15,6 +15,7 @@ import java.util.Properties;
  * @author yuanzhy
  * @date 2018/6/13
  */
+@Deprecated
 public class ConfigUtil {
 
     private static Logger log = LoggerFactory.getLogger(ConfigUtil.class);

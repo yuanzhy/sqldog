@@ -60,9 +60,11 @@ public class MemoryTableData extends AbstractTableData implements TableData {
         // generate pk
         Object[] pkValues = generatePkValues(values);
         // check pk
-        String pkValue = Arrays.stream(pkValues).map(Object::toString).collect(Collectors.joining(UNITED_SEP));
-        Asserts.isFalse(pkSet.contains(pkValue), "Primary key conflict：" + Arrays.stream(pkValues).map(Object::toString).collect(Collectors.joining(", ")));
-        pkSet.add(pkValue);
+        if (pkValues != null) {
+            String pkValue = Arrays.stream(pkValues).map(Object::toString).collect(Collectors.joining(UNITED_SEP));
+            Asserts.isFalse(pkSet.contains(pkValue), "Primary key conflict：" + Arrays.stream(pkValues).map(Object::toString).collect(Collectors.joining(", ")));
+            pkSet.add(pkValue);
+        }
         // check constraint
         this.checkConstraint(values);
         for (Constraint c : table.getConstraints()) {

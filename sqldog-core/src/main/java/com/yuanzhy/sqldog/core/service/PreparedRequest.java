@@ -1,4 +1,4 @@
-package com.yuanzhy.sqldog.core.rmi;
+package com.yuanzhy.sqldog.core.service;
 
 /**
  * @author yuanzhy

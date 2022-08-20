@@ -1,31 +1,32 @@
 package com.yuanzhy.sqldog.server.storage.persistence;
 
 import com.yuanzhy.sqldog.core.exception.PersistenceException;
+import com.yuanzhy.sqldog.server.common.config.Configs;
 import com.yuanzhy.sqldog.server.core.Cipher;
 import com.yuanzhy.sqldog.server.core.Codec;
 import com.yuanzhy.sqldog.server.core.Persistence;
-import com.yuanzhy.sqldog.server.util.ConfigUtil;
 
 /**
  * @author yuanzhy
  * @date 2022/3/30
  */
 public class PersistenceFactory {
+
     /**
      *
      * @return
      */
     public static Persistence get() {
-        if (ConfigUtil.isDisk()) {
-            return ConfigUtil.useWriteCache() ? Holder.CACHED_PERSISTENCE : Holder.DISK_PERSISTENCE;
+        if (Configs.get().isDisk()) {
+            return Configs.get().useWriteCache() ? Holder.CACHED_PERSISTENCE : Holder.DISK_PERSISTENCE;
         }
-//        else if (ConfigUtil.isMemory()) {
+//        else if (Configs.get().isMemory()) {
 //        }
         throw new PersistenceException("Persistence strategy not found");
     }
 
     static Codec getCodec() {
-        String codecConfig = ConfigUtil.getProperty("server.storage.codec");
+        String codecConfig = Configs.get().getProperty("server.storage.codec");
         if ("json".equals(codecConfig)) {
             return Holder.JSON_CODEC;
         } else if ("serialize".equals(codecConfig)) {
@@ -37,7 +38,7 @@ public class PersistenceFactory {
 
     static Cipher getCipher() {
         return Holder.CIPHER;
-//        String secretConfig = ConfigUtil.getProperty("server.storage.secret");
+//        String secretConfig = Configs.get().getProperty("server.storage.secret");
 //        if ("false".equals(secretConfig)) {
 //            return "";
 //        }

@@ -27,4 +27,4 @@ if "%allparam:~-1%"==" " set "allparam=%allparam:~0,-1%"&goto intercept_right
 
 :eof
 
-java -jar %dir%\..\cli\sqldog-cli-1.0-SNAPSHOT.jar %allparam%
+java -jar %dir%\..\cli\sqldog-cli.jar %allparam%

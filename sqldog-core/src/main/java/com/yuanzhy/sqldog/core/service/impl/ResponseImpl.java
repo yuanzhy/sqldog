@@ -1,6 +1,6 @@
-package com.yuanzhy.sqldog.core.rmi.impl;
+package com.yuanzhy.sqldog.core.service.impl;
 
-import com.yuanzhy.sqldog.core.rmi.Response;
+import com.yuanzhy.sqldog.core.service.Response;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 
 /**

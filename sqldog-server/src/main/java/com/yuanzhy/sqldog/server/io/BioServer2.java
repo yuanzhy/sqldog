@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.yuanzhy.sqldog.server.common.config.Configs;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -24,7 +25,6 @@ import com.yuanzhy.sqldog.server.sql.command.SetCommand;
 import com.yuanzhy.sqldog.server.sql.command.ShowCommand;
 import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
 import com.yuanzhy.sqldog.core.util.ByteUtil;
-import com.yuanzhy.sqldog.server.util.ConfigUtil;
 
 /**
  * @author maoning
@@ -35,7 +35,7 @@ public class BioServer2 implements Server {
 
     @Override
     public void start() {
-        int port = Integer.parseInt(ConfigUtil.getProperty("server.port", "2345"));
+        int port = Integer.parseInt(Configs.get().getProperty("server.port", "2345"));
         try {
             ServerSocket ss = new ServerSocket(port);
             while (true) {

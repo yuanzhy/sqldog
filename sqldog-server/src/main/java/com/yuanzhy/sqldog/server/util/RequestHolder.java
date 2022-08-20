@@ -1,6 +1,6 @@
 package com.yuanzhy.sqldog.server.util;
 
-import com.yuanzhy.sqldog.core.rmi.Request;
+import com.yuanzhy.sqldog.core.service.Request;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Schema;

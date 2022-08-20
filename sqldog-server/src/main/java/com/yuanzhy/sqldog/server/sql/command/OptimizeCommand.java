@@ -2,8 +2,8 @@ package com.yuanzhy.sqldog.server.sql.command;
 
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.server.common.config.Configs;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
-import com.yuanzhy.sqldog.server.util.ConfigUtil;
 
 /**
  * @author yuanzhy
@@ -18,7 +18,7 @@ public class OptimizeCommand extends AbstractSqlCommand {
 
     @Override
     public SqlResult execute() {
-        if (ConfigUtil.isMemory()) {
+        if (Configs.get().isMemory()) {
             return new SqlResultBuilder(StatementType.OTHER).build();
         }
         // optimize schema abc;

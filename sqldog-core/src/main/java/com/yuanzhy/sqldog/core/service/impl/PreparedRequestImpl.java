@@ -1,7 +1,7 @@
-package com.yuanzhy.sqldog.core.rmi.impl;
+package com.yuanzhy.sqldog.core.service.impl;
 
 import com.yuanzhy.sqldog.core.constant.RequestType;
-import com.yuanzhy.sqldog.core.rmi.PreparedRequest;
+import com.yuanzhy.sqldog.core.service.PreparedRequest;
 
 /**
  * @author yuanzhy

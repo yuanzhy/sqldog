@@ -23,6 +23,7 @@ abstract class UnregisteredDriver implements Driver {
     public static final String USER_PROPERTY_KEY = "user";
     public static final String PASSWORD_PROPERTY_KEY = "password";
 
+    public static final String MODE_PROPERTY_KEY = "MODE";
     public static final String HOST_PROPERTY_KEY = "HOST";
     public static final String PORT_PROPERTY_KEY = "PORT";
     public static final String SCHEMA_PROPERTY_KEY = "SCHEMA";
@@ -48,10 +49,15 @@ abstract class UnregisteredDriver implements Driver {
         if ((props = parseURL(url, info)) == null) {
             return null;
         }
+        boolean isEmbed = "embed".equals(props.getProperty(MODE_PROPERTY_KEY));
         String host = props.getProperty(HOST_PROPERTY_KEY);
-        int port = Integer.parseInt(props.getProperty(PORT_PROPERTY_KEY));
         String schema = props.getProperty(SCHEMA_PROPERTY_KEY, "PUBLIC");
-        return new ConnectionImpl(host, port, schema, info);
+        if (isEmbed) {
+            return new ConnectionImpl(host, schema, info);
+        } else {
+            int port = Integer.parseInt(props.getProperty(PORT_PROPERTY_KEY));
+            return new ConnectionImpl(host, port, schema, info);
+        }
     }
 
     @Override
@@ -68,6 +74,10 @@ abstract class UnregisteredDriver implements Driver {
         if (info == null) {
             throw new SQLException("Illegal url");
         }
+
+        DriverPropertyInfo modeProp = new DriverPropertyInfo(MODE_PROPERTY_KEY, info.getProperty(MODE_PROPERTY_KEY));
+        modeProp.required = true;
+        modeProp.description = "Running mode of Sqldog Server";
 
         DriverPropertyInfo hostProp = new DriverPropertyInfo(HOST_PROPERTY_KEY, info.getProperty(HOST_PROPERTY_KEY));
         hostProp.required = true;
@@ -113,28 +123,49 @@ abstract class UnregisteredDriver implements Driver {
     }
 
     /**
-     * // jdbc:sqldog://[192.168.1.11][:2345][/schema_name]
+     * jdbc:sqldog:mem
+     * jdbc:sqldog:file:
+     * jdbc:sqldog://[192.168.1.11][:2345][/schema_name]
+     * jdbc:sqldog://[192.168.1.11][:2345][/schema_name]?appName=xx
      * @param url jdbcUrl
      * @return
      */
     protected Properties parseURL(String url, Properties defaults) {
-        Matcher m = URL_PTN.matcher(url);
-        String host, port, schema;
-        if (m.find()) {
-            host = m.group(1);
-            port = m.group(2).substring(1);
-            schema = m.group(3);
-        } else {
-            return null;
-        }
-        if (port == null) {
-            port = DEFAULT_PORT;
-        }
         Properties props = new Properties(defaults);
-        props.put(HOST_PROPERTY_KEY, host);
-        props.put(PORT_PROPERTY_KEY, port);
-        if (schema != null && schema.length() > 1) {
-            props.put(SCHEMA_PROPERTY_KEY, schema.substring(1));
+        if (url.startsWith("jdbc:sqldog:mem")) {
+            // 嵌入式 memory
+            props.put(MODE_PROPERTY_KEY, "embed");
+        } else if (url.startsWith("jdbc:sqldog:file:")) {
+            // 嵌入式 file
+            String filePath = url.substring(17);
+            if (filePath.isEmpty()) {
+                return null;
+            }
+            int idx = filePath.indexOf(";");
+            if (idx >= 0) {
+                filePath = filePath.substring(0, idx);
+            }
+            props.put(MODE_PROPERTY_KEY, "embed");
+            props.put(HOST_PROPERTY_KEY, filePath);
+        } else {
+            Matcher m = URL_PTN.matcher(url);
+            String host, port, schema;
+            if (m.find()) {
+                host = m.group(1);
+                port = m.group(2).substring(1);
+                schema = m.group(3);
+            } else {
+                return null;
+            }
+            if (port == null) {
+                port = DEFAULT_PORT;
+            }
+            props.put(MODE_PROPERTY_KEY, "stand");
+            props.put(HOST_PROPERTY_KEY, host);
+            props.put(PORT_PROPERTY_KEY, port);
+            if (schema != null && schema.length() > 1) {
+                props.put(SCHEMA_PROPERTY_KEY, schema.substring(1));
+            }
         }
         return props;
     }

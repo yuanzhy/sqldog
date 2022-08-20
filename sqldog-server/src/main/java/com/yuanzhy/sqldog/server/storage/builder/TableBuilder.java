@@ -1,6 +1,7 @@
 package com.yuanzhy.sqldog.server.storage.builder;
 
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.common.config.Configs;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Constraint;
 import com.yuanzhy.sqldog.server.core.Serial;
@@ -9,7 +10,6 @@ import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.server.storage.disk.DiskTable;
 import com.yuanzhy.sqldog.server.storage.memory.MemorySerial;
 import com.yuanzhy.sqldog.server.storage.memory.MemoryTable;
-import com.yuanzhy.sqldog.server.util.ConfigUtil;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -64,7 +64,7 @@ public class TableBuilder extends BaseBuilder<TableBuilder> {
                 this.serial = new MemorySerial(0, 1); // 默认步长
             }
         }
-        return ConfigUtil.isDisk()
+        return Configs.get().isDisk()
                 ? new DiskTable(parent, name, columnMap, primaryKey, constraint, serial)
                 : new MemoryTable(parent, name, columnMap, primaryKey, constraint, serial);
     }

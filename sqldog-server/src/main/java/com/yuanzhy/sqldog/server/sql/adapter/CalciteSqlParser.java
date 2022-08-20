@@ -2,7 +2,7 @@ package com.yuanzhy.sqldog.server.sql.adapter;
 
 import com.yuanzhy.sqldog.core.constant.Consts;
 import com.yuanzhy.sqldog.core.constant.RequestType;
-import com.yuanzhy.sqldog.core.rmi.Request;
+import com.yuanzhy.sqldog.core.service.Request;
 import com.yuanzhy.sqldog.server.util.RequestHolder;
 import org.apache.calcite.sql.SqlAsOperator;
 import org.apache.calcite.sql.SqlBasicCall;

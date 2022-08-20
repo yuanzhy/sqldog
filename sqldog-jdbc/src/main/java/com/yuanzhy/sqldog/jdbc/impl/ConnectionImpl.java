@@ -2,11 +2,12 @@ package com.yuanzhy.sqldog.jdbc.impl;
 
 import com.yuanzhy.sqldog.core.constant.Consts;
 import com.yuanzhy.sqldog.core.constant.RequestType;
-import com.yuanzhy.sqldog.core.rmi.Executor;
-import com.yuanzhy.sqldog.core.rmi.RMIServer;
-import com.yuanzhy.sqldog.core.rmi.Request;
-import com.yuanzhy.sqldog.core.rmi.Response;
-import com.yuanzhy.sqldog.core.rmi.impl.RequestBuilder;
+import com.yuanzhy.sqldog.core.service.EmbedService;
+import com.yuanzhy.sqldog.core.service.Executor;
+import com.yuanzhy.sqldog.core.service.Request;
+import com.yuanzhy.sqldog.core.service.Response;
+import com.yuanzhy.sqldog.core.service.Service;
+import com.yuanzhy.sqldog.core.service.impl.RequestBuilder;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.jdbc.Driver;
 import com.yuanzhy.sqldog.jdbc.SQLError;
@@ -30,6 +31,7 @@ import java.sql.Statement;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,6 +51,7 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
 
     private static final ExecutorService POOL = Executors.newFixedThreadPool(4);
 
+    private final boolean embed;
     private final String host;
     private final int port;
     private final Properties info;
@@ -61,7 +64,17 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     private String schema;
     private volatile boolean isClosed = false;
 
+    public ConnectionImpl(String filePath, String schema, Properties info) throws SQLException {
+        this.embed = true;
+        this.host = filePath;
+        this.port = -1;
+        this.info = info;
+        connect();
+        setSchema(schema);
+    }
+
     public ConnectionImpl(String host, int port, String schema, Properties info) throws SQLException {
+        this.embed = false;
         this.host = host;
         this.port = port;
         this.info = info;
@@ -70,13 +83,24 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     }
 
     private void connect() throws SQLException {
-        try {
-            Registry registry = LocateRegistry.getRegistry(host, port);
-            RMIServer rmiServer = (RMIServer) registry.lookup(Consts.SERVER_NAME);
-            executor = rmiServer.connect(info.getProperty(Driver.USER_PROPERTY_KEY), info.getProperty(Driver.PASSWORD_PROPERTY_KEY));
-        } catch (Exception e) {
-            throw SQLError.wrapEx(e);
+        if (this.embed) {
+            ServiceLoader<EmbedService> sl = ServiceLoader.load(EmbedService.class);
+            try {
+                EmbedService service = sl.iterator().next();
+                executor = service.connect(host);
+            } catch (Exception e) {
+                throw SQLError.wrapEx(e);
+            }
+        } else {
+            try {
+                Registry registry = LocateRegistry.getRegistry(host, port);
+                Service service = (Service) registry.lookup(Consts.SERVER_NAME);
+                executor = service.connect(info.getProperty(Driver.USER_PROPERTY_KEY), info.getProperty(Driver.PASSWORD_PROPERTY_KEY));
+            } catch (Exception e) {
+                throw SQLError.wrapEx(e);
+            }
         }
+
     }
 
     @Override

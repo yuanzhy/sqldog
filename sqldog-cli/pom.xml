@@ -78,7 +78,7 @@
                                 <resource>
                                     <directory>${basedir}/target</directory>
                                     <includes>
-                                        <include>sqldog-cli-**.jar</include>
+                                        <include>sqldog-cli**.jar</include>
                                     </includes>
                                     <filtering>false</filtering>
                                 </resource>

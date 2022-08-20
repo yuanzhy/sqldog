@@ -2,10 +2,10 @@ package com.yuanzhy.sqldog.server.storage.builder;
 
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.config.Configs;
 import com.yuanzhy.sqldog.server.core.Database;
 import com.yuanzhy.sqldog.server.storage.disk.DiskDatabase;
 import com.yuanzhy.sqldog.server.storage.memory.MemoryDatabase;
-import com.yuanzhy.sqldog.server.util.ConfigUtil;
 
 /**
  *
@@ -52,7 +52,7 @@ public class DatabaseBuilder extends BaseBuilder<DatabaseBuilder> {
     public Database build() {
         Asserts.hasText(name, "数据库名称不能为空");
         Asserts.hasText(encoding, "数据库编码不能为空");
-        return ConfigUtil.isDisk()
+        return Configs.get().isDisk()
                 ? new DiskDatabase(name, encoding, description, tablespace)
                 : new MemoryDatabase(name, encoding, description, tablespace);
     }

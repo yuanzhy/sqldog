@@ -2,14 +2,14 @@ package com.yuanzhy.sqldog.server.storage.persistence;
 
 import com.yuanzhy.sqldog.core.exception.PersistenceException;
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.ByteUtil;
 import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.config.Configs;
 import com.yuanzhy.sqldog.server.common.model.DataExtent;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
 import com.yuanzhy.sqldog.server.common.model.IndexPage;
 import com.yuanzhy.sqldog.server.core.Codec;
 import com.yuanzhy.sqldog.server.core.Persistence;
-import com.yuanzhy.sqldog.core.util.ByteUtil;
-import com.yuanzhy.sqldog.server.util.ConfigUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,9 +35,11 @@ public class DiskPersistence implements Persistence {
     private final String rootPath;
     public DiskPersistence(Codec codec) {
         this.codec = codec;
-        String dataPath = ConfigUtil.getProperty("server.storage.path", "data");
-        if (!dataPath.startsWith("/")) {
-            dataPath = new File(ConfigUtil.getJarPath()).getParent() + "/" + dataPath;
+        String dataPath = Configs.get().getProperty("server.storage.path", "data");
+        if (Paths.get(dataPath).isAbsolute()) {
+            new File(dataPath).mkdirs();
+        } else {
+            dataPath = new File(Configs.get().getJarPath()).getParent() + "/" + dataPath;
             new File(dataPath).mkdirs();
         }
         rootPath = dataPath;
