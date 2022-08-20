@@ -25,11 +25,8 @@ import org.apache.calcite.schema.ModifiableTable;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.Statistics;
-import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.schema.impl.AbstractTableQueryable;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.sql.Date;
@@ -45,7 +42,7 @@ import java.util.Map;
  * @date 2022/4/4
  */
 public class FilterableCalciteTable extends AbstractQueryableTable implements FilterableTable, ModifiableTable {
-    private static final Logger LOG = LoggerFactory.getLogger(FilterableCalciteTable.class);
+//    private static final Logger LOG = LoggerFactory.getLogger(FilterableCalciteTable.class);
     private static final Type TYPE = Object[].class;
 
     private final Table table;

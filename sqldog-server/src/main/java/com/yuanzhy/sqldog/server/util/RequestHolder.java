@@ -13,7 +13,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public final class RequestHolder {
 
-    private static final ThreadLocal<Request> REQ_TL = new ThreadLocal();
+    private static final ThreadLocal<Request> REQ_TL = new ThreadLocal<>();
 
     public static Request currRequest() {
         Request req = REQ_TL.get();

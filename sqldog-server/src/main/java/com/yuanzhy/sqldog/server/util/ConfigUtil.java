@@ -18,6 +18,8 @@ import java.util.Properties;
 public class ConfigUtil {
 
     private static Logger log = LoggerFactory.getLogger(ConfigUtil.class);
+
+    private static boolean disk = true;
     /**
      *
      */
@@ -36,6 +38,7 @@ public class ConfigUtil {
                 in = ConfigUtil.class.getClassLoader().getResourceAsStream("config.properties");
             }
             props.load(in);
+            disk = "disk".equals(getProperty("server.storage.mode", "disk"));
         } catch (IOException e) {
             log.error("读取config配置文件失败", e);
         } finally {
@@ -69,7 +72,7 @@ public class ConfigUtil {
     }
 
     public static boolean isDisk() {
-        return "disk".equals(getProperty("server.storage.mode", "disk"));
+        return disk;
     }
 
     public static boolean useWriteCache() {

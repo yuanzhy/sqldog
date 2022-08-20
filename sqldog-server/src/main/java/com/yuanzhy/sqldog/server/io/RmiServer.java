@@ -18,7 +18,7 @@ import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
 import com.yuanzhy.sqldog.server.sql.parser.PreparedSqlParser;
 import com.yuanzhy.sqldog.server.util.ConfigUtil;
 import com.yuanzhy.sqldog.server.util.Databases;
-import com.yuanzhy.sqldog.server.util.LRUCache;
+import com.yuanzhy.sqldog.server.common.collection.LRUCache;
 import com.yuanzhy.sqldog.server.util.RequestHolder;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

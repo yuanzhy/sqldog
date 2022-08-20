@@ -4,6 +4,7 @@ import com.yuanzhy.sqldog.core.exception.PersistenceException;
 import com.yuanzhy.sqldog.server.common.model.DataExtent;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
 import com.yuanzhy.sqldog.server.common.model.IndexPage;
+import com.yuanzhy.sqldog.server.common.model.LeafIndexPage;
 import com.yuanzhy.sqldog.server.core.Persistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,8 +85,18 @@ public class PersistenceWrapper implements Persistence {
     }
 
     @Override
+    public IndexPage getInsertableIndex(String tablePath, String colName, int level) throws PersistenceException {
+        return delegate.getInsertableIndex(tablePath, colName, level);
+    }
+
+    @Override
     public IndexPage readIndex(String tablePath, String colName, short fileId, int offset) throws PersistenceException {
         return delegate.readIndex(tablePath, colName, fileId, offset);
+    }
+
+    @Override
+    public LeafIndexPage readLeafIndex(String tablePath, String colName, short fileId, int offset) throws PersistenceException {
+        return delegate.readLeafIndex(tablePath, colName, fileId, offset);
     }
 
     @Override

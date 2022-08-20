@@ -8,6 +8,8 @@ Sqldog is a simple RDBMS developed in Java. It supports memory and disk storage 
 * Simple Select
 * Simple Agg
 
+**Note**: For development and learning use only, do not use in production environment
+
 ## Install
 
 1. Install JDK8+ and configure environment variables
