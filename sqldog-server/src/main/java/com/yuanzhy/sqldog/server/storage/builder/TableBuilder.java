@@ -22,10 +22,10 @@ import java.util.Set;
  * @date 2021-10-26
  */
 public class TableBuilder extends BaseBuilder<TableBuilder> {
-    private Constraint primaryKey;
-    private final Map<String, Column> columnMap = new LinkedHashMap<>();
-    private final Set<Constraint> constraint = new HashSet<>();
-    private Serial serial;
+    protected Constraint primaryKey;
+    protected final Map<String, Column> columnMap = new LinkedHashMap<>();
+    protected final Set<Constraint> constraint = new HashSet<>();
+    protected Serial serial;
 
     public TableBuilder addColumn(Column column) {
         this.columnMap.put(column.getName(), column);

@@ -7,9 +7,7 @@ import com.yuanzhy.sqldog.server.core.constant.DataType;
 import com.yuanzhy.sqldog.server.sql.adapter.CalciteSchema;
 import com.yuanzhy.sqldog.server.storage.builder.ColumnBuilder;
 import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
-import com.yuanzhy.sqldog.server.storage.builder.SchemaBuilder;
-import com.yuanzhy.sqldog.server.storage.builder.TableBuilder;
-import com.yuanzhy.sqldog.server.util.Databases;
+import com.yuanzhy.sqldog.server.storage.memory.MemorySchema;
 import org.apache.calcite.jdbc.CalciteConnection;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.util.ConversionUtil;
@@ -37,8 +35,8 @@ public class TestQuery {
     private Connection conn;
     @Before
     public void setUp() throws SQLException {
-        Schema schema = new SchemaBuilder().parent(Databases.getDefault()).name("TEST").build();
-        Table table = new TableBuilder().name("PERSON").parent(schema)
+        Schema schema = new MemorySchema(null, "TEST", "");
+        Table table = new TestTableBuilder().name("PERSON").parent(schema)
                 .addColumn(new ColumnBuilder().name("ID").dataType(DataType.INT).nullable(false).build())
                 .addColumn(new ColumnBuilder().name("NAME").dataType(DataType.VARCHAR).precision(50).build())
                 .addColumn(new ColumnBuilder().name("AGE").dataType(DataType.INT).build())

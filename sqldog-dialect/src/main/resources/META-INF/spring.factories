@@ -1,0 +1,1 @@
+org.springframework.data.jdbc.repository.config.DialectResolver$JdbcDialectProvider=com.yuanzhy.sqldog.dialect.spring.jdbc.SqldogDialectProvider

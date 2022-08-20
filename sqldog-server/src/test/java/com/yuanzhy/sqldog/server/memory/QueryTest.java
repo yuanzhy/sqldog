@@ -8,10 +8,8 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOrderBy;
 import org.apache.calcite.sql.SqlSelect;
-import org.junit.Test;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author yuanzhy
@@ -20,10 +18,8 @@ import java.util.Map;
  */
 public class QueryTest {
 
-    @Test
-    public List<Map<String, Object>> selectBy(SqlNode sqlNode) {
+    public void selectBy(SqlNode sqlNode) {
         handleSQL(sqlNode);
-        return null;
     }
 
     private void handleSQL(SqlNode sqlNode) {

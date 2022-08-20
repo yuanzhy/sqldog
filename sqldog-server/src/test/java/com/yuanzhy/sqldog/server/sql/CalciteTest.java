@@ -1,5 +1,13 @@
 package com.yuanzhy.sqldog.server.sql;
 
+import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
+import com.yuanzhy.sqldog.server.core.constant.DataType;
+import com.yuanzhy.sqldog.server.sql.adapter.ScannableCalciteTable;
+import com.yuanzhy.sqldog.server.storage.builder.ColumnBuilder;
+import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
+import com.yuanzhy.sqldog.server.storage.builder.TableBuilder;
+import com.yuanzhy.sqldog.server.storage.memory.MemorySchema;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.schema.SchemaPlus;
@@ -21,14 +29,6 @@ import org.apache.calcite.tools.RelConversionException;
 import org.apache.calcite.tools.ValidationException;
 import org.junit.Test;
 
-import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
-import com.yuanzhy.sqldog.server.core.constant.DataType;
-import com.yuanzhy.sqldog.server.storage.builder.ColumnBuilder;
-import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
-import com.yuanzhy.sqldog.server.storage.builder.TableBuilder;
-import com.yuanzhy.sqldog.server.sql.adapter.ScannableCalciteTable;
-
 /**
  *
  * @author yuanzhy
@@ -38,7 +38,7 @@ public class CalciteTest {
 
     @Test
     public void t() throws SqlParseException, RelConversionException {
-        Table table = new TableBuilder().name("TEST")
+        Table table = new TableBuilder().parent(new MemorySchema(null, "schema", "")).name("TEST")
                 .addColumn(new ColumnBuilder().name("ID").dataType(DataType.INT).nullable(false).build())
                 .addColumn(new ColumnBuilder().name("NAME").dataType(DataType.VARCHAR).precision(50).build())
                 .addColumn(new ColumnBuilder().name("AGE").dataType(DataType.INT).build())
