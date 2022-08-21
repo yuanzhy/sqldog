@@ -47,7 +47,7 @@ public class Calcites {
         //config.put("model", MyCsvTest.class.getClassLoader().getResource("my_csv_model.json").getPath());
         config.put("parserFactory", "com.yuanzhy.sqldog.server.sql.adapter.CalciteParserFactory");
         config.put("caseSensitive", "false");
-        config.put("conformance", "ORACLE_12");
+//        config.put("conformance", "STRICT_2003");
 //        config.put("timeZone", "UTC");
         try {
             Connection conn = DriverManager.getConnection("jdbc:calcite:", config);
@@ -67,7 +67,7 @@ public class Calcites {
                         //.withQuoting(Quoting.BACK_TICK)
                         //.withQuotedCasing(Casing.TO_UPPER)
                         //.withUnquotedCasing(Casing.TO_UPPER)
-                        .withConformance(SqlConformanceEnum.ORACLE_12)
+//                        .withConformance(SqlConformanceEnum.STRICT_2003)
                 )
 //                .operatorTable(sqlStdOperatorTable)
                 .build();

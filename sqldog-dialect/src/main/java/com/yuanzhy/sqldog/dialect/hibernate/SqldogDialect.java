@@ -78,17 +78,18 @@ public class SqldogDialect extends Dialect {
         registerColumnType( Types.JAVA_OBJECT, "json" );
 
         registerFunction( "random", new NoArgSQLFunction("random", StandardBasicTypes.DOUBLE) );
-//        registerFunction( "rand", new NoArgSQLFunction("random", StandardBasicTypes.DOUBLE) );
+        registerFunction( "rand", new NoArgSQLFunction("random", StandardBasicTypes.DOUBLE) );
+        registerFunction( "uuid", new NoArgSQLFunction("uuid", StandardBasicTypes.STRING) );
 
-//        registerFunction( "round", new StandardSQLFunction("round") );
+        registerFunction( "round", new StandardSQLFunction("round") );
 //        registerFunction( "trunc", new StandardSQLFunction("trunc") );
-//        registerFunction( "ceil", new StandardSQLFunction("ceil") );
-//        registerFunction( "floor", new StandardSQLFunction("floor") );
+        registerFunction( "ceil", new StandardSQLFunction("ceil") );
+        registerFunction( "floor", new StandardSQLFunction("floor") );
 
         registerFunction( "chr", new StandardSQLFunction("chr", StandardBasicTypes.CHARACTER) );
         registerFunction( "lower", new StandardSQLFunction("lower") );
         registerFunction( "upper", new StandardSQLFunction("upper") );
-//        registerFunction( "substr", new StandardSQLFunction("substr", StandardBasicTypes.STRING) );
+        registerFunction( "substring", new StandardSQLFunction("substr", StandardBasicTypes.STRING) );
 //        registerFunction( "to_ascii", new StandardSQLFunction("to_ascii") );
         registerFunction( "md5", new StandardSQLFunction("md5", StandardBasicTypes.STRING) );
 //        registerFunction( "ascii", new StandardSQLFunction("ascii", StandardBasicTypes.INTEGER) );

@@ -14,6 +14,7 @@ import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * @author yuanzhy
@@ -54,6 +55,7 @@ public class ScalarFunctions {
 //        put("quarter", Calendar.);
     }};
     public static final Timestamp date_trunc(String type, java.util.Date date) {
+        if (date == null) return null;
         Integer field = dateFieldType.get(type.toLowerCase());
         Asserts.notNull(field, "not supported: " + type);
         return new Timestamp(DateUtils.truncate(date, field).getTime());
@@ -62,6 +64,7 @@ public class ScalarFunctions {
     // 字符串相关 -----------------------------------------------------------------------
 
     public static final String to_char(Object raw, String formatter) {
+        if (raw == null) return null;
         if (raw instanceof Number) {
             if (StringUtils.containsAny(formatter, "y", "M", "d", "H", "h", "m", "s", "S")) {
                 return DateFormatUtils.format(new java.util.Date(((Number) raw).longValue()), formatter);
@@ -134,6 +137,7 @@ public class ScalarFunctions {
     }
 
     public static final String left(String str, int n) {
+        if (str == null) return null;
         if (n > 0) {
             return str.substring(0, n);
         } else {
@@ -148,7 +152,8 @@ public class ScalarFunctions {
 //            return str.substring(-(n-1));
 //        }
 //    }
-    public static final String to_hex(int n) {
+    public static final String to_hex(Integer n) {
+        if (n == null) return null;
         return Integer.toHexString(n);
     }
     public static final String reverse(String str) {
@@ -158,9 +163,7 @@ public class ScalarFunctions {
         return StringUtils.repeat(str, n);
     }
     public static final String chr(Integer c) {
-        if (c == null) {
-            return null;
-        }
+        if (c == null) return null;
         return Character.valueOf((char)c.intValue()).toString();
     }
 
@@ -169,11 +172,22 @@ public class ScalarFunctions {
     }
 
     public static final String md5(String raw) {
+        if (raw == null) return null;
         return DigestUtils.md5Hex(raw);
     }
 
     public static final Number to_number(String str, String formatter) {
+        if (StringUtils.isEmpty(str)) return null;
         String r = to_char(new BigDecimal(str.replace(",", "").replace(" ", "")), formatter.replace(",", ""));
         return new BigDecimal(r);
+    }
+
+    public static final String uuid() {
+        return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    public static final String substring(String raw, int start, int end) {
+        if (raw == null) return null;
+        return raw.substring(start, end);
     }
 }
