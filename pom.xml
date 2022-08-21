@@ -116,7 +116,7 @@
                         </goals>
                         <configuration>
                             <overwrite>true</overwrite>
-                            <outputDirectory>${basedir}/target/sqldog</outputDirectory>
+                            <outputDirectory>${basedir}/target/sqldog-${project.version}</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${basedir}/sqldog</directory>
@@ -145,7 +145,7 @@
                         </goals>
                         <configuration>
                             <overwrite>true</overwrite>
-                            <outputDirectory>${basedir}/target/sqldog/docs</outputDirectory>
+                            <outputDirectory>${basedir}/target/sqldog-${project.version}/docs</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${basedir}</directory>

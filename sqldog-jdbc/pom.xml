@@ -86,7 +86,7 @@
                         </goals>
                         <configuration>
                             <overwrite>true</overwrite>
-                            <outputDirectory>${basedir}/../target/sqldog/jdbc</outputDirectory>
+                            <outputDirectory>${basedir}/../target/sqldog-${project.version}/jdbc</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${basedir}/target</directory>

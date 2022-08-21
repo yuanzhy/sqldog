@@ -69,7 +69,7 @@
                         </goals>
                         <configuration>
                             <overwrite>true</overwrite>
-                            <outputDirectory>${basedir}/../target/sqldog/cli</outputDirectory>
+                            <outputDirectory>${basedir}/../target/sqldog-${project.version}/cli</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${basedir}/target</directory>
@@ -95,8 +95,8 @@
                             <goal>rename</goal>
                         </goals>
                         <configuration>
-                            <sourceFile>${basedir}/../target/sqldog/cli/sqldog-cli-${project.version}.jar</sourceFile>
-                            <destinationFile>${basedir}/../target/sqldog/cli/sqldog-cli.jar</destinationFile>
+                            <sourceFile>${basedir}/../target/sqldog-${project.version}/cli/sqldog-cli-${project.version}.jar</sourceFile>
+                            <destinationFile>${basedir}/../target/sqldog-${project.version}/cli/sqldog-cli.jar</destinationFile>
                         </configuration>
                     </execution>
                 </executions>

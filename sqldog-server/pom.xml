@@ -109,7 +109,7 @@
                         </goals>
                         <configuration>
                             <overwrite>true</overwrite>
-                            <outputDirectory>${basedir}/../target/sqldog/server</outputDirectory>
+                            <outputDirectory>${basedir}/../target/sqldog-${project.version}/server</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${basedir}/target</directory>
@@ -142,8 +142,8 @@
                             <goal>rename</goal>
                         </goals>
                         <configuration>
-                            <sourceFile>${basedir}/../target/sqldog/server/sqldog-server-${project.version}-shaded.jar</sourceFile>
-                            <destinationFile>${basedir}/../target/sqldog/server/sqldog-server.jar</destinationFile>
+                            <sourceFile>${basedir}/../target/sqldog-${project.version}/server/sqldog-server-${project.version}-shaded.jar</sourceFile>
+                            <destinationFile>${basedir}/../target/sqldog-${project.version}/server/sqldog-server.jar</destinationFile>
                         </configuration>
                     </execution>
                 </executions>
