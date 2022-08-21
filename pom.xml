@@ -115,6 +115,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
+                            <overwrite>true</overwrite>
                             <outputDirectory>${basedir}/target/sqldog</outputDirectory>
                             <resources>
                                 <resource>
@@ -126,9 +127,31 @@
                                     <filtering>false</filtering>
                                 </resource>
                                 <resource>
+                                    <directory>${basedir}/</directory>
+                                    <includes>
+                                        <include>LICENSE</include>
+                                    </includes>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-docs</id>
+                        <!-- here the phase you need -->
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <overwrite>true</overwrite>
+                            <outputDirectory>${basedir}/target/sqldog/docs</outputDirectory>
+                            <resources>
+                                <resource>
                                     <directory>${basedir}</directory>
                                     <includes>
                                         <include>README.md</include>
+                                        <include>README_CN.md</include>
                                     </includes>
                                     <filtering>false</filtering>
                                 </resource>

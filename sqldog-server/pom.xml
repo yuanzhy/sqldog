@@ -84,6 +84,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
@@ -117,12 +118,13 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
+                            <overwrite>true</overwrite>
                             <outputDirectory>${basedir}/../target/sqldog/server</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${basedir}/target</directory>
                                     <includes>
-                                        <include>sqldog-**.jar</include>
+                                        <include>sqldog-**-shaded.jar</include>
                                     </includes>
                                     <filtering>false</filtering>
                                 </resource>
@@ -134,6 +136,24 @@
                                     <filtering>true</filtering>
                                 </resource>
                             </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.coderplus.maven.plugins</groupId>
+                <artifactId>copy-rename-maven-plugin</artifactId>
+                <version>1.0.1</version>
+                <executions>
+                    <execution>
+                        <id>rename-file</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>rename</goal>
+                        </goals>
+                        <configuration>
+                            <sourceFile>${basedir}/../target/sqldog/server/sqldog-server-${project.version}-shaded.jar</sourceFile>
+                            <destinationFile>${basedir}/../target/sqldog/server/sqldog-server.jar</destinationFile>
                         </configuration>
                     </execution>
                 </executions>

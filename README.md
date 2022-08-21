@@ -1,22 +1,63 @@
 # sqldog
 
+#### [English](README.md) | [中文](README_CN.md)
+
 Sqldog is a simple RDBMS developed in Java. It supports memory and disk storage mode and supports the following features
 
 * DML SQL（simple）
 * DDL SQL
+* SELECT
 * CLI
-* Simple Select
-* Simple Agg
+* JPA (Hibernate) dialect, Mybatis PageHelper, SpringData-JDBC automatic adaptation
+
+**Note**: For development and learning use only, do not use in production environment
 
 ## Install
 
 1. Install JDK8+ and configure environment variables
 2. Extracting the Release Package to any directory
-3. Configure the bin directory to an environment variable
+3. Configure the "bin" directory to an environment variable
 
 ## Usage
 
-### Server
+### Embedded
+- Import "JDBC" and "Server" dependencies
+1. maven
+```xml
+<dependency>
+    <groupId>com.yuanzhy.sqldog</groupId>
+    <artifactId>sqldog-jdbc</artifactId>
+    <version>0.1-SNAPSHOT</version>
+</dependency>
+<dependency>
+    <groupId>com.yuanzhy.sqldog</groupId>
+    <artifactId>sqldog-server</artifactId>
+    <version>0.1-SNAPSHOT</version>
+</dependency>
+```
+2. gradle
+```groovy
+dependencies {
+    implementation "com.yuanzhy.sqldog:sqldog-jdbc:0.1-SNAPSHOT"
+    implementation "com.yuanzhy.sqldog:sqldog-server:0.1-SNAPSHOT"
+}
+```
+
+- Configure jdbc
+1. In-memory mode (data is stored in JVM memory)
+```properties
+url=jdbc:sqldog:mem
+driver-class=com.yuanzhy.sqldog.jdbc.Driver
+```
+2. File mode (data is stored in a configured directory)
+```properties
+url=jdbc:sqldog:file:/home/test/data
+driver-class=com.yuanzhy.sqldog.jdbc.Driver
+```
+
+---
+
+### Standalone
 
 Modify the configuration file "server/config.properties" if needed
 configuration instruction as follows:
@@ -82,21 +123,23 @@ exit
 
 ### JDBC
 
-- Install "JDBC jar" into maven local repository
-```shell
-mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-core -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=./sqldog/jdbc/sqldog-core-1.0-SNAPSHOT.jar
-mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-dialect -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=./sqldog/jdbc/sqldog-dialect-1.0-SNAPSHOT.jar
-mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-jdbc -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=./sqldog/jdbc/sqldog-jdbc-1.0-SNAPSHOT.jar
-```
-- Add maven dependency
+- Import JDBC dependency
+1. maven
 ```xml
 <dependency>
     <groupId>com.yuanzhy.sqldog</groupId>
     <artifactId>sqldog-jdbc</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1-SNAPSHOT</version>
 </dependency>
 ```
-- Configure JDBC
+2. gradle
+```groovy
+dependencies {
+    implementation "com.yuanzhy.sqldog:sqldog-jdbc:0.1-SNAPSHOT"
+}
+```
+
+- Configure jdbc
 ```properties
 url=jdbc:sqldog://127.0.0.1[:2345][/schema_name]
 user=root

@@ -1,23 +1,63 @@
 # sqldog
 
+#### [English](README.md) | [中文](README_CN.md)
+
 sqldog 是一款 Java 开发的简易关系型数据库，支持内存和硬盘存储模式，支持以下功能
 
 * DML SQL（simple）
 * DDL SQL
+* SELECT
 * CLI
-* Simple Select
-* Simple Agg
+* JPA (Hibernate) dialect, Mybatis PageHelper, SpringData-JDBC 自动适配
+
+**注意**：仅用于开发和学习使用，切勿用于生产环境
 
 ## 安装
 
+### 独立版
 1. 安装JDK8+并配置环境变量
 2. 将安装包解压到任意目录
 3. 将 bin 目录配置到环境变量
-4. 命令行中执行 dsql-server
 
 ## 使用说明
 
-### 服务端
+### 嵌入版
+- 引入 JDBC 和 server 依赖
+1. maven
+```xml
+<dependency>
+    <groupId>com.yuanzhy.sqldog</groupId>
+    <artifactId>sqldog-jdbc</artifactId>
+    <version>0.1-SNAPSHOT</version>
+</dependency>
+<dependency>
+    <groupId>com.yuanzhy.sqldog</groupId>
+    <artifactId>sqldog-server</artifactId>
+    <version>0.1-SNAPSHOT</version>
+</dependency>
+```
+2. gradle
+```groovy
+dependencies {
+    implementation "com.yuanzhy.sqldog:sqldog-jdbc:0.1-SNAPSHOT"
+    implementation "com.yuanzhy.sqldog:sqldog-server:0.1-SNAPSHOT"
+}
+```
+
+- 配置jdbc
+1. 内存模式（数据存储在jvm内存中）
+```properties
+url=jdbc:sqldog:mem
+driver-class=com.yuanzhy.sqldog.jdbc.Driver
+```
+2. 文件模式（数据存储在配置的目录中）
+```properties
+url=jdbc:sqldog:file:/home/test/data
+driver-class=com.yuanzhy.sqldog.jdbc.Driver
+```
+---
+
+### 独立版
 
 根据需要修改配置文件 server/config.properties，配置说明如下
 
@@ -82,20 +122,22 @@ exit
 
 ### JDBC
 
-- 将 jdbc jar 安装到本地仓库
-```shell
-mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-core -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=./sqldog/jdbc/sqldog-core-1.0-SNAPSHOT.jar
-mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-dialect -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=./sqldog/jdbc/sqldog-dialect-1.0-SNAPSHOT.jar
-mvn install:install-file -DgroupId=com.yuanzhy.sqldog -DartifactId=sqldog-jdbc -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=./sqldog/jdbc/sqldog-jdbc-1.0-SNAPSHOT.jar
-```
-- 引入 maven 依赖
+- 引入 JDBC 依赖
+1. maven
 ```xml
 <dependency>
     <groupId>com.yuanzhy.sqldog</groupId>
     <artifactId>sqldog-jdbc</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1-SNAPSHOT</version>
 </dependency>
 ```
+2. gradle
+```groovy
+dependencies {
+    implementation "com.yuanzhy.sqldog:sqldog-jdbc:0.1-SNAPSHOT"
+}
+```
+
 - 配置jdbc
 ```properties
 url=jdbc:sqldog://127.0.0.1[:2345][/schema_name]

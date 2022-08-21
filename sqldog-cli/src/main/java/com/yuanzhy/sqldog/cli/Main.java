@@ -21,7 +21,7 @@ public class Main {
             CliCommand cliCommand = CliCommandFactory.create(cli);
             cliCommand.execute();
         } catch (Exception e) {
-            System.out.println(e.getMessage() + "\n" /*+ CliUtil.getHelpString()*/);
+            System.out.println(e.getMessage() + "\n\n" + CliUtil.getHelpString());
             System.exit(0);
         }
     }

@@ -73,6 +73,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
+                            <overwrite>true</overwrite>
                             <outputDirectory>${basedir}/../target/sqldog/cli</outputDirectory>
                             <resources>
                                 <resource>
@@ -83,6 +84,24 @@
                                     <filtering>false</filtering>
                                 </resource>
                             </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.coderplus.maven.plugins</groupId>
+                <artifactId>copy-rename-maven-plugin</artifactId>
+                <version>1.0.1</version>
+                <executions>
+                    <execution>
+                        <id>rename-file</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>rename</goal>
+                        </goals>
+                        <configuration>
+                            <sourceFile>${basedir}/../target/sqldog/cli/sqldog-cli-${project.version}.jar</sourceFile>
+                            <destinationFile>${basedir}/../target/sqldog/cli/sqldog-cli.jar</destinationFile>
                         </configuration>
                     </execution>
                 </executions>

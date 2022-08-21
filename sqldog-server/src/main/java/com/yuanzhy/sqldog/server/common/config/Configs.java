@@ -22,6 +22,9 @@ public class Configs {
     }
 
     public static Config get() {
+        if (CONFIG == null) {
+            init();
+        }
         return CONFIG;
     }
 }
