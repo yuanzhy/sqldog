@@ -2,6 +2,10 @@
 
 set dir=%~dp0
 
+if "%SQLDOG_HOME%"=="" (
+    set SQLDOG_HOME=%dir:~0,-5%
+)
+
 set allparam=
 
 :param
@@ -27,4 +31,4 @@ if "%allparam:~-1%"==" " set "allparam=%allparam:~0,-1%"&goto intercept_right
 
 :eof
 
-java -jar %dir%\..\cli\sqldog-cli.jar %allparam%
+java -jar %SQLDOG_HOME%\cli\sqldog-cli.jar %allparam%

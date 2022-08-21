@@ -1,5 +1,10 @@
 package com.yuanzhy.sqldog.server.storage.builder;
 
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.common.config.Configs;
 import com.yuanzhy.sqldog.server.core.Column;
@@ -10,11 +15,6 @@ import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.server.storage.disk.DiskTable;
 import com.yuanzhy.sqldog.server.storage.memory.MemorySerial;
 import com.yuanzhy.sqldog.server.storage.memory.MemoryTable;
-
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
 
 /**
  *

@@ -1,10 +1,10 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import java.util.stream.Collectors;
+
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
-
-import java.util.stream.Collectors;
 
 /**
  * @author yuanzhy

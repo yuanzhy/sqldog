@@ -1,5 +1,10 @@
 #!/bin/sh
 
-DIR="$( cd "$( dirname "$0"  )" && pwd  )"
+if [ -z "$SQLDOG_HOME" ] ; then
+  SQLDOG_HOME="$( cd "$( dirname "$0"  )" && cd .. && pwd  )"
+fi
 
-nohup java -jar ${DIR}/../server/sqldog-server.jar > /dev/null &
+echo Using JAVA_HOME:    $JAVA_HOME
+echo Using SQLDOG_HOME:  $SQLDOG_HOME
+
+nohup java -DSQLDOG_HOME=$SQLDOG_HOME -jar ${SQLDOG_HOME}/server/sqldog-server.jar > /dev/null &

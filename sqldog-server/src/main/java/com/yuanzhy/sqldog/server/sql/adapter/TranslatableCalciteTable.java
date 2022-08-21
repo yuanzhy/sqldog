@@ -1,7 +1,7 @@
 package com.yuanzhy.sqldog.server.sql.adapter;
 
-import com.yuanzhy.sqldog.server.core.Column;
-import com.yuanzhy.sqldog.server.core.Table;
+import java.util.Map;
+
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
@@ -10,7 +10,8 @@ import org.apache.calcite.schema.TranslatableTable;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import java.util.Map;
+import com.yuanzhy.sqldog.server.core.Column;
+import com.yuanzhy.sqldog.server.core.Table;
 
 /**
  * @author yuanzhy

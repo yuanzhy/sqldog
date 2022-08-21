@@ -1,5 +1,7 @@
 package com.yuanzhy.sqldog.server.memory;
 
+import java.util.List;
+
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlJoin;
@@ -8,8 +10,6 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOrderBy;
 import org.apache.calcite.sql.SqlSelect;
-
-import java.util.List;
 
 /**
  * @author yuanzhy

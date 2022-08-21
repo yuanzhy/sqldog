@@ -3,10 +3,9 @@ package com.yuanzhy.sqldog.server.sql.command;
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Databases;
-
-import org.apache.commons.lang3.StringUtils;
 
 /**
  *

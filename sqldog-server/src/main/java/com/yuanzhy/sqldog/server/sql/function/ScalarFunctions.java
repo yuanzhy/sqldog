@@ -1,12 +1,8 @@
 package com.yuanzhy.sqldog.server.sql.function;
 
-import com.yuanzhy.sqldog.core.util.Asserts;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateFormatUtils;
-import org.apache.commons.lang3.time.DateUtils;
-
 import java.math.BigDecimal;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -15,6 +11,11 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.ByteUtil;
+import com.yuanzhy.sqldog.core.util.StringUtils;
+import com.yuanzhy.sqldog.server.util.DateUtils;
 
 /**
  * @author yuanzhy
@@ -66,8 +67,8 @@ public class ScalarFunctions {
     public static final String to_char(Object raw, String formatter) {
         if (raw == null) return null;
         if (raw instanceof Number) {
-            if (StringUtils.containsAny(formatter, "y", "M", "d", "H", "h", "m", "s", "S")) {
-                return DateFormatUtils.format(new java.util.Date(((Number) raw).longValue()), formatter);
+            if (StringUtils.containsAny(formatter, 'y', 'M', 'd', 'H', 'h', 'm', 's', 'S')) {
+                return DateUtils.format(new java.util.Date(((Number) raw).longValue()), formatter);
             }
             DecimalFormat nf = (DecimalFormat) DecimalFormat.getInstance();
             if (formatter.contains(".")) {
@@ -81,7 +82,7 @@ public class ScalarFunctions {
             nf.applyPattern(formatter);
             return nf.format(((Number) raw).longValue());
         } else if (raw instanceof java.util.Date) {
-            return DateFormatUtils.format((java.util.Date)raw, formatter);
+            return DateUtils.format((java.util.Date)raw, formatter);
         } else {
             throw new IllegalArgumentException("not supported: " + raw + ", " + formatter);
         }
@@ -173,7 +174,12 @@ public class ScalarFunctions {
 
     public static final String md5(String raw) {
         if (raw == null) return null;
-        return DigestUtils.md5Hex(raw);
+        try {
+            byte[] md5Bytes = MessageDigest.getInstance("MD5").digest(ByteUtil.toBytes(raw));
+            return ByteUtil.toHexString(md5Bytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static final Number to_number(String str, String formatter) {

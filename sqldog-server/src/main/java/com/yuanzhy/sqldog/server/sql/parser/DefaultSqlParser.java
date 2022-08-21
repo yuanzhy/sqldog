@@ -1,8 +1,6 @@
 package com.yuanzhy.sqldog.server.sql.parser;
 
-import com.yuanzhy.sqldog.server.sql.command.OptimizeCommand;
-import org.apache.commons.lang3.StringUtils;
-
+import com.yuanzhy.sqldog.core.util.StringUtils;
 import com.yuanzhy.sqldog.server.sql.SqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlParser;
 import com.yuanzhy.sqldog.server.sql.command.AlterTableCommand;
@@ -17,6 +15,7 @@ import com.yuanzhy.sqldog.server.sql.command.DropIndexCommand;
 import com.yuanzhy.sqldog.server.sql.command.DropSchemaCommand;
 import com.yuanzhy.sqldog.server.sql.command.DropTableCommand;
 import com.yuanzhy.sqldog.server.sql.command.InsertCommand;
+import com.yuanzhy.sqldog.server.sql.command.OptimizeCommand;
 import com.yuanzhy.sqldog.server.sql.command.SelectCommand;
 import com.yuanzhy.sqldog.server.sql.command.SetCommand;
 import com.yuanzhy.sqldog.server.sql.command.ShowCommand;

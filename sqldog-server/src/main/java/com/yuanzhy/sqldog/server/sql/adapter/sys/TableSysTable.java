@@ -1,11 +1,8 @@
 package com.yuanzhy.sqldog.server.sql.adapter.sys;
 
-import com.yuanzhy.sqldog.core.constant.RefGeneration;
-import com.yuanzhy.sqldog.core.constant.TableType;
-import com.yuanzhy.sqldog.server.core.Schema;
-import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.sql.adapter.ObjectArrayEnumerable;
-import com.yuanzhy.sqldog.server.util.Databases;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.calcite.DataContext;
 import org.apache.calcite.linq4j.Enumerable;
 import org.apache.calcite.rel.type.RelDataType;
@@ -13,10 +10,14 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.yuanzhy.sqldog.core.constant.RefGeneration;
+import com.yuanzhy.sqldog.core.constant.TableType;
+import com.yuanzhy.sqldog.core.util.StringUtils;
+import com.yuanzhy.sqldog.server.core.Schema;
+import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.sql.adapter.ObjectArrayEnumerable;
+import com.yuanzhy.sqldog.server.util.Databases;
 
 /**
  * 存储表的 系统表

@@ -3,7 +3,7 @@ package com.yuanzhy.sqldog.server.sql.result;
 import com.yuanzhy.sqldog.core.sql.ColumnMetaData;
 import com.yuanzhy.sqldog.core.sql.ColumnMetaDataImpl;
 import com.yuanzhy.sqldog.core.util.Asserts;
-import org.apache.commons.lang3.StringUtils;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 
 /**
  * @author yuanzhy

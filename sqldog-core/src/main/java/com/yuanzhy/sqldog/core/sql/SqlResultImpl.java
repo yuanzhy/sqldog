@@ -1,8 +1,8 @@
 package com.yuanzhy.sqldog.core.sql;
 
-import com.yuanzhy.sqldog.core.constant.StatementType;
-
 import java.util.List;
+
+import com.yuanzhy.sqldog.core.constant.StatementType;
 
 /**
  * @author yuanzhy

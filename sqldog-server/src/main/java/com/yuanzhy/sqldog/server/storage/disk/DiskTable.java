@@ -1,5 +1,10 @@
 package com.yuanzhy.sqldog.server.storage.disk;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.yuanzhy.sqldog.server.core.Base;
@@ -15,11 +20,6 @@ import com.yuanzhy.sqldog.server.storage.builder.ColumnBuilder;
 import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
 import com.yuanzhy.sqldog.server.storage.memory.MemoryTable;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
-
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author yuanzhy

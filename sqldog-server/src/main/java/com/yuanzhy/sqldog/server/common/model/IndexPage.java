@@ -1,7 +1,7 @@
 package com.yuanzhy.sqldog.server.common.model;
 
-import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.core.util.ByteUtil;
+import com.yuanzhy.sqldog.server.common.StorageConst;
 
 /**
  * @author yuanzhy

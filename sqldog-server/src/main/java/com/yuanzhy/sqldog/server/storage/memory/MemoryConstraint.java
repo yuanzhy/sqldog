@@ -1,10 +1,10 @@
 package com.yuanzhy.sqldog.server.storage.memory;
 
-import com.yuanzhy.sqldog.server.core.Constraint;
-import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
-
 import java.util.Arrays;
 import java.util.Objects;
+
+import com.yuanzhy.sqldog.server.core.Constraint;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 
 /**
  * @author yuanzhy

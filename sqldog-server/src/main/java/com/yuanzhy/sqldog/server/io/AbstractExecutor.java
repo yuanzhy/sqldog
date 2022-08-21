@@ -1,5 +1,13 @@
 package com.yuanzhy.sqldog.server.io;
 
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.yuanzhy.sqldog.core.SqldogVersion;
 import com.yuanzhy.sqldog.core.constant.RequestType;
 import com.yuanzhy.sqldog.core.service.Executor;
@@ -8,6 +16,7 @@ import com.yuanzhy.sqldog.core.service.Request;
 import com.yuanzhy.sqldog.core.service.Response;
 import com.yuanzhy.sqldog.core.service.impl.ResponseImpl;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 import com.yuanzhy.sqldog.server.sql.PreparedSqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlParser;
@@ -15,14 +24,6 @@ import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
 import com.yuanzhy.sqldog.server.sql.parser.PreparedSqlParser;
 import com.yuanzhy.sqldog.server.util.LRUCache;
 import com.yuanzhy.sqldog.server.util.RequestHolder;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author yuanzhy

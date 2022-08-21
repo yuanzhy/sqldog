@@ -1,8 +1,8 @@
 package com.yuanzhy.sqldog.server.core;
 
-import com.yuanzhy.sqldog.core.exception.CodecException;
-
 import java.util.Map;
+
+import com.yuanzhy.sqldog.core.exception.CodecException;
 
 /**
  * @author yuanzhy

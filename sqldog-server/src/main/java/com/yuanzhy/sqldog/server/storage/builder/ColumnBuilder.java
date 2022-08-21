@@ -1,11 +1,10 @@
 package com.yuanzhy.sqldog.server.storage.builder;
 
-import com.yuanzhy.sqldog.server.storage.memory.MemoryColumn;
-import org.apache.commons.lang3.StringUtils;
-
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.constant.DataType;
+import com.yuanzhy.sqldog.server.storage.memory.MemoryColumn;
 
 /**
  *

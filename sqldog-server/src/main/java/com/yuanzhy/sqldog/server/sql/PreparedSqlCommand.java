@@ -1,8 +1,8 @@
 package com.yuanzhy.sqldog.server.sql;
 
-import com.yuanzhy.sqldog.core.sql.SqlResult;
-
 import java.io.Closeable;
+
+import com.yuanzhy.sqldog.core.sql.SqlResult;
 
 /**
  * @author yuanzhy

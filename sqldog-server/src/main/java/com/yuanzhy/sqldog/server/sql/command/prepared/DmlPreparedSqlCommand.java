@@ -1,5 +1,10 @@
 package com.yuanzhy.sqldog.server.sql.command.prepared;
 
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Arrays;
+
 import com.yuanzhy.sqldog.core.constant.Consts;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.DateUtil;
@@ -7,12 +12,6 @@ import com.yuanzhy.sqldog.server.sql.PreparedSqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlCommand;
 import com.yuanzhy.sqldog.server.sql.command.DeleteCommand;
 import com.yuanzhy.sqldog.server.sql.command.InsertCommand;
-import com.yuanzhy.sqldog.server.util.Databases;
-
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.Arrays;
 
 /**
  * @author yuanzhy

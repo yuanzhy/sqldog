@@ -1,14 +1,5 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
-import com.yuanzhy.sqldog.core.constant.Consts;
-import com.yuanzhy.sqldog.core.constant.StatementType;
-import com.yuanzhy.sqldog.core.constant.TableType;
-import com.yuanzhy.sqldog.core.sql.SqlResult;
-import com.yuanzhy.sqldog.core.sql.SqlResultImpl;
-import com.yuanzhy.sqldog.core.util.SqlUtil;
-import com.yuanzhy.sqldog.jdbc.Driver;
-import com.yuanzhy.sqldog.jdbc.SqldogConnection;
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -21,6 +12,15 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.constant.TableType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.sql.SqlResultImpl;
+import com.yuanzhy.sqldog.core.util.SqlUtil;
+import com.yuanzhy.sqldog.jdbc.Driver;
+import com.yuanzhy.sqldog.jdbc.SqldogConnection;
 
 /**
  * @author yuanzhy

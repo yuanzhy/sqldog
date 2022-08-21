@@ -1,10 +1,11 @@
 package com.yuanzhy.sqldog.cli.command;
 
+import org.apache.commons.cli.CommandLine;
+
 import com.yuanzhy.sqldog.cli.util.CliUtil;
 import com.yuanzhy.sqldog.core.SqldogVersion;
 import com.yuanzhy.sqldog.core.util.Asserts;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.lang3.math.NumberUtils;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 
 /**
  * @author yuanzhy
@@ -27,9 +28,13 @@ public final class CliCommandFactory {
         } else if (cli.hasOption("U") || cli.hasOption("P")) {
             Asserts.isTrue(cli.hasOption("U") && cli.hasOption("P"), "用户名密码必须同时存在");
             String strPort = cli.getOptionValue("p", "2345");
-            Asserts.isTrue(NumberUtils.isCreatable(strPort), "Port invalid format: " + strPort);
             String host = cli.getOptionValue("h", "127.0.0.1");
-            int port = Integer.parseInt(strPort);
+            int port;
+            try {
+                port = Integer.parseInt(StringUtils.trim(strPort));
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Port invalid format: " + strPort);
+            }
             String username = cli.getOptionValue("U");
             String password = cli.getOptionValue("P");
             RemoteCliCommand cliCommand;

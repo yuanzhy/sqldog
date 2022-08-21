@@ -1,10 +1,10 @@
 package com.yuanzhy.sqldog.core.sql;
 
-import com.yuanzhy.sqldog.core.constant.StatementType;
-
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
+
+import com.yuanzhy.sqldog.core.constant.StatementType;
 
 /**
  * @author yuanzhy

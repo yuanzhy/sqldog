@@ -1,12 +1,13 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlUpdate;
+import org.apache.calcite.sql.parser.SqlParseException;
+
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Calcites;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlUpdate;
-import org.apache.calcite.sql.parser.SqlParseException;
 
 /**
  * @author yuanzhy

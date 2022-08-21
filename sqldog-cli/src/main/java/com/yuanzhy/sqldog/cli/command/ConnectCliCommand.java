@@ -1,12 +1,11 @@
 package com.yuanzhy.sqldog.cli.command;
 
-import com.yuanzhy.sqldog.core.constant.Consts;
-
-import org.apache.commons.lang3.StringUtils;
-
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Scanner;
+
+import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 
 /**
  * @author yuanzhy

@@ -1,13 +1,5 @@
 package com.yuanzhy.sqldog.server.sql.command.prepared;
 
-import com.yuanzhy.sqldog.core.constant.StatementType;
-import com.yuanzhy.sqldog.core.sql.SqlResult;
-import com.yuanzhy.sqldog.core.util.Asserts;
-import com.yuanzhy.sqldog.core.util.SqlUtil;
-import com.yuanzhy.sqldog.server.sql.PreparedSqlCommand;
-import com.yuanzhy.sqldog.server.util.CommandUtil;
-import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
-
 import java.io.InputStream;
 import java.sql.Blob;
 import java.sql.ParameterMetaData;
@@ -17,6 +9,14 @@ import java.sql.RowId;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
+
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.SqlUtil;
+import com.yuanzhy.sqldog.server.sql.PreparedSqlCommand;
+import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
+import com.yuanzhy.sqldog.server.util.CommandUtil;
 
 /**
  * @author yuanzhy

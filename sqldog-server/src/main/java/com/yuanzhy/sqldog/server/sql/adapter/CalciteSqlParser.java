@@ -1,9 +1,10 @@
 package com.yuanzhy.sqldog.server.sql.adapter;
 
-import com.yuanzhy.sqldog.core.constant.Consts;
-import com.yuanzhy.sqldog.core.constant.RequestType;
-import com.yuanzhy.sqldog.core.service.Request;
-import com.yuanzhy.sqldog.server.util.RequestHolder;
+import java.io.Reader;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.calcite.sql.SqlAsOperator;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDelete;
@@ -21,10 +22,10 @@ import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.parser.impl.SqlParserImpl;
 
-import java.io.Reader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.core.constant.RequestType;
+import com.yuanzhy.sqldog.core.service.Request;
+import com.yuanzhy.sqldog.server.util.RequestHolder;
 
 /**
  * @author yuanzhy

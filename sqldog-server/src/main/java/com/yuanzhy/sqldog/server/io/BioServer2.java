@@ -12,19 +12,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.yuanzhy.sqldog.server.common.config.Configs;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import com.yuanzhy.sqldog.core.sql.ColumnMetaData;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.util.ArrayUtils;
+import com.yuanzhy.sqldog.core.util.ByteUtil;
+import com.yuanzhy.sqldog.core.util.StringUtils;
+import com.yuanzhy.sqldog.server.common.config.Configs;
 import com.yuanzhy.sqldog.server.sql.SqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlParser;
 import com.yuanzhy.sqldog.server.sql.command.SelectCommand;
 import com.yuanzhy.sqldog.server.sql.command.SetCommand;
 import com.yuanzhy.sqldog.server.sql.command.ShowCommand;
 import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
-import com.yuanzhy.sqldog.core.util.ByteUtil;
 
 /**
  * @author maoning

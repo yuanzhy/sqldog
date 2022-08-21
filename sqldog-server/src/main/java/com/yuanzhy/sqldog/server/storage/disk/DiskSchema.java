@@ -1,5 +1,8 @@
 package com.yuanzhy.sqldog.server.storage.disk;
 
+import java.util.List;
+import java.util.Map;
+
 import com.alibaba.fastjson.JSONObject;
 import com.yuanzhy.sqldog.server.core.Base;
 import com.yuanzhy.sqldog.server.core.Persistable;
@@ -8,9 +11,6 @@ import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.core.Table;
 import com.yuanzhy.sqldog.server.storage.memory.MemorySchema;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author yuanzhy

@@ -1,10 +1,10 @@
 package com.yuanzhy.sqldog.cli.util;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Arrays;
 import java.util.stream.Collectors;
+
+import com.yuanzhy.sqldog.core.util.ArrayUtils;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 
 /**
  *

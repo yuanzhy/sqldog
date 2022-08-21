@@ -1,9 +1,9 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
-import com.yuanzhy.sqldog.core.sql.ColumnMetaData;
-
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+
+import com.yuanzhy.sqldog.core.sql.ColumnMetaData;
 
 /**
  * @author yuanzhy

@@ -1,8 +1,8 @@
 package com.yuanzhy.sqldog.core.service;
 
-import com.yuanzhy.sqldog.core.sql.SqlResult;
-
 import java.io.Serializable;
+
+import com.yuanzhy.sqldog.core.sql.SqlResult;
 
 /**
  *

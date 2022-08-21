@@ -1,19 +1,5 @@
 package com.yuanzhy.sqldog.server.io;
 
-import com.yuanzhy.sqldog.core.codec.Codec;
-import com.yuanzhy.sqldog.core.codec.SerializeCodec;
-import com.yuanzhy.sqldog.core.constant.Auth;
-import com.yuanzhy.sqldog.core.constant.Consts;
-import com.yuanzhy.sqldog.core.sql.SqlResult;
-import com.yuanzhy.sqldog.server.common.StorageConst;
-import com.yuanzhy.sqldog.server.sql.SqlCommand;
-import com.yuanzhy.sqldog.server.sql.SqlParser;
-import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
-import com.yuanzhy.sqldog.server.util.ConfigUtil;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,6 +7,21 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.yuanzhy.sqldog.core.codec.Codec;
+import com.yuanzhy.sqldog.core.codec.SerializeCodec;
+import com.yuanzhy.sqldog.core.constant.Auth;
+import com.yuanzhy.sqldog.core.constant.Consts;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.util.StringUtils;
+import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.sql.SqlCommand;
+import com.yuanzhy.sqldog.server.sql.SqlParser;
+import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
+import com.yuanzhy.sqldog.server.util.ConfigUtil;
 
 /**
  * @author yuanzhy

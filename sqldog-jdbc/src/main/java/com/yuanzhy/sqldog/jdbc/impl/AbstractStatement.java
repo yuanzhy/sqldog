@@ -1,12 +1,12 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
-import com.yuanzhy.sqldog.jdbc.SqldogConnection;
-
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.yuanzhy.sqldog.jdbc.SqldogConnection;
 
 /**
  *

@@ -1,7 +1,5 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
-import com.yuanzhy.sqldog.jdbc.SQLError;
-
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -19,6 +17,8 @@ import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
+
+import com.yuanzhy.sqldog.jdbc.SQLError;
 
 /**
  * @author yuanzhy

@@ -1,12 +1,12 @@
 package com.yuanzhy.sqldog.server.core.constant;
 
-import com.yuanzhy.sqldog.core.util.DateUtil;
-import org.apache.commons.lang3.StringUtils;
-
 import java.math.BigDecimal;
 import java.sql.Array;
 import java.sql.Timestamp;
 import java.sql.Types;
+
+import com.yuanzhy.sqldog.core.util.DateUtil;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 
 /**
  * @author yuanzhy

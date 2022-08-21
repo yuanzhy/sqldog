@@ -1,13 +1,13 @@
 package com.yuanzhy.sqldog.jdbc;
 
-import com.yuanzhy.sqldog.core.sql.SqlResult;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
 import java.util.List;
+
+import com.yuanzhy.sqldog.core.sql.SqlResult;
 
 /**
  *

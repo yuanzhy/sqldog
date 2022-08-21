@@ -1,8 +1,5 @@
 package com.yuanzhy.sqldog.server.core;
 
-import com.yuanzhy.sqldog.server.util.Calcites;
-import org.junit.Test;
-
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -11,6 +8,10 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.junit.Test;
+
+import com.yuanzhy.sqldog.server.util.Calcites;
 
 /**
  * @author yuanzhy

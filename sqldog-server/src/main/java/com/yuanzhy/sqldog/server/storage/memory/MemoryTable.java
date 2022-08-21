@@ -1,14 +1,5 @@
 package com.yuanzhy.sqldog.server.storage.memory;
 
-import com.yuanzhy.sqldog.core.util.Asserts;
-import com.yuanzhy.sqldog.server.core.Base;
-import com.yuanzhy.sqldog.server.core.Column;
-import com.yuanzhy.sqldog.server.core.Constraint;
-import com.yuanzhy.sqldog.server.core.Serial;
-import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.core.TableData;
-import org.apache.commons.lang3.ArrayUtils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,6 +8,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.yuanzhy.sqldog.core.util.ArrayUtils;
+import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.core.Base;
+import com.yuanzhy.sqldog.server.core.Column;
+import com.yuanzhy.sqldog.server.core.Constraint;
+import com.yuanzhy.sqldog.server.core.Serial;
+import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.core.TableData;
 
 /**
  * @author yuanzhy

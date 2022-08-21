@@ -1,16 +1,16 @@
 package com.yuanzhy.sqldog.server.core;
 
-import com.yuanzhy.sqldog.core.exception.PersistenceException;
-import com.yuanzhy.sqldog.server.common.StorageConst;
-import com.yuanzhy.sqldog.server.common.model.DataExtent;
-import com.yuanzhy.sqldog.server.common.model.DataPage;
-import com.yuanzhy.sqldog.server.common.model.IndexPage;
-import org.apache.commons.lang3.ArrayUtils;
-
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import com.yuanzhy.sqldog.core.exception.PersistenceException;
+import com.yuanzhy.sqldog.core.util.ArrayUtils;
+import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.model.DataExtent;
+import com.yuanzhy.sqldog.server.common.model.DataPage;
+import com.yuanzhy.sqldog.server.common.model.IndexPage;
 
 /**
  * @author yuanzhy

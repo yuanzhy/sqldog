@@ -2,9 +2,9 @@ package com.yuanzhy.sqldog.server.util;
 
 import com.yuanzhy.sqldog.core.service.Request;
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Schema;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author yuanzhy

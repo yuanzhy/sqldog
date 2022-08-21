@@ -1,20 +1,19 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
-import com.yuanzhy.sqldog.core.constant.StatementType;
-import com.yuanzhy.sqldog.core.sql.SqlResult;
-import com.yuanzhy.sqldog.core.util.Asserts;
-import com.yuanzhy.sqldog.core.util.SqlUtil;
-import com.yuanzhy.sqldog.server.core.Column;
-import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
-
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.yuanzhy.sqldog.core.constant.StatementType;
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.util.ArrayUtils;
+import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.SqlUtil;
+import com.yuanzhy.sqldog.core.util.StringUtils;
+import com.yuanzhy.sqldog.server.core.Column;
+import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 
 /**
  * @author yuanzhy

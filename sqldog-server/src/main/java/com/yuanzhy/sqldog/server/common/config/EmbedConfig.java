@@ -1,10 +1,11 @@
 package com.yuanzhy.sqldog.server.common.config;
 
-import org.apache.commons.lang3.StringUtils;
+import java.util.Properties;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Properties;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 
 /**
  * @author yuanzhy

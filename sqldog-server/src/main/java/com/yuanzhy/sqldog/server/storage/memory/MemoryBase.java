@@ -1,11 +1,12 @@
 package com.yuanzhy.sqldog.server.storage.memory;
 
-import com.yuanzhy.sqldog.core.util.Asserts;
-import com.yuanzhy.sqldog.server.core.Base;
+import java.util.Observable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Observable;
+import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.server.core.Base;
 
 /**
  *

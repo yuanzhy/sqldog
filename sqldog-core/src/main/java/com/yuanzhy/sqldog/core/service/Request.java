@@ -1,8 +1,8 @@
 package com.yuanzhy.sqldog.core.service;
 
-import com.yuanzhy.sqldog.core.constant.RequestType;
-
 import java.io.Serializable;
+
+import com.yuanzhy.sqldog.core.constant.RequestType;
 
 /**
  * @author yuanzhy

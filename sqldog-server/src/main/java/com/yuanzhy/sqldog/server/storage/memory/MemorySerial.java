@@ -1,8 +1,8 @@
 package com.yuanzhy.sqldog.server.storage.memory;
 
-import com.yuanzhy.sqldog.server.core.Serial;
-
 import java.util.concurrent.atomic.AtomicLong;
+
+import com.yuanzhy.sqldog.server.core.Serial;
 
 /**
  * @author yuanzhy

@@ -1,14 +1,15 @@
 package com.yuanzhy.sqldog.server.sql.adapter;
 
-import com.yuanzhy.sqldog.server.core.Schema;
-import org.apache.calcite.schema.Table;
-import org.apache.calcite.schema.impl.AbstractSchema;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+
+import org.apache.calcite.schema.Table;
+import org.apache.calcite.schema.impl.AbstractSchema;
+
+import com.yuanzhy.sqldog.server.core.Schema;
 
 /**
  * @author yuanzhy

@@ -1,14 +1,14 @@
 package com.yuanzhy.sqldog.dialect.spring.jdbc;
 
-import org.springframework.data.jdbc.repository.config.DialectResolver;
-import org.springframework.data.relational.core.dialect.Dialect;
-import org.springframework.jdbc.core.ConnectionCallback;
-import org.springframework.jdbc.core.JdbcOperations;
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Optional;
+
+import org.springframework.data.jdbc.repository.config.DialectResolver;
+import org.springframework.data.relational.core.dialect.Dialect;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcOperations;
 
 /**
  * @author yuanzhy

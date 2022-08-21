@@ -1,20 +1,5 @@
 package com.yuanzhy.sqldog.calcite;
 
-import com.yuanzhy.sqldog.server.core.Schema;
-import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
-import com.yuanzhy.sqldog.server.core.constant.DataType;
-import com.yuanzhy.sqldog.server.sql.adapter.CalciteSchema;
-import com.yuanzhy.sqldog.server.storage.builder.ColumnBuilder;
-import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
-import com.yuanzhy.sqldog.server.storage.memory.MemorySchema;
-import org.apache.calcite.jdbc.CalciteConnection;
-import org.apache.calcite.schema.SchemaPlus;
-import org.apache.calcite.util.ConversionUtil;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -25,6 +10,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import org.apache.calcite.jdbc.CalciteConnection;
+import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.util.ConversionUtil;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.yuanzhy.sqldog.server.core.Schema;
+import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
+import com.yuanzhy.sqldog.server.core.constant.DataType;
+import com.yuanzhy.sqldog.server.sql.adapter.CalciteSchema;
+import com.yuanzhy.sqldog.server.storage.builder.ColumnBuilder;
+import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
+import com.yuanzhy.sqldog.server.storage.memory.MemorySchema;
 
 /**
  * @author yuanzhy

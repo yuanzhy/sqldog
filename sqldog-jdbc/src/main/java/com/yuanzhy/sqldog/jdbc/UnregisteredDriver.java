@@ -1,8 +1,5 @@
 package com.yuanzhy.sqldog.jdbc;
 
-import com.yuanzhy.sqldog.core.SqldogVersion;
-import com.yuanzhy.sqldog.jdbc.impl.ConnectionImpl;
-
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverPropertyInfo;
@@ -12,6 +9,9 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.yuanzhy.sqldog.core.SqldogVersion;
+import com.yuanzhy.sqldog.jdbc.impl.ConnectionImpl;
 
 /**
  * @author yuanzhy

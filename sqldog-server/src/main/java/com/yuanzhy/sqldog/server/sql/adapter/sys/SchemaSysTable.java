@@ -1,7 +1,8 @@
 package com.yuanzhy.sqldog.server.sql.adapter.sys;
 
-import com.yuanzhy.sqldog.server.sql.adapter.ObjectArrayEnumerable;
-import com.yuanzhy.sqldog.server.util.Databases;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.calcite.DataContext;
 import org.apache.calcite.linq4j.Enumerable;
 import org.apache.calcite.rel.type.RelDataType;
@@ -10,8 +11,8 @@ import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.yuanzhy.sqldog.server.sql.adapter.ObjectArrayEnumerable;
+import com.yuanzhy.sqldog.server.util.Databases;
 
 /**
  * @author yuanzhy

@@ -1,5 +1,14 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
+import java.sql.Array;
+import java.sql.DatabaseMetaData;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.apache.calcite.sql.type.SqlTypeName;
+
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.constant.TableType;
 import com.yuanzhy.sqldog.core.sql.ColumnMetaData;
@@ -11,14 +20,6 @@ import com.yuanzhy.sqldog.server.sql.result.ColumnMetaDataBuilder;
 import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.util.Calcites;
 import com.yuanzhy.sqldog.server.util.Databases;
-import org.apache.calcite.sql.type.SqlTypeName;
-
-import java.sql.Array;
-import java.sql.DatabaseMetaData;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author yuanzhy

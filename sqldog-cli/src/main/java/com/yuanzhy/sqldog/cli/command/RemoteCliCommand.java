@@ -1,9 +1,5 @@
 package com.yuanzhy.sqldog.cli.command;
 
-import com.yuanzhy.sqldog.cli.util.FormatterUtil;
-import com.yuanzhy.sqldog.core.util.DateUtil;
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.Closeable;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -19,6 +15,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+
+import com.yuanzhy.sqldog.cli.util.FormatterUtil;
+import com.yuanzhy.sqldog.core.util.DateUtil;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 
 /**
  * @author yuanzhy

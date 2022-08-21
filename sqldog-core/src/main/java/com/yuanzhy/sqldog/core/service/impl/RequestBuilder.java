@@ -1,13 +1,13 @@
 package com.yuanzhy.sqldog.core.service.impl;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import com.yuanzhy.sqldog.core.constant.RequestType;
 import com.yuanzhy.sqldog.core.service.PreparedRequest;
 import com.yuanzhy.sqldog.core.service.Request;
 import com.yuanzhy.sqldog.core.util.Asserts;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * @author yuanzhy

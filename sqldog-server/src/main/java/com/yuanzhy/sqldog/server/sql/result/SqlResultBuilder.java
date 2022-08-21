@@ -1,5 +1,11 @@
 package com.yuanzhy.sqldog.server.sql.result;
 
+import java.sql.ParameterMetaData;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
+
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.ColumnMetaData;
 import com.yuanzhy.sqldog.core.sql.ParamMetaData;
@@ -8,12 +14,6 @@ import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.sql.SqlResultImpl;
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.core.Constraint;
-
-import java.sql.ParameterMetaData;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * @author yuanzhy

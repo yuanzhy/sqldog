@@ -1,15 +1,14 @@
 package com.yuanzhy.sqldog.server.sql.command;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.server.core.constant.DataType;
+import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 import com.yuanzhy.sqldog.server.storage.builder.ColumnBuilder;
 import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
 import com.yuanzhy.sqldog.server.storage.builder.TableBuilder;
-import com.yuanzhy.sqldog.server.sql.result.SqlResultBuilder;
 
 /**
  * @author yuanzhy

@@ -1,10 +1,10 @@
 package com.yuanzhy.sqldog.server.sql.adapter;
 
+import java.io.Reader;
+
 import org.apache.calcite.sql.parser.SqlAbstractParserImpl;
 import org.apache.calcite.sql.parser.SqlParserImplFactory;
 import org.apache.calcite.util.SourceStringReader;
-
-import java.io.Reader;
 
 /**
  * @author yuanzhy

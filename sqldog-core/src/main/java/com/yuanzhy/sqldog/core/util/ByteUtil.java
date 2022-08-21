@@ -1,6 +1,5 @@
 package com.yuanzhy.sqldog.core.util;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -10,12 +9,11 @@ import java.nio.charset.StandardCharsets;
  */
 public class ByteUtil {
 
+    private static final char[] DIGITS_LOWER = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd',
+            'e', 'f' };
+
     public static byte[] toBytes(String s) {
-        try {
-            return s.getBytes(StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return s.getBytes(StandardCharsets.UTF_8);
     }
 
     public static byte[] toBytes(short s) {
@@ -106,12 +104,20 @@ public class ByteUtil {
     }
 
     public static String toString(byte[] bytes, int offset, int len) {
-        try {
-            return new String(bytes, offset, len, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return new String(bytes, offset, len, StandardCharsets.UTF_8);
     }
 
+    public static String toHexString(byte[] bytes) {
+        final int l = bytes.length;
+        final char[] out = new char[l << 1];
+        encodeHex(bytes, l, out);
+        return new String(out);
+    }
 
+    private static void encodeHex(final byte[] data, final int dataLen, final char[] out) {
+        for (int i = 0, j = 0; i < dataLen; i++) {
+            out[j++] = DIGITS_LOWER[(0xF0 & data[i]) >>> 4];
+            out[j++] = DIGITS_LOWER[0x0F & data[i]];
+        }
+    }
 }

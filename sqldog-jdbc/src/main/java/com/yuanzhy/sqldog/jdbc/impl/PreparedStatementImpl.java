@@ -1,10 +1,5 @@
 package com.yuanzhy.sqldog.jdbc.impl;
 
-import com.yuanzhy.sqldog.core.sql.SqlResult;
-import com.yuanzhy.sqldog.core.util.Asserts;
-import com.yuanzhy.sqldog.core.util.SqlUtil;
-import com.yuanzhy.sqldog.jdbc.SqldogConnection;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -31,6 +26,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.UUID;
+
+import com.yuanzhy.sqldog.core.sql.SqlResult;
+import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.SqlUtil;
+import com.yuanzhy.sqldog.jdbc.SqldogConnection;
 
 /**
  *

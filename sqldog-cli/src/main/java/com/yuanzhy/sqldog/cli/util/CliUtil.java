@@ -1,11 +1,11 @@
 package com.yuanzhy.sqldog.cli.util;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
+
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-
-import java.io.ByteArrayOutputStream;
-import java.io.PrintWriter;
 
 /**
  * @author yuanzhy

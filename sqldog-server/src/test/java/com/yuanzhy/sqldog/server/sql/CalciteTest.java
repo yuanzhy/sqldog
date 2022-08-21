@@ -1,13 +1,5 @@
 package com.yuanzhy.sqldog.server.sql;
 
-import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
-import com.yuanzhy.sqldog.server.core.constant.DataType;
-import com.yuanzhy.sqldog.server.sql.adapter.ScannableCalciteTable;
-import com.yuanzhy.sqldog.server.storage.builder.ColumnBuilder;
-import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
-import com.yuanzhy.sqldog.server.storage.builder.TableBuilder;
-import com.yuanzhy.sqldog.server.storage.memory.MemorySchema;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.schema.SchemaPlus;
@@ -28,6 +20,15 @@ import org.apache.calcite.tools.Planner;
 import org.apache.calcite.tools.RelConversionException;
 import org.apache.calcite.tools.ValidationException;
 import org.junit.Test;
+
+import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
+import com.yuanzhy.sqldog.server.core.constant.DataType;
+import com.yuanzhy.sqldog.server.sql.adapter.ScannableCalciteTable;
+import com.yuanzhy.sqldog.server.storage.builder.ColumnBuilder;
+import com.yuanzhy.sqldog.server.storage.builder.ConstraintBuilder;
+import com.yuanzhy.sqldog.server.storage.builder.TableBuilder;
+import com.yuanzhy.sqldog.server.storage.memory.MemorySchema;
 
 /**
  *
