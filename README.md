@@ -12,12 +12,6 @@ Sqldog is a simple RDBMS developed in Java. It supports memory and disk storage 
 
 **Note**: For development and learning use only, do not use in production environment
 
-## Install
-
-1. Install JDK8+ and configure environment variables
-2. Extracting the Release Package to any directory
-3. Configure the "bin" directory to an environment variable
-
 ## Usage
 
 ### Embedded
@@ -59,7 +53,12 @@ driver-class=com.yuanzhy.sqldog.jdbc.Driver
 
 ### Standalone
 
-Modify the configuration file "server/config.properties" if needed
+#### Install
+
+1. Install JDK8+ and configure environment variables
+2. Extracting the Release Package to any directory
+3. Configure the "bin" directory to an environment variable
+4. Modify the configuration file "server/config.properties" if needed
 configuration instruction as follows:
 
 - server.storage.mode：Storage mode, Options are "disk", "memory"
@@ -77,7 +76,7 @@ Start the service after configuration
 dql-server
 ```
 
-### CLI
+#### CLI
 
 - Show help
 ```shell
@@ -121,7 +120,7 @@ exit
 \q
 ```
 
-### JDBC
+#### JDBC
 
 - Import JDBC dependency
 1. maven

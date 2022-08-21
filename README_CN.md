@@ -12,13 +12,6 @@ sqldog 是一款 Java 开发的简易关系型数据库，支持内存和硬盘�
 
 **注意**：仅用于开发和学习使用，切勿用于生产环境
 
-## 安装
-
-### 独立版
-1. 安装JDK8+并配置环境变量
-2. 将安装包解压到任意目录
-3. 将 bin 目录配置到环境变量
-
 ## 使用说明
 
 ### 嵌入版
@@ -59,7 +52,11 @@ driver-class=com.yuanzhy.sqldog.jdbc.Driver
 
 ### 独立版
 
-根据需要修改配置文件 server/config.properties，配置说明如下
+#### 安装
+1. 安装JDK8+并配置环境变量
+2. 将安装包解压到任意目录
+3. 将 bin 目录配置到环境变量
+4. 根据需要修改配置文件 server/config.properties，配置说明如下
 
 - server.storage.mode：存储模式，可选项“disk”、“memory”
 - server.storage.writeCache：是否开启写缓存，开启后可大幅提升写入速度，数据会延迟落盘，可靠性降低（仅disk模式生效）
@@ -76,7 +73,7 @@ driver-class=com.yuanzhy.sqldog.jdbc.Driver
 dql-server
 ```
 
-### 命令行
+#### 命令行
 
 - 查看帮助
 ```shell
@@ -120,7 +117,7 @@ exit
 \q
 ```
 
-### JDBC
+#### JDBC
 
 - 引入 JDBC 依赖
 1. maven
