@@ -26,7 +26,7 @@ public class PersistenceFactory {
     }
 
     static Codec getCodec() {
-        String codecConfig = Configs.get().getProperty("server.storage.codec");
+        String codecConfig = Configs.get().getProperty("sqldog.storage.codec");
         if ("json".equals(codecConfig)) {
             return Holder.JSON_CODEC;
         } else if ("serialize".equals(codecConfig)) {
@@ -38,7 +38,7 @@ public class PersistenceFactory {
 
     static Cipher getCipher() {
         return Holder.CIPHER;
-//        String secretConfig = Configs.get().getProperty("server.storage.secret");
+//        String secretConfig = Configs.get().getProperty("sqldog.storage.secret");
 //        if ("false".equals(secretConfig)) {
 //            return "";
 //        }

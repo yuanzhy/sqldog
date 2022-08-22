@@ -10,9 +10,12 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>sqldog-dialect</artifactId>
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.install.skip>true</maven.install.skip>
+    </properties>
 
     <dependencies>
-
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>

@@ -1,7 +1,9 @@
 #!/bin/sh
 
+VERSION={VERSION}
+
 if [ -z "$SQLDOG_HOME" ] ; then
   SQLDOG_HOME="$( cd "$( dirname "$0"  )" && cd .. && pwd  )"
 fi
 
-java -jar ${SQLDOG_HOME}/cli/sqldog-cli.jar $@
+java -jar ${SQLDOG_HOME}/cli/sqldog-cli-$VERSION.jar $@

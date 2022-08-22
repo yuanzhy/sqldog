@@ -34,7 +34,7 @@ public class RmiServer implements Server {
     private static final Logger log = LoggerFactory.getLogger(RmiServer.class);
     private static final int TIMEOUT = 1000 * 60 * 30; // 30分钟超时
     private final Map<String, ExecutorImpl> executors = new ConcurrentHashMap<>();
-    private final int maxConnections = Configs.get().getIntProperty("server.max-connections");
+    private final int maxConnections = Configs.get().getIntProperty("sqldog.max-connections");
 
     private final ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
@@ -42,10 +42,10 @@ public class RmiServer implements Server {
     @Override
     public void start() {
         Config config = Configs.get();
-        String host = config.getProperty("server.host", "127.0.0.1");
-        int port = Integer.parseInt(config.getProperty("server.port", "2345"));
-        String username = config.getProperty("server.username");
-        String password = config.getProperty("server.password");
+        String host = config.getProperty("sqldog.host", "127.0.0.1");
+        int port = Integer.parseInt(config.getProperty("sqldog.port", "2345"));
+        String username = config.getProperty("sqldog.username");
+        String password = config.getProperty("sqldog.password");
         if (StringUtils.isAnyEmpty(username, password)) {
             log.error("config 'server.username , server.password' is missing");
             return;
@@ -111,8 +111,8 @@ public class RmiServer implements Server {
     }
 
     private class RMIService extends UnicastRemoteObject implements Service {
-        private final String realUsername = Configs.get().getProperty("server.username");
-        private final String realPassword = Configs.get().getProperty("server.password");
+        private final String realUsername = Configs.get().getProperty("sqldog.username");
+        private final String realPassword = Configs.get().getProperty("sqldog.password");
         protected RMIService() throws RemoteException { }
         @Override
         public Executor connect(String username, String password) throws RemoteException {

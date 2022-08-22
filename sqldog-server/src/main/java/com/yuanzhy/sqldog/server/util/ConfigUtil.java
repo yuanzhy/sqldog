@@ -26,16 +26,16 @@ public class ConfigUtil {
     private static Properties props = new Properties();
 
     static {
-        // 先从平级目录找config.properties
+        // 先从平级目录找sqldog.properties
         InputStream in = null;
         try {
-            File configFile = new File(getJarPath().concat("/config.properties"));
+            File configFile = new File(getJarPath().concat("/sqldog.properties"));
             if (configFile.exists()) {
-                log.info("Sqldog.jar同级目录下找到config.properties，读取此配置");
+                log.info("Sqldog.jar同级目录下找到sqldog.properties，读取此配置");
                 in = new FileInputStream(configFile);
             } else {
-                log.info("Sqldog.jar同级目录下没有config.properties，默认读取jar包中的配置");
-                in = ConfigUtil.class.getClassLoader().getResourceAsStream("config.properties");
+                log.info("Sqldog.jar同级目录下没有sqldog.properties，默认读取jar包中的配置");
+                in = ConfigUtil.class.getClassLoader().getResourceAsStream("sqldog.properties");
             }
             props.load(in);
         } catch (IOException e) {
@@ -71,14 +71,14 @@ public class ConfigUtil {
     }
 
     public static boolean isDisk() {
-        return "disk".equals(getProperty("server.storage.mode", "disk"));
+        return "disk".equals(getProperty("sqldog.storage.mode", "disk"));
     }
 
     public static boolean useWriteCache() {
-        return getBoolProperty("server.storage.writeCache");
+        return getBoolProperty("sqldog.storage.writeCache");
     }
 
     public static boolean isMemory() {
-        return "memory".equals(getProperty("server.storage.mode"));
+        return "memory".equals(getProperty("sqldog.storage.mode"));
     }
 }

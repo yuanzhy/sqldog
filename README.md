@@ -58,7 +58,7 @@ driver-class=com.yuanzhy.sqldog.jdbc.Driver
 1. Install JDK8+ and configure environment variables
 2. Extracting the Release Package to any directory
 3. Configure the "bin" directory to an environment variable
-4. Modify the configuration file "server/config.properties" if needed
+4. Modify the configuration file "server/sqldog.properties" if needed
 configuration instruction as follows:
 
 - server.storage.mode：Storage mode, Options are "disk", "memory"

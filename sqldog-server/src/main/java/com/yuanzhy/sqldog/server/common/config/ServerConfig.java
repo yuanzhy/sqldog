@@ -21,19 +21,19 @@ public class ServerConfig implements Config {
     /**
      *
      */
-    private Properties props = new Properties();
+    protected final Properties props = new Properties();
 
     {
-        // 先从平级目录找config.properties
+        // 先从平级目录找sqldog.properties
         InputStream in = null;
         try {
-            File configFile = new File(getJarPath().concat("/config.properties"));
+            File configFile = new File(getJarPath().concat("/sqldog.properties"));
             if (configFile.exists()) {
-                log.info("Sqldog.jar同级目录下找到config.properties，读取此配置");
+                log.info("Sqldog.jar同级目录下找到sqldog.properties，读取此配置");
                 in = new FileInputStream(configFile);
             } else {
-                log.info("Sqldog.jar同级目录下没有config.properties，默认读取jar包中的配置");
-                in = Config.class.getClassLoader().getResourceAsStream("config.properties");
+                log.info("Sqldog.jar同级目录下没有sqldog.properties，默认读取jar包中的配置");
+                in = Config.class.getClassLoader().getResourceAsStream("sqldog.properties");
             }
             props.load(in);
         } catch (IOException e) {

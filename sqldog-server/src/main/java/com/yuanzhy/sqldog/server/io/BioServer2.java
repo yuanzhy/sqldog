@@ -34,7 +34,7 @@ public class BioServer2 implements Server {
 
     @Override
     public void start() {
-        int port = Integer.parseInt(Configs.get().getProperty("server.port", "2345"));
+        int port = Integer.parseInt(Configs.get().getProperty("sqldog.port", "2345"));
         try {
             ServerSocket ss = new ServerSocket(port);
             while (true) {

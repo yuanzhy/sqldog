@@ -1,5 +1,7 @@
 @echo off
 
+set VERSION={VERSION}
+
 set dir=%~dp0
 
 if "%SQLDOG_HOME%"=="" (
@@ -31,4 +33,4 @@ if "%allparam:~-1%"==" " set "allparam=%allparam:~0,-1%"&goto intercept_right
 
 :eof
 
-java -jar %SQLDOG_HOME%\cli\sqldog-cli.jar %allparam%
+java -jar %SQLDOG_HOME%\cli\sqldog-cli-%VERSION%.jar %allparam%

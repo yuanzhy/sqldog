@@ -36,7 +36,7 @@ public class DiskPersistence implements Persistence {
     private final String rootPath;
     public DiskPersistence(Codec codec) {
         this.codec = codec;
-        String dataPath = Configs.get().getProperty("server.storage.path", "data");
+        String dataPath = Configs.get().getProperty("sqldog.storage.path", "data");
         if (Paths.get(dataPath).isAbsolute()) {
             new File(dataPath).mkdirs();
         } else {

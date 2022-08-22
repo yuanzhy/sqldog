@@ -1,7 +1,10 @@
 package com.yuanzhy.sqldog.server.common.config;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,20 +21,33 @@ public class EmbedConfig implements Config {
     /**
      *
      */
-    private Properties props = new Properties();
+    private final Properties props = new Properties();
 
     public EmbedConfig(String filePath) {
-        if (StringUtils.isEmpty(filePath)) {
-            props.put("server.storage.mode", "memory");
-        } else {
-            props.put("server.storage.mode", "disk");
-            props.put("server.storage.writeCache", "true");
-            props.put("server.storage.path", filePath);
+        InputStream in = null;
+        try {
+            in = Config.class.getClassLoader().getResourceAsStream("META-INF/sqldog.properties");
+            if (in == null) {
+                log.info("META-INF/sqldog.properties not exists, load default");
+                in = Config.class.getClassLoader().getResourceAsStream("sqldog.properties");
+            }
+            props.load(in);
+        } catch (IOException e) {
+            log.error("读取config配置文件失败", e);
+        } finally {
+            IOUtils.closeQuietly(in);
         }
-        props.put("server.storage.codec", "json");
-        props.put("server.storage.secret", "false");
-        props.put("server.codec", "serialize");
-        log.info("加载嵌入式配置");
+        if (StringUtils.isEmpty(filePath)) {
+            props.put("sqldog.storage.mode", "memory");
+        } else {
+            props.put("sqldog.storage.mode", "disk");
+            props.putIfAbsent("sqldog.storage.writeCache", "true");
+            props.put("sqldog.storage.path", filePath);
+        }
+        props.putIfAbsent("sqldog.storage.codec", "json");
+        props.putIfAbsent("sqldog.storage.secret", "false");
+        props.putIfAbsent("sqldog.codec", "serialize");
+        log.info("Embedded configuration loaded");
     }
 
     @Override

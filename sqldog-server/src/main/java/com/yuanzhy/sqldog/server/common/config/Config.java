@@ -35,14 +35,14 @@ public interface Config {
     }
 
     default boolean isDisk() {
-        return "disk".equals(getProperty("server.storage.mode", "disk"));
+        return "disk".equals(getProperty("sqldog.storage.mode", "disk"));
     }
 
     default boolean useWriteCache() {
-        return getBoolProperty("server.storage.writeCache");
+        return getBoolProperty("sqldog.storage.writeCache");
     }
 
     default boolean isMemory() {
-        return "memory".equals(getProperty("server.storage.mode"));
+        return "memory".equals(getProperty("sqldog.storage.mode"));
     }
 }

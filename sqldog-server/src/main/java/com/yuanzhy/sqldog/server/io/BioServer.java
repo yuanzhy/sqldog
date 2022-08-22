@@ -38,10 +38,10 @@ public class BioServer implements Server {
     private final Codec<SqlResult> codec = new SerializeCodec<>();
     @Override
     public void start() {
-        String host = ConfigUtil.getProperty("server.host", "127.0.0.1");
-        int port = Integer.parseInt(ConfigUtil.getProperty("server.port", "2345"));
-        String username = ConfigUtil.getProperty("server.username");
-        String password = ConfigUtil.getProperty("server.password");
+        String host = ConfigUtil.getProperty("sqldog.host", "127.0.0.1");
+        int port = Integer.parseInt(ConfigUtil.getProperty("sqldog.port", "2345"));
+        String username = ConfigUtil.getProperty("sqldog.username");
+        String password = ConfigUtil.getProperty("sqldog.password");
         if (StringUtils.isAnyEmpty(username, password)) {
             LOG.error("config 'server.username , server.password' is missing");
             return;
@@ -144,8 +144,8 @@ public class BioServer implements Server {
             // username:xxx,password:123
             String paramUsername = StringUtils.substringBetween(arr[1], "username:", ",password");
             String paramPassword = StringUtils.substringAfter(arr[1], "password:");
-            String realUsername = ConfigUtil.getProperty("server.username");
-            String realPassword = ConfigUtil.getProperty("server.password");
+            String realUsername = ConfigUtil.getProperty("sqldog.username");
+            String realPassword = ConfigUtil.getProperty("sqldog.password");
             if (realUsername.equals(paramUsername) && realPassword.equals(paramPassword)) {
                 authenticated = true;
             } else {

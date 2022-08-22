@@ -1,10 +1,12 @@
 #!/bin/sh
 
+VERSION={VERSION}
 if [ -z "$SQLDOG_HOME" ] ; then
   SQLDOG_HOME="$( cd "$( dirname "$0"  )" && cd .. && pwd  )"
 fi
 
 echo Using JAVA_HOME:    $JAVA_HOME
 echo Using SQLDOG_HOME:  $SQLDOG_HOME
+echo Sqldog Version is $VERSION
 
-nohup java -DSQLDOG_HOME=$SQLDOG_HOME -jar ${SQLDOG_HOME}/server/sqldog-server.jar > /dev/null &
+nohup java -DSQLDOG_HOME=$SQLDOG_HOME -Dlogback.configurationFile=$SQLDOG_HOME/conf/logback.xml -jar ${SQLDOG_HOME}/server/sqldog-server-$VERSION.jar > /dev/null &
