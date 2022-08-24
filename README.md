@@ -21,19 +21,19 @@ Sqldog is a simple RDBMS developed in Java. It supports memory and disk storage 
 <dependency>
     <groupId>com.yuanzhy.sqldog</groupId>
     <artifactId>sqldog-jdbc</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.1</version>
 </dependency>
 <dependency>
     <groupId>com.yuanzhy.sqldog</groupId>
     <artifactId>sqldog-server</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.1</version>
 </dependency>
 ```
 2. gradle
 ```groovy
 dependencies {
-    implementation "com.yuanzhy.sqldog:sqldog-jdbc:0.1-SNAPSHOT"
-    implementation "com.yuanzhy.sqldog:sqldog-server:0.1-SNAPSHOT"
+    implementation "com.yuanzhy.sqldog:sqldog-jdbc:0.1"
+    implementation "com.yuanzhy.sqldog:sqldog-server:0.1"
 }
 ```
 
@@ -128,13 +128,13 @@ exit
 <dependency>
     <groupId>com.yuanzhy.sqldog</groupId>
     <artifactId>sqldog-jdbc</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.1</version>
 </dependency>
 ```
 2. gradle
 ```groovy
 dependencies {
-    implementation "com.yuanzhy.sqldog:sqldog-jdbc:0.1-SNAPSHOT"
+    implementation "com.yuanzhy.sqldog:sqldog-jdbc:0.1"
 }
 ```
 
