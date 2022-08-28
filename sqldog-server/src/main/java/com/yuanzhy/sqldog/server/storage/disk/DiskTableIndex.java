@@ -1,7 +1,7 @@
 package com.yuanzhy.sqldog.server.storage.disk;
 
-import com.yuanzhy.sqldog.core.util.ByteUtil;
 import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.model.BranchIndexPage;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
 import com.yuanzhy.sqldog.server.common.model.IndexPage;
 import com.yuanzhy.sqldog.server.common.model.LeafIndexPage;
@@ -13,9 +13,7 @@ import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.core.Table;
 import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
-import org.apache.commons.lang3.ArrayUtils;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -45,12 +43,12 @@ public class DiskTableIndex {
         boolean isUnited = colNames.length > 1;
         List<IndexPage.LeafResult> list = isUnited ? new ArrayList<>() : null;
         for (int i = 0; i < colNames.length; i++) {
-            IndexPage rootPage = persistence.readIndex(tablePath, colNames[i]);
+            BranchIndexPage rootPage = (BranchIndexPage) persistence.readIndex(tablePath, colNames[i]);
             if (rootPage == null) {
                 return false;
             }
             Column column = table.getColumn(colNames[i]);
-            LeafIndexPage leafPage = findLeafIndex(rootPage, column, values[i], null);
+            LeafIndexPage leafPage = rootPage.findLeafIndex(column, values[i]);
 //            byte[] leafBuf = leafPage.getData();
             IndexPage.LeafResult lr = leafPage.findLeafStart(column, values[i]);
             if (lr.isNew) { // 如果联合唯一有一个是新增的就不会冲突，否则继续匹配下一字段
@@ -84,7 +82,7 @@ public class DiskTableIndex {
     public void insertIndex(Column column, byte[] value, DataPage dataPage) {
         final String colName = column.getName();
         // 读取第一页 即根索引
-        final IndexPage rootPage = persistence.readIndex(tablePath, colName);
+        final BranchIndexPage rootPage = (BranchIndexPage) persistence.readIndex(tablePath, colName);
         if (rootPage == null) { // 首次插入索引
             insertIndexFirst(colName, dataPage, value);
             return;
@@ -104,7 +102,7 @@ public class DiskTableIndex {
         // ----------------- begin ------------------
         // 带更新的树枝索引，按照从下到上（即最后一个为根节点）的顺序
         final LinkedList<UpdatedIndex> toBeUpdated = new LinkedList<>();
-        LeafIndexPage leafPage = findLeafIndex(rootPage, column, value, toBeUpdated);
+        LeafIndexPage leafPage = rootPage.findLeafIndex(column, value, toBeUpdated);
         final IndexPage.LeafResult lr = leafPage.findLeafStart(column, value);
         if (lr.leafPage != null) {
             leafPage = lr.leafPage;
@@ -123,55 +121,69 @@ public class DiskTableIndex {
         updateBranchIndex(colName, value, updateBranchType, toBeUpdated, changedPage);
     }
 
-    private void updateBranchIndex(String colName, byte[] value, int updateBranchType, LinkedList<UpdatedIndex> toBeUpdated, IndexPage leafPage) {
+    private void updateBranchIndex(String colName, byte[] value, int updateBranchType, LinkedList<UpdatedIndex> toBeUpdated, LeafIndexPage leafPage) {
         if (updateBranchType == 0) {
             return;
         }
         for (int i = 0; i < toBeUpdated.size(); i++) {
             final IndexPage lowerIndex = i == 0 ? leafPage : toBeUpdated.get(i - 1).getIndexPage();
             final UpdatedIndex updatedIndex = toBeUpdated.get(i);
+            final BranchIndexPage updatedPage = updatedIndex.getIndexPage();
 //            final byte[] value = updatedIndex.getValue();
-            final byte[] updateBuf = updatedIndex.getIndexPage().getData();
-            final byte level = updateBuf[StorageConst.INDEX_LEVEL_START];
+//            final byte[] updateBuf = updatedIndex.getIndexPage().getData();
+            final int level = updatedPage.level();
             final int dataStart = updatedIndex.getDataStart(); // 待插入的位置，【值-索引地址值】
-            final int freeStart = ByteUtil.toShort(updateBuf, StorageConst.FREE_START_OFFSET);
-            final int freeEnd = ByteUtil.toShort(updateBuf, StorageConst.FREE_END_OFFSET);
+            final int freeStart = updatedPage.freeStart();
+            final int freeEnd = updatedPage.freeEnd();
             final int branchValCount = value.length + 2 + 4; // 2数据长度，4索引地址长度
             if (updateBranchType == 1) { // 替换最小值情况
-                int minValLen = ByteUtil.toShort(updateBuf, dataStart);
-                int minValCount = 2 + minValLen + 4;
+                final byte[] minVal = updatedPage.value(dataStart);
+                final int minValLen = minVal.length;
+                final int minValCount = 2 + minValLen + 4;
                 if (freeEnd - freeStart + minValCount >= branchValCount) { // 不需要分页
                     if (branchValCount == minValCount) { // 正好, 直接替换写入, 头都不用更了
-                        writeIndexValue(lowerIndex, value, StorageConst.INDEX_BRANCH_START, updateBuf);
-                        persistence.writeIndex(tablePath, colName, updatedIndex.getIndexPage());
+                        updatedPage.replaceIndexValue(lowerIndex, value, StorageConst.INDEX_BRANCH_START);
+                        updatedPage.save();
                     } else { // 需要左移或右移
-                        System.arraycopy(updateBuf, StorageConst.INDEX_BRANCH_START + minValCount,
-                                updateBuf, StorageConst.INDEX_BRANCH_START + branchValCount,
-                                freeEnd - StorageConst.INDEX_BRANCH_START - minValCount);
-                        writeIndexValue(lowerIndex, value, StorageConst.INDEX_BRANCH_START, updateBuf);
-                        updateFreeStart(freeStart + branchValCount - minValCount, updateBuf);
-                        persistence.writeIndex(tablePath, colName, updatedIndex.getIndexPage());
+//                        System.arraycopy(updateBuf, StorageConst.INDEX_BRANCH_START + minValCount,
+//                                updateBuf, StorageConst.INDEX_BRANCH_START + branchValCount,
+//                                freeEnd - StorageConst.INDEX_BRANCH_START - minValCount);
+//                        writeIndexValue(lowerIndex, value, StorageConst.INDEX_BRANCH_START, updateBuf);
+//                        updateFreeStart(freeStart + branchValCount - minValCount, updateBuf);
+//                        persistence.writeIndex(tablePath, colName, updatedIndex.getIndexPage());
+                        updatedPage.replaceIndexValue(lowerIndex, value, minVal, StorageConst.INDEX_BRANCH_START);
+                        updatedPage.save();
                     }
                 } else { // 需要分页, 替换你都不够, 太虽了
                     // 向左插入一页新的
-                    byte[] newBuf1 = IndexPage.newBuffer(level);
-                    int freeStart1 = writeIndexValue(lowerIndex, value, StorageConst.INDEX_BRANCH_START, newBuf1);
-                    updateFreeStart(freeStart1, newBuf1);
-                    IndexPage page1 = persistence.writeIndex(tablePath, colName, newBuf1);
+                    BranchIndexPage page1 = (BranchIndexPage) persistence.newIndex(tablePath, colName, level);
+//                    byte[] newBuf1 = IndexPage.newBuffer(level);
+//                    int freeStart1 = writeIndexValue(lowerIndex, value, StorageConst.INDEX_BRANCH_START, newBuf1);
+//                    updateFreeStart(freeStart1, newBuf1);
+//                    IndexPage page1 = persistence.writeIndex(tablePath, colName, newBuf1);
+                    page1.addIndexValue(lowerIndex, value);
+                    page1.save();
                     if (i == toBeUpdated.size() - 1) {
                         // 当前是根节点了，需要升级 =======================================
-                        IndexPage rootPage = updatedIndex.getIndexPage();
-                        IndexPage page2 = persistence.writeIndex(tablePath, colName, updateBuf); // 将原根写入其他位置, 把0号位置让给新根
-                        byte[] rootBuf = rootPage.getData();
-                        rootBuf[StorageConst.INDEX_LEVEL_START] = (byte)(level+1); // 写入level
-                        int rootStart = writeIndexValue(page1, value, StorageConst.INDEX_BRANCH_START, rootBuf); // 写入第一页的地址
+                        BranchIndexPage rootPage = updatedIndex.getIndexPage();
+                        // 将原根写入其他位置, 把0号位置让给新根
+//                        IndexPage page2 = persistence.writeIndex(tablePath, colName, updateBuf);
+                        BranchIndexPage page2 = (BranchIndexPage) persistence.newIndex(tablePath, colName, updatedPage.level());
+                        page2 = updatedPage.copyTo(page2.getFileId());
+//                        page2.save();
+//                        byte[] rootBuf = rootPage.getData();
+//                        int rootStart = writeIndexValue(page1, value, StorageConst.INDEX_BRANCH_START, rootBuf); // 写入第一页的地址
+                        rootPage.level(level + 1);
+                        final int rootStart = rootPage.replaceIndexValue(page1, value, StorageConst.INDEX_BRANCH_START); // 写入第一页的地址
                         // 写入第二页的地址
-                        int len2 = ByteUtil.toShort(updateBuf, StorageConst.INDEX_BRANCH_START);
-                        byte[] val2 = ArrayUtils.subarray(updateBuf, StorageConst.INDEX_BRANCH_START + 2, StorageConst.INDEX_BRANCH_START + 2 + len2);
-                        rootStart = writeIndexValue(page2, val2, rootStart, rootBuf);
-                        updateFreeStart(rootStart, rootBuf); // 更新新根的freeStart头信息
+//                        int len2 = ByteUtil.toShort(updateBuf, StorageConst.INDEX_BRANCH_START);
+//                        byte[] val2 = ArrayUtils.subarray(updateBuf, StorageConst.INDEX_BRANCH_START + 2, StorageConst.INDEX_BRANCH_START + 2 + len2);
+//                        rootStart = writeIndexValue(page2, val2, rootStart, rootBuf);
+//                        updateFreeStart(rootStart, rootBuf); // 更新新根的freeStart头信息
+                        final byte[] val2 = page2.value(StorageConst.INDEX_BRANCH_START);
+                        rootPage.addIndexValue(page2, val2, rootStart);
                         // 保存新根
-                        persistence.writeIndex(tablePath, colName, rootPage);
+                        rootPage.save();
                     } else {
                         // 父索引需要新增了, 改为2. 前置索引改为新增的索引
                         updateBranchType = 2;
@@ -181,70 +193,93 @@ public class DiskTableIndex {
             } else {
                 // 新增的情况
                 if (freeEnd - freeStart >= branchValCount) { // 够了, start后的数据右移
-                    if (freeStart != dataStart) {
-                        System.arraycopy(updateBuf, dataStart, updateBuf, dataStart + branchValCount, freeStart - dataStart);
-                    }
-                    writeIndexValue(lowerIndex, value, dataStart, updateBuf);
-                    updateFreeStart(freeStart + branchValCount, updateBuf);
-                    persistence.writeIndex(tablePath, colName, updatedIndex.getIndexPage());
+//                    if (freeStart != dataStart) {
+//                        System.arraycopy(updateBuf, dataStart, updateBuf, dataStart + branchValCount, freeStart - dataStart);
+//                    }
+//                    writeIndexValue(lowerIndex, value, dataStart, updateBuf);
+//                    updateFreeStart(freeStart + branchValCount, updateBuf);
+//                    persistence.writeIndex(tablePath, colName, updatedIndex.getIndexPage());
+                    updatedPage.insertIndexValue(lowerIndex, value, dataStart);
+                    updatedPage.save();
                     // --------------------------------------
                     // 由于够了, 没有新增页, 父索引不需要更新了
                     break;
                     // --------------------------------------
                 } else { // 不够了, 新开页
-                    IndexPage page1 = null, page2 = null;
+                    BranchIndexPage page1 = null, page2 = null;
                     // 分裂, 最小值特殊处理. 插入左页, 2页没有变化所以不用更了
                     if (dataStart == StorageConst.INDEX_BRANCH_START) {
-                        final byte[] newBuf1 = IndexPage.newBuffer(level);
+//                        final byte[] newBuf1 = IndexPage.newBuffer(level);
+//                        // 2. 写入值   最小值 直接写入第一页
+//                        int _freeStart = writeIndexValue(lowerIndex, value, dataStart, newBuf1);
+//                        updateFreeStart(_freeStart, newBuf1);
+//                        page1 = persistence.writeIndex(tablePath, colName, newBuf1); // 第一页为新增的，返回地址相关信息
+//                        toBeUpdated.set(i, new UpdatedIndex(page1, dataStart));
                         // 2. 写入值   最小值 直接写入第一页
-                        int _freeStart = writeIndexValue(lowerIndex, value, dataStart, newBuf1);
-                        updateFreeStart(_freeStart, newBuf1);
-                        page1 = persistence.writeIndex(tablePath, colName, newBuf1); // 第一页为新增的，返回地址相关信息
+                        page1 = (BranchIndexPage) persistence.newIndex(tablePath, colName, level);
+                        page1.addIndexValue(lowerIndex, value, dataStart);
+                        page1.save();
                         toBeUpdated.set(i, new UpdatedIndex(page1, dataStart));
                     } else { // 最大值和中间值 逻辑类似. 可能会有拷贝到第二页的数据为空的情况, 即参数5长度为0
-                        final byte[] newBuf2 = IndexPage.newBuffer(level);
-                        // 拷贝1后面的数据到2
-                        System.arraycopy(updateBuf, dataStart, newBuf2, StorageConst.INDEX_BRANCH_START, freeStart - dataStart);
-                        int freeStart1 = dataStart;
-                        int freeStart2 = StorageConst.INDEX_BRANCH_START + freeStart - dataStart;
-                        // 判断够不够写入的
-                        if (branchValCount <= freeEnd - freeStart2) { // 2够,写入2开头
-                            System.arraycopy(newBuf2, StorageConst.INDEX_BRANCH_START, newBuf2, StorageConst.INDEX_BRANCH_START + branchValCount, freeStart - dataStart);
-                            writeIndexValue(lowerIndex, value, StorageConst.INDEX_BRANCH_START, newBuf2);
-                            freeStart2 += branchValCount;
-                        } else if (branchValCount <= freeEnd - freeStart1) { // 1够,写入1末尾
-                            freeStart1 = writeIndexValue(lowerIndex, value, freeStart1, updateBuf);
-                        } else { // 都不够, 这种情况不可能, 因为会限制大于1000长度的字段禁止建立索引
-                            throw new RuntimeException("分页后仍然不够存储一个索引的, 暂时放弃治疗了");
-                        }
-                        // 更正1和2的头部
-                        updateFreeStart(freeStart1, updateBuf);
-                        updateFreeStart(freeStart2, newBuf2);
+//                        final byte[] newBuf2 = IndexPage.newBuffer(level);
+//                        // 拷贝1后面的数据到2
+//                        System.arraycopy(updateBuf, dataStart, newBuf2, StorageConst.INDEX_BRANCH_START, freeStart - dataStart);
+//                        int freeStart1 = dataStart;
+//                        int freeStart2 = StorageConst.INDEX_BRANCH_START + freeStart - dataStart;
+//                        // 判断够不够写入的
+//                        if (branchValCount <= freeEnd - freeStart2) { // 2够,写入2开头
+//                            System.arraycopy(newBuf2, StorageConst.INDEX_BRANCH_START, newBuf2, StorageConst.INDEX_BRANCH_START + branchValCount, freeStart - dataStart);
+//                            writeIndexValue(lowerIndex, value, StorageConst.INDEX_BRANCH_START, newBuf2);
+//                            freeStart2 += branchValCount;
+//                        } else if (branchValCount <= freeEnd - freeStart1) { // 1够,写入1末尾
+//                            freeStart1 = writeIndexValue(lowerIndex, value, freeStart1, updateBuf);
+//                        } else { // 都不够, 这种情况不可能, 因为会限制大于1000长度的字段禁止建立索引
+//                            throw new RuntimeException("分页后仍然不够存储一个索引的, 暂时放弃治疗了");
+//                        }
+//                        // 更正1和2的头部
+//                        updateFreeStart(freeStart1, updateBuf);
+//                        updateFreeStart(freeStart2, newBuf2);
+                        page2 = updatedPage.insertIndexValueNewly(lowerIndex, value, dataStart);
                         // 写入新页2 和 原页
-                        page2 = persistence.writeIndex(tablePath, colName, newBuf2);
-                        persistence.writeIndex(tablePath, colName, updatedIndex.getIndexPage());
-                        toBeUpdated.set(i, new UpdatedIndex(page2, freeStart2));
+//                        page2 = persistence.writeIndex(tablePath, colName, newBuf2);
+//                        persistence.writeIndex(tablePath, colName, updatedIndex.getIndexPage());
+                        page2.save();
+                        updatedPage.save();
+                        toBeUpdated.set(i, new UpdatedIndex(page2, page2.freeStart()));
                     }
                     if (i == toBeUpdated.size() - 1) {
                         // 当前是根节点了，需要升级 =======================================
-                        IndexPage rootPage = updatedIndex.getIndexPage();
+                        BranchIndexPage rootPage = updatedIndex.getIndexPage();
                         if (page1 == null) { // 谁为空谁就是原根
-                            page1 = persistence.writeIndex(tablePath, colName, updateBuf); // 将原根写入其他位置, 把0号位置让给新根
+//                            page1 = persistence.writeIndex(tablePath, colName, updateBuf); // 将原根写入其他位置, 把0号位置让给新根
+                            // 将原根写入其他位置, 把0号位置让给新根
+                            page1 = (BranchIndexPage) persistence.newIndex(tablePath, colName, level);
+                            page1 = updatedPage.copyTo(page1.getFileId());
                         } else {
-                            page2 = persistence.writeIndex(tablePath, colName, updateBuf); // 将原根写入其他位置, 把0号位置让给新根
+//                            page2 = persistence.writeIndex(tablePath, colName, updateBuf); // 将原根写入其他位置, 把0号位置让给新根
+                            // 将原根写入其他位置, 把0号位置让给新根
+                            page2 = (BranchIndexPage) persistence.newIndex(tablePath, colName, level);
+                            page2 = updatedPage.copyTo(page2.getFileId());
                         }
-                        byte[] rootBuf = rootPage.getData();
-                        rootBuf[StorageConst.INDEX_LEVEL_START] = (byte)(level+1); // 写入level
-                        int len1 = ByteUtil.toShort(page1.getData(), StorageConst.INDEX_BRANCH_START);
-                        byte[] val1 = ArrayUtils.subarray(page1.getData(), StorageConst.INDEX_BRANCH_START + 2, StorageConst.INDEX_BRANCH_START + 2 + len1);
-                        int rootStart = writeIndexValue(page1, val1, StorageConst.INDEX_BRANCH_START, rootBuf); // 写入第一页的地址
+//                        byte[] rootBuf = rootPage.getData();
+//                        rootBuf[StorageConst.INDEX_LEVEL_START] = (byte)(level+1); // 写入level
+//                        int len1 = ByteUtil.toShort(page1.getData(), StorageConst.INDEX_BRANCH_START);
+//                        byte[] val1 = ArrayUtils.subarray(page1.getData(), StorageConst.INDEX_BRANCH_START + 2, StorageConst.INDEX_BRANCH_START + 2 + len1);
+//                        int rootStart = writeIndexValue(page1, val1, StorageConst.INDEX_BRANCH_START, rootBuf); // 写入第一页的地址
                         // 写入第二页的地址
-                        int len2 = ByteUtil.toShort(page2.getData(), StorageConst.INDEX_BRANCH_START);
-                        byte[] val2 = ArrayUtils.subarray(page2.getData(), StorageConst.INDEX_BRANCH_START + 2, StorageConst.INDEX_BRANCH_START + 2 + len2);
-                        rootStart = writeIndexValue(page2, val2, rootStart, rootBuf);
-                        updateFreeStart(rootStart, rootBuf); // 更新新根的freeStart头信息
+//                        int len2 = ByteUtil.toShort(page2.getData(), StorageConst.INDEX_BRANCH_START);
+//                        byte[] val2 = ArrayUtils.subarray(page2.getData(), StorageConst.INDEX_BRANCH_START + 2, StorageConst.INDEX_BRANCH_START + 2 + len2);
+//                        rootStart = writeIndexValue(page2, val2, rootStart, rootBuf);
+//                        updateFreeStart(rootStart, rootBuf); // 更新新根的freeStart头信息
+                        rootPage.level(level + 1);
+                        final byte[] val1 = page1.minValue();
+                        final int rootStart = rootPage.replaceIndexValue(page1, val1, StorageConst.INDEX_BRANCH_START);
+                        // 写入第二页的地址
+                        final byte[] val2 = page2.minValue();
+                        rootPage.addIndexValue(page2, val2, rootStart);
                         // 保存新根
-                        persistence.writeIndex(tablePath, colName, rootPage);
+//                        persistence.writeIndex(tablePath, colName, rootPage);
+                        rootPage.save();
                     }
                 }
             }
@@ -257,140 +292,12 @@ public class DiskTableIndex {
         leafPage.addIndexValue(dataPage, value);
         // --------------------------------------------------------------------------------
         // 再写入根索引
-        IndexPage rootPage = new IndexPage(tablePath, colName, StorageConst.INDEX_DEF_FILE_ID);
+        BranchIndexPage rootPage = new BranchIndexPage(tablePath, colName, StorageConst.INDEX_DEF_FILE_ID);
         rootPage.level(1);
         rootPage.addIndexValue(leafPage, value);
 
         rootPage.save();
         leafPage.save();
-    }
-
-    @Deprecated
-    private void updateFreeStart(int freeStart, byte[] newBuf) {
-        byte[] startBytes = ByteUtil.toBytes((short)freeStart);
-        newBuf[StorageConst.FREE_START_OFFSET] = startBytes[0];
-        newBuf[StorageConst.FREE_START_OFFSET+1] = startBytes[1];
-    }
-
-    private int writeIndexValue(IndexPage indexPage, byte[] value, int dataStart, byte[] newBuf) {
-        byte[] valuelen = ByteUtil.toBytes((short)value.length);
-        System.arraycopy(valuelen, 0, newBuf, dataStart, 2);
-        dataStart += 2;
-        for (byte v : value) {
-            newBuf[dataStart++] = v;
-        }
-        // 写入 索引地址值
-        // 索引地址值：4字节，其中2字节表示索引文件id，2字节表示页偏移
-        for (byte b : indexPage.toAddress()) {
-            newBuf[dataStart++] = b;
-        }
-        return dataStart;
-    }
-
-    // 寻找叶子节点，并收集需要更新的树枝节点信息
-    private LeafIndexPage findLeafIndex(IndexPage pPage, Column column, byte[] value, LinkedList<UpdatedIndex> toBeUpdated) {
-//        final byte[] buf = pPage.getData();
-        final int freeStart = pPage.freeStart();
-        final int dataStart = StorageConst.INDEX_BRANCH_START;
-        final byte[] existsVal = pPage.val(dataStart);
-        final int valLength = existsVal.length;
-        short fileId, pageOffset;
-        int compared = compare(column, value, existsVal);
-        if (compared == 0) {
-            // 取相等的地址值
-            if (toBeUpdated != null)
-                toBeUpdated.addFirst(new UpdatedIndex(pPage, dataStart)); // 树枝节点等值情况取值的开头
-        } else if (compared < 0) {
-            // 比最小值还小，直接插入最左边.
-//            dataStart -= 2 + valLength; // 指针移动到上一条记录的最后
-            if (toBeUpdated != null)
-                toBeUpdated.addFirst(new UpdatedIndex(pPage, dataStart));
-            if (dataStart == StorageConst.INDEX_BRANCH_START) { // 前面已经没有数据了，直接取第一条数据对应的索引地址
-                dataStart += 2 + valLength;
-            } else {
-                dataStart -= 4; // 获取前一个值对应的索引地址
-            }
-        } else { // > 0
-            boolean found = true;
-            // 此处无需处理等于的情况，找到了小于的值，直接取它前面的值即可，此值可以等于value, 也可以小于value.处理逻辑类似
-            while (compare(column, value, existsVal) > 0) {
-                dataStart += 4; // 跳过索引地址值长度
-                if (dataStart > freeStart) {
-                    throw new RuntimeException("数据异常");
-                }
-                if (dataStart == freeStart) {
-                    found = false;
-                    break;
-                }
-                valLength = ByteUtil.toShort(buf, dataStart);
-                dataStart += 2;
-                existsVal = ArrayUtils.subarray(buf, dataStart, dataStart += valLength);
-            }
-            // 获取前一个值对应的索引地址
-            boolean eq = compare(column, value, existsVal) == 0;
-            if (found) { // 等值的情况，树枝节点定位到值的开头，不等值的情况定位前一个地址的末尾 ==========================
-                dataStart -= 2 + valLength; // 找到比插入的值大的了，这时寻找前一个值的地址 末尾
-            } // else { // 遍历到最后还没有，说明新插入的值是最大的，直接找最后一页的地址}
-            if (toBeUpdated != null) {
-                toBeUpdated.addFirst(new UpdatedIndex(pPage, dataStart));
-            }
-            if (eq) {
-                dataStart += 2 + valLength; // 等值，跳到等值的索引地址值位置
-            } else {
-                dataStart -= 4; // 不等，跳到前一个值的索引地址值位置
-            }
-        }
-        // 获取 索引地址值
-        fileId = ByteUtil.toShort(buf, dataStart);
-        dataStart += 2;
-        pageOffset = ByteUtil.toShort(buf, dataStart);
-        // 根据父索引获取直接子索引
-        final IndexPage indexPage = persistence.readIndex(tablePath, column.getName(), fileId, pageOffset);
-        byte[] indexBuf = indexPage.getData();
-        byte level = indexBuf[StorageConst.INDEX_LEVEL_START];
-        if (level > 0) { // 树枝
-            return findLeafIndex(indexPage, column, value, toBeUpdated);
-        } else {
-            return new LeafIndexPage(indexPage);
-        }
-    }
-
-    @Deprecated
-    private int compare(Column column, byte[] v1, byte[] v2) {
-        if (Arrays.equals(v1, v2)) {
-            return 0;
-        }
-        switch (column.getDataType()) {
-            case INT:
-            case SERIAL:
-                return Integer.compare(ByteUtil.toInt(v1), ByteUtil.toInt(v2));
-            case BIGINT:
-            case BIGSERIAL:
-            case DATE:
-            case TIMESTAMP:
-            case TIME:
-                return Long.compare(ByteUtil.toLong(v1), ByteUtil.toLong(v2));
-            case SMALLINT:
-            case SMALLSERIAL:
-                return Short.compare(ByteUtil.toShort(v1), ByteUtil.toShort(v2));
-            case TINYINT:
-            case BOOLEAN:
-                return Byte.compare(v1[0], v2[0]);
-            case FLOAT:
-                return Float.compare(ByteUtil.toFloat(v1), ByteUtil.toFloat(v2));
-            case DOUBLE:
-                return Double.compare(ByteUtil.toDouble(v1), ByteUtil.toDouble(v2));
-            case BYTEA:
-            case TEXT:
-            case ARRAY:
-            case JSON:
-                throw new UnsupportedOperationException("暂未实现大字段比较大小");
-            case DECIMAL:
-            case NUMERIC:
-                return new BigDecimal(ByteUtil.toString(v1)).compareTo(new BigDecimal(ByteUtil.toString(v2)));
-            default: // VARCHAR, CHAR
-                return ByteUtil.toString(v1).compareTo(ByteUtil.toString(v2));
-        }
     }
 
     public void updateIndexAddr(List<Map<DataPage.Row, Integer>> rowList, DataPage dataPage) {
@@ -403,7 +310,7 @@ public class DiskTableIndex {
             String[] colNames = constraint.getColumnNames();
             for (int i = 0; i < colNames.length; i++) {
                 Column column = table.getColumn(colNames[i]);
-                IndexPage rootPage = persistence.readIndex(tablePath, colNames[i]);
+                BranchIndexPage rootPage = (BranchIndexPage) persistence.readIndex(tablePath, colNames[i]);
                 int idx = table.getColumnIndex(colNames[i]);
                 for (Map<DataPage.Row, Integer> map : rowList) {
                     Map.Entry<DataPage.Row, Integer> entry = map.entrySet().iterator().next();
@@ -411,7 +318,7 @@ public class DiskTableIndex {
                     final int newEnd = entry.getValue();
                     final byte[] value = tableData.valueToBytes(column, rr.data[idx]);
                     final LinkedList<UpdatedIndex> toBeUpdated = new LinkedList<>();
-                    LeafIndexPage leafPage = findLeafIndex(rootPage, column, value, toBeUpdated);
+                    LeafIndexPage leafPage = rootPage.findLeafIndex(column, value, toBeUpdated);
                     IndexPage.LeafResult lr = leafPage.findLeafStart(column, value);
                     if (lr.isNew) {
                         continue; // 没找到，不处理了
@@ -441,12 +348,12 @@ public class DiskTableIndex {
             String[] colNames = constraint.getColumnNames();
             for (int i = 0; i < colNames.length; i++) {
                 Column column = table.getColumn(colNames[i]);
-                IndexPage rootPage = persistence.readIndex(tablePath, colNames[i]);
+                BranchIndexPage rootPage = (BranchIndexPage) persistence.readIndex(tablePath, colNames[i]);
                 int idx = table.getColumnIndex(colNames[i]);
                 for (DataPage.Row row : rowList) {
                     final byte[] value = tableData.valueToBytes(column, row.data[idx]);
                     final LinkedList<UpdatedIndex> toBeUpdated = new LinkedList<>();
-                    LeafIndexPage leafPage = findLeafIndex(rootPage, column, value, toBeUpdated);
+                    LeafIndexPage leafPage = rootPage.findLeafIndex(column, value, toBeUpdated);
 //                    byte[] leafBuf = leafPage.getData();
 //                    int freeStart = leafPage.freeStart();
                     final IndexPage.LeafResult lr = leafPage.findLeafStart(column, value);
@@ -494,7 +401,7 @@ public class DiskTableIndex {
 //                    updateFreeStart(freeStart - _len, leafBuf);
 //                    persistence.writeIndex(tablePath, colNames[i], leafPage);
                     if (needUpdateBranch) {
-                        leafPage.minValue();
+//                        leafPage.minValue();
                         updateBranchIndex(column.getName(), leafPage.minValue(), 1, toBeUpdated, leafPage);
                     }
                 }

@@ -12,7 +12,6 @@
             <pattern>[%thread] %d{yyyy-MM-dd HH:mm:ss} %-5level %logger{35} - %msg%n </pattern>
         </encoder>
     </appender>
-    <!--<logger name="com.thunisoft.np.tools" level="info"/>-->
     <root level="info">
         <appender-ref ref="file" />
         <appender-ref ref="stdout" />

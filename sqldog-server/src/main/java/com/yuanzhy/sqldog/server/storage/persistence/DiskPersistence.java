@@ -1,21 +1,5 @@
 package com.yuanzhy.sqldog.server.storage.persistence;
 
-import com.yuanzhy.sqldog.core.exception.PersistenceException;
-import com.yuanzhy.sqldog.core.util.Asserts;
-import com.yuanzhy.sqldog.core.util.ByteUtil;
-import com.yuanzhy.sqldog.server.common.StorageConst;
-import com.yuanzhy.sqldog.server.common.model.DataExtent;
-import com.yuanzhy.sqldog.server.common.model.DataPage;
-import com.yuanzhy.sqldog.server.common.model.IndexPage;
-import com.yuanzhy.sqldog.server.common.model.LeafIndexPage;
-import com.yuanzhy.sqldog.server.common.model.Page;
-import com.yuanzhy.sqldog.server.core.Codec;
-import com.yuanzhy.sqldog.server.core.Persistence;
-import com.yuanzhy.sqldog.server.util.ConfigUtil;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -25,6 +9,24 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import com.yuanzhy.sqldog.core.exception.PersistenceException;
+import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.ByteUtil;
+import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.model.BranchIndexPage;
+import com.yuanzhy.sqldog.server.common.model.DataExtent;
+import com.yuanzhy.sqldog.server.common.model.DataPage;
+import com.yuanzhy.sqldog.server.common.model.IndexPage;
+import com.yuanzhy.sqldog.server.common.model.LeafIndexPage;
+import com.yuanzhy.sqldog.server.common.model.Page;
+import com.yuanzhy.sqldog.server.core.Codec;
+import com.yuanzhy.sqldog.server.core.Persistence;
+import com.yuanzhy.sqldog.server.util.ConfigUtil;
 
 /**
  * @author yuanzhy
@@ -265,7 +267,7 @@ public class DiskPersistence implements Persistence {
     }
 
     @Override
-    public IndexPage writeIndex(String tablePath, String colName, byte[] newBuf) throws PersistenceException {
+    public IndexPage newIndex(String tablePath, String colName, int level) throws PersistenceException {
         // 找到最后一页
         File folder = new File(resolvePath(rootPath, tablePath, StorageConst.TABLE_INDEX_PATH));
         String[] fileIdArr = folder.list((dir, name) -> name.startsWith(colName.concat(StorageConst.TABLE_INDEX_NAME_SEP)));
@@ -278,9 +280,12 @@ public class DiskPersistence implements Persistence {
             lastFileId = Arrays.stream(fileIdArr).map(n -> Short.parseShort(StringUtils.substringAfterLast(n, StorageConst.TABLE_INDEX_NAME_SEP))).max(Short::compareTo).orElse((short)0);
             lastFile = new File(folder, indexFileName(colName, lastFileId));
         }
-        write(lastFile, lastFile.length(), newBuf);
-        int offset = (int)(lastFile.length() / StorageConst.PAGE_SIZE) - 1;
-        return new IndexPage(tablePath, colName, lastFileId, offset, newBuf);
+        final int offset = (int)(lastFile.length() / StorageConst.PAGE_SIZE);
+        IndexPage indexPage = level == 0 ?
+                new LeafIndexPage(tablePath, colName, lastFileId, offset) :
+                new BranchIndexPage(tablePath, colName, lastFileId, offset).level(level);
+        write(lastFile, lastFile.length(), indexPage);
+        return indexPage;
     }
 
     @Override
@@ -300,7 +305,7 @@ public class DiskPersistence implements Persistence {
         final int offset = (int)(lastFile.length() / StorageConst.PAGE_SIZE) - 1;
         IndexPage indexPage = level == 0 ?
                 new LeafIndexPage(tablePath, colName, lastFileId, offset) :
-                new IndexPage(tablePath, colName, lastFileId, offset);
+                new BranchIndexPage(tablePath, colName, lastFileId, offset).level(level);
         write(lastFile, lastFile.length(), indexPage);
         return indexPage;
     }
@@ -311,17 +316,9 @@ public class DiskPersistence implements Persistence {
         if (!indexFile.exists()) {
             return null;
         }
-        long pos = (long)offset * StorageConst.PAGE_SIZE;
-        // 索引的pos是参数给的，不会超出
-//        if (pos >= indexFile.length()) { // pos 已经大于文件大小了，取下一个文件
-//            String nextFileId = String.valueOf(Integer.parseInt(fileId) + 1); // next fileId
-//            int nextOffset = (int)((pos - file.length()) / offset);
-//            return readIndex(tablePath, colName, nextFileId, nextOffset);
-//        }
-        IndexPage indexPage = new IndexPage(tablePath, colName, fileId, offset);
-        read(indexFile, pos, indexPage);
-        return indexPage;
+        return read(indexFile, tablePath, colName, fileId, offset);
     }
+
 
     @Override
     public LeafIndexPage readLeafIndex(String tablePath, String colName, short fileId, int offset) throws PersistenceException {
@@ -408,6 +405,24 @@ public class DiskPersistence implements Persistence {
         }
     }
 
+    private IndexPage read(File file, String tablePath, String colName, short fileId, int offset) {
+        long pos = (long)offset * StorageConst.PAGE_SIZE;
+        // 索引的pos是参数给的，不会超出
+//        if (pos >= indexFile.length()) { // pos 已经大于文件大小了，取下一个文件
+//            String nextFileId = String.valueOf(Integer.parseInt(fileId) + 1); // next fileId
+//            int nextOffset = (int)((pos - file.length()) / offset);
+//            return readIndex(tablePath, colName, nextFileId, nextOffset);
+//        }
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            if (pos > 0) {
+                raf.seek(pos);
+            }
+            return IndexPage.from(raf, tablePath, colName, fileId, offset);
+        } catch (IOException e) {
+            throw new PersistenceException(e);
+        }
+    }
+
     @Deprecated
     private void read(File file, long pos, byte[] buf) {
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
@@ -430,20 +445,6 @@ public class DiskPersistence implements Persistence {
             }
             for (Page page : pages) {
                 page.dumpDataTo(raf);
-            }
-        } catch (IOException e) {
-            throw new PersistenceException(e);
-        }
-    }
-
-    @Deprecated
-    private void write(File file, long pos, byte[]... bytesArray) {
-        try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
-            if (pos > 0) {
-                raf.seek(pos);
-            }
-            for (byte[] bytes : bytesArray) {
-                raf.write(bytes);
             }
         } catch (IOException e) {
             throw new PersistenceException(e);

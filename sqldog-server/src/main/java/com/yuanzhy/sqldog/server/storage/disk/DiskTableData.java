@@ -548,8 +548,8 @@ public class DiskTableData extends AbstractTableData implements TableData {
                 if (isAdd) {
                     row.put(column.getName(), column.defaultValue());
                 }
+                this.insertData(row);
             }
-            this.insertData(row);
             dataPage = persistence.readPage(tablePath, dataPage.getFileId(), dataPage.getOffset() + 1);
         }
         persistence.delete(tmpTablePath);

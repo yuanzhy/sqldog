@@ -209,21 +209,24 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
     }
 
     @Override
-    public IndexPage writeIndex(String tablePath, String colName, byte[] newBuf) throws PersistenceException {
-        // 如果是写入新页面，则尝试持久化所有缓存避免不一致问题
+    public IndexPage newIndex(String tablePath, String colName, int level) throws PersistenceException {
         final String indexKeyPrefix = tablePath + Consts.SEPARATOR + colName + Consts.SEPARATOR;
         String[] keyArr = indexPageMap.keySet().stream().filter(k -> k.startsWith(indexKeyPrefix)).toArray(String[]::new);
         for (String key : keyArr) {
             persistIndexCache(key);
         }
-        return super.writeIndex(tablePath, colName, newBuf);
+        return super.newIndex(tablePath, colName, level);
     }
 
-//    @Override
-//    public IndexPage getInsertableIndex(String tablePath, String colName, int level) throws PersistenceException {
-//        // TODO cache实现
-//        return super.getInsertableIndex(tablePath, colName, level);
-//    }
+    @Override
+    public IndexPage getInsertableIndex(String tablePath, String colName, int level) throws PersistenceException {
+        final String indexKeyPrefix = tablePath + Consts.SEPARATOR + colName + Consts.SEPARATOR;
+        String[] keyArr = indexPageMap.keySet().stream().filter(k -> k.startsWith(indexKeyPrefix)).toArray(String[]::new);
+        for (String key : keyArr) {
+            persistIndexCache(key);
+        }
+        return super.getInsertableIndex(tablePath, colName, level);
+    }
 
     @Override
     public void writeIndex(String tablePath, String colName, IndexPage indexPage) throws PersistenceException {
@@ -325,6 +328,10 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
 
     private String indexKey(String tablePath, String colName, short fileId, int offset) {
         return tablePath + Consts.SEPARATOR + colName + Consts.SEPARATOR + fileId + Consts.SEPARATOR + offset;
+    }
+
+    private String insertableIndexKey(String tablePath, String colName) {
+        return tablePath + Consts.SEPARATOR + colName;
     }
 
     private class CacheObject<T> {

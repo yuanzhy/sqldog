@@ -1,20 +1,24 @@
 package com.yuanzhy.sqldog.server.common.model;
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.math.BigDecimal;
+import java.util.Arrays;
+
+import org.apache.commons.lang3.ArrayUtils;
+
+import com.yuanzhy.sqldog.core.exception.PersistenceException;
 import com.yuanzhy.sqldog.core.util.ByteUtil;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
-import org.apache.commons.lang3.ArrayUtils;
-
-import java.math.BigDecimal;
-import java.util.Arrays;
 
 /**
  * @author yuanzhy
  * @version 1.0
  * @date 2022/4/17
  */
-public class IndexPage extends Page {
+public abstract class IndexPage extends Page {
 
     protected final String columnName;
 
@@ -22,7 +26,7 @@ public class IndexPage extends Page {
         this(tablePath, columnName, fileId, 0);
     }
 
-    public IndexPage(String tablePath, String columnName, short fileId, int offset) {
+    protected IndexPage(String tablePath, String columnName, short fileId, int offset) {
         this(tablePath, columnName, fileId, offset, newLeafBuffer());
     }
 
@@ -45,41 +49,53 @@ public class IndexPage extends Page {
     }
 
     @Override
-    public IndexPage copyTo(short fileId) {
-        return new IndexPage(tablePath, columnName, fileId, 0, data);
-    }
-
+    public abstract IndexPage copyTo(short fileId);
     public boolean isLeaf() {
         return data[8] == 0;
     }
 
-    @Deprecated
-    public static IndexPage fromAddress(IndexPage indexPage, int start) {
-        short fileId = ByteUtil.toShort(indexPage.data, start);
-        start += 2;
-        int pageOffset = ByteUtil.toShort(indexPage.data, start);
-        return new IndexPage(indexPage.tablePath, indexPage.columnName, fileId, pageOffset, null);
+    public boolean isBranch() {
+        return !isLeaf();
     }
 
-    protected byte[] newBuffer() {
-        // 先写入叶子节点
-        byte[] buf = new byte[StorageConst.PAGE_SIZE];
-        // Page Header
-        //  - CHECKSUM 未实现
-//            leafPage[0] = leafPage[1] = leafPage[2] = leafPage[3] = 0;
-        //  - FREE_START  FREE_END
-        //  - FREE_START  FREE_END
-        byte[] endBytes = ByteUtil.toBytes(StorageConst.PAGE_SIZE);
-        buf[6] = endBytes[0];
-        buf[7] = endBytes[1];
-        buf[8] = (byte) 0;
-        return buf;
+    public static IndexPage from(RandomAccessFile raf, String tablePath, String colName, short fileId, int offset) {
+        byte[] data = new byte[StorageConst.PAGE_SIZE];
+        try {
+            int n = raf.read(data);
+            if (data.length != n) {
+                throw new PersistenceException("Illegal extra data, The correct size is " + data.length + ", in fact is " + n);
+            }
+        } catch (IOException e) {
+            throw new PersistenceException(e);
+        }
+        if (data[8] == 0) {
+            return new LeafIndexPage(tablePath, colName, fileId, offset, data);
+        } else {
+            return new BranchIndexPage(tablePath, colName, fileId, offset, data);
+        }
     }
 
-    @Deprecated
-    public static byte[] newLeafBuffer() {
+    public static IndexPage to(RandomAccessFile raf, String tablePath, String colName, short fileId, int offset) {
+        byte[] data = new byte[StorageConst.PAGE_SIZE];
+        try {
+            int n = raf.read(data);
+            if (data.length != n) {
+                throw new PersistenceException("Illegal extra data, The correct size is " + data.length + ", in fact is " + n);
+            }
+        } catch (IOException e) {
+            throw new PersistenceException(e);
+        }
+        if (data[8] == 0) {
+            return new LeafIndexPage(tablePath, colName, fileId, offset, data);
+        } else {
+            return new BranchIndexPage(tablePath, colName, fileId, offset, data);
+        }
+    }
+
+    protected static byte[] newLeafBuffer() {
         return newBuffer(0);
     }
+
     @Deprecated
     public static byte[] newBuffer(int level) {
         // 先写入叶子节点
@@ -96,20 +112,18 @@ public class IndexPage extends Page {
         return buf;
     }
 
-    public byte[] val(final int start) {
+    public byte[] value(final int start) {
         int dataStart = start;
         int valLength = ByteUtil.toShort(data, dataStart);
         dataStart += 2; // 跳过数据长度标志位
         return ArrayUtils.subarray(data, dataStart, dataStart + valLength);
     }
 
-    public byte[] minValue() { // 获取索引页的最小值
-        short valLen = ByteUtil.toShort(data, StorageConst.INDEX_LEAF_START);
-        return ArrayUtils.subarray(data, StorageConst.INDEX_LEAF_START + 2, StorageConst.INDEX_LEAF_START + 2 + valLen);
-    }
+    public abstract byte[] minValue();
 
-    public void level(int level) {
+    public IndexPage level(int level) {
         data[8] = (byte) level;
+        return this;
     }
 
     public int level() {
@@ -151,28 +165,6 @@ public class IndexPage extends Page {
             default: // VARCHAR, CHAR
                 return ByteUtil.toString(v1).compareTo(ByteUtil.toString(v2));
         }
-    }
-
-    public int addIndexValue(LeafIndexPage leafPage, byte[] value, int dataStart) {
-        // 非叶子节点不含 PREV_PAGE and NEXT_PAGE
-        // 写入索引数据：[值-索引地址值]
-        byte[] valuelen = ByteUtil.toBytes((short)value.length);
-        System.arraycopy(valuelen, 0, data, dataStart, 2);
-        dataStart += 2;
-        for (byte v : value) {
-            data[dataStart++] = v;
-        }
-        // 写入 索引地址值
-        // 索引地址值：4字节，其中2字节表示索引文件id，2字节表示页偏移
-        for (byte b : leafPage.toAddress()) {
-            data[dataStart++] = b;
-        }
-        updateFreeStart(dataStart);
-        return dataStart;
-    }
-
-    public int addIndexValue(LeafIndexPage leafPage, byte[] value) {
-        return addIndexValue(leafPage, value, StorageConst.INDEX_BRANCH_START);
     }
 
     public void save() {

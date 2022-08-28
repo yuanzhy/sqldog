@@ -75,8 +75,8 @@ public class DataPage extends Page {
         // 数据地址值：8字节，其中2字节表示数据文件id，2字节表示页偏移，2字节表示offset，2字节表示length
         byte[] bytes1 = ByteUtil.toBytes(getFileId()); // 定位到文件
         byte[] bytes2 = ByteUtil.toBytes((short) getOffset()); // 定位到第几页
-        byte[] bytes3 = ByteUtil.toBytes(row.start); // 数据起始偏移
-        byte[] bytes4 = ByteUtil.toBytes(row.end - row.start); // 数据长度
+        byte[] bytes3 = ByteUtil.toBytes((short) row.start); // 数据起始偏移
+        byte[] bytes4 = ByteUtil.toBytes((short) (row.end - row.start)); // 数据长度
         return new byte[]{bytes1[0], bytes1[1], bytes2[0], bytes2[1], bytes3[0], bytes3[1], bytes4[0], bytes4[1]};
     }
 

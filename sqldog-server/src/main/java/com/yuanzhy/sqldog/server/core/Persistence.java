@@ -106,16 +106,7 @@ public interface Persistence {
      */
     void writeIndex(String tablePath, String colName, IndexPage indexPage) throws PersistenceException;
 
-    /**
-     * 追加索引，并返回位置，相当于新增一个页
-     * @param tablePath
-     * @param colName
-     * @param newBuf
-     * @return
-     * @throws PersistenceException
-     */
-    @Deprecated
-    IndexPage writeIndex(String tablePath, String colName, byte[] newBuf) throws PersistenceException;
+    IndexPage newIndex(String tablePath, String colName, int level) throws PersistenceException;
 
     IndexPage getInsertableIndex(String tablePath, String colName, int level) throws PersistenceException;
 
@@ -176,7 +167,7 @@ public interface Persistence {
     }
 
     default IndexPage readIndex(String tablePath, String colName, short fileId) throws PersistenceException {
-        return readIndex(tablePath, colName, StorageConst.INDEX_DEF_FILE_ID, 0);
+        return readIndex(tablePath, colName, fileId, 0);
     }
 
     /**

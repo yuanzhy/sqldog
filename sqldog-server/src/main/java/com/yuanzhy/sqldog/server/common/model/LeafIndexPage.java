@@ -24,7 +24,7 @@ public class LeafIndexPage extends IndexPage {
         this(tablePath, columnName, fileId, offset, newLeafBuffer());
     }
 
-    private LeafIndexPage(String tablePath, String columnName, short fileId, int offset, byte[] data) {
+    LeafIndexPage(String tablePath, String columnName, short fileId, int offset, byte[] data) {
         super(tablePath, columnName, fileId, offset, data);
     }
 
@@ -35,6 +35,11 @@ public class LeafIndexPage extends IndexPage {
     @Override
     public LeafIndexPage copyTo(short fileId) {
         return new LeafIndexPage(tablePath, columnName, fileId, 0, data);
+    }
+
+    @Override
+    public byte[] minValue() { // 获取索引页的最小值
+        return this.value(StorageConst.INDEX_LEAF_START);
     }
 
     public LeafIndexPage prev() {
@@ -81,15 +86,19 @@ public class LeafIndexPage extends IndexPage {
             dataAddr2 = ArrayUtils.subarray(data, dataStart, dataStart += 8);
         } while (!Arrays.equals(dataAddress, dataAddr2));
         // dataStart - 8 : dataStart对应地址值后面，移动到前面
-        return new LeafResult(dataStart - 8, leafPage, addrLen);
+        return new LeafResult(dataStart, leafPage, addrLen);
     }
 
     public LeafResult findLeafStart(Column column, byte[] value) {
         final byte[] leafBuf = this.data;
         int dataStart = StorageConst.INDEX_LEAF_START;
         int freeStart = freeStart();
-        byte[] existsVal = val(dataStart);
+        if (dataStart == freeStart) {
+            return new LeafResult(true, dataStart, this, 0);
+        }
+        byte[] existsVal = value(dataStart);
         int valLength = existsVal.length;
+        dataStart += 2 + valLength;
         int compared = compare(column, value, existsVal);
         if (compared == 0) {
             // 和最小值相等，叶子长度+1
@@ -166,19 +175,21 @@ public class LeafIndexPage extends IndexPage {
      */
     public boolean deleteOne(final byte[] value, final int addressStart, final int addressLength) {
         final int freeStart = this.freeStart();
-        int _len = 0;
+        int _len;
         boolean needUpdateBranch = false;
         if (addressLength == 1) { // 只有一个长度, 需要连数据也一起删掉
-            _len = 4 + value.length + 2; // 一条索引数据的总长度(不算索引地址的长度)
+            _len = 8 + 4 + value.length + 2; // 一条索引数据的总长度(不算索引地址的长度)
             if (addressStart - _len == StorageConst.INDEX_LEAF_START) {
                 needUpdateBranch = true;
                 // 是最小值了，需要同时删除树枝索引的最小值
             }
+        } else {
+            _len = 8;
         }
         // 从索引中删除该地址
         System.arraycopy(this.data, addressStart, this.data, addressStart - _len, freeStart - addressStart);
         updateFreeStart(freeStart - _len);
-        PersistenceFactory.get().writeIndex(tablePath, columnName, this);
+        this.save();
         return needUpdateBranch;
     }
 

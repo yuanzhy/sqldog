@@ -37,11 +37,6 @@ public abstract class Page {
         return offset;
     }
 
-    @Deprecated
-    public byte[] getData() {
-        return data;
-    }
-
     public short freeStart() {
         return ByteUtil.toShort(data, StorageConst.FREE_START_OFFSET);
     }

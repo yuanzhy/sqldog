@@ -276,7 +276,7 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
                 scanner.close();
             }
         } while (rs.next());
-        System.out.println("(total -> " + rows + " rows)");
+        System.out.println("(total -> " + rows + " rows)"); // TODO rows拿的不是总数
     }
 
     private List<Integer> getShowColumnIndex(ResultSetMetaData metaData) throws SQLException {

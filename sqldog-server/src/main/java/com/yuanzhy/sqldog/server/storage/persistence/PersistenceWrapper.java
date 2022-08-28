@@ -80,8 +80,8 @@ public class PersistenceWrapper implements Persistence {
     }
 
     @Override
-    public IndexPage writeIndex(String tablePath, String colName, byte[] newBuf) throws PersistenceException {
-        return delegate.writeIndex(tablePath, colName, newBuf);
+    public IndexPage newIndex(String tablePath, String colName, int level) throws PersistenceException {
+        return delegate.newIndex(tablePath, colName, level);
     }
 
     @Override
