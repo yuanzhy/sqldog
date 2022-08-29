@@ -2,8 +2,7 @@ package com.yuanzhy.sqldog.server.common.model;
 
 import java.util.LinkedList;
 
-import org.apache.commons.lang3.ArrayUtils;
-
+import com.yuanzhy.sqldog.core.util.ArrayUtils;
 import com.yuanzhy.sqldog.core.util.ByteUtil;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Column;
@@ -22,7 +21,7 @@ public class BranchIndexPage extends IndexPage {
     }
 
     public BranchIndexPage(String tablePath, String columnName, short fileId, int offset) {
-        this(tablePath, columnName, fileId, offset, newLeafBuffer());
+        this(tablePath, columnName, fileId, offset, newBuffer());
     }
 
     BranchIndexPage(String tablePath, String columnName, short fileId, int offset, byte[] data) {
@@ -32,6 +31,16 @@ public class BranchIndexPage extends IndexPage {
     @Override
     public BranchIndexPage copyTo(short fileId) {
         return new BranchIndexPage(tablePath, columnName, fileId, 0, data);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return freeStart() == StorageConst.INDEX_BRANCH_START;
+    }
+
+    @Override
+    public void clear() {
+        updateFreeStart(StorageConst.INDEX_BRANCH_START);
     }
 
     @Override

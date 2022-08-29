@@ -137,6 +137,10 @@ public class DiskTableIndex {
             final int freeEnd = updatedPage.freeEnd();
             final int branchValCount = value.length + 2 + 4; // 2数据长度，4索引地址长度
             if (updateBranchType == 1) { // 替换最小值情况
+//                if (lowerIndex.isEmpty()) { // TODO 索引降级
+//                    updatedPage.clear();
+//                    continue;
+//                }
                 final byte[] minVal = updatedPage.value(dataStart);
                 final int minValLen = minVal.length;
                 final int minValCount = 2 + minValLen + 4;
@@ -401,6 +405,7 @@ public class DiskTableIndex {
 //                    updateFreeStart(freeStart - _len, leafBuf);
 //                    persistence.writeIndex(tablePath, colNames[i], leafPage);
                     if (needUpdateBranch) {
+                        // TODO 删除到最后需要索引降级
 //                        leafPage.minValue();
                         updateBranchIndex(column.getName(), leafPage.minValue(), 1, toBeUpdated, leafPage);
                     }

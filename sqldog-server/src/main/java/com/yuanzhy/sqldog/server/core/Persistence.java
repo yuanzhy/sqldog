@@ -8,7 +8,6 @@ import java.util.Map;
 import com.yuanzhy.sqldog.core.exception.PersistenceException;
 import com.yuanzhy.sqldog.core.util.ArrayUtils;
 import com.yuanzhy.sqldog.server.common.StorageConst;
-import com.yuanzhy.sqldog.server.common.model.DataExtent;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
 import com.yuanzhy.sqldog.server.common.model.IndexPage;
 import com.yuanzhy.sqldog.server.common.model.LeafIndexPage;
@@ -57,17 +56,6 @@ public interface Persistence {
      * @return DataPage: nullable
      */
     DataPage readPage(String tablePath, short fileId, int offset) throws PersistenceException;
-
-    /**
-     * 读取一个数据区, 需要大量tableScan的情况建议按区读取
-     * @param tablePath table路径
-     * @param fileId    文件标识
-     * @param offset    偏移量
-     * @return
-     * @throws PersistenceException
-     */
-    @Deprecated
-    DataExtent readExtent(String tablePath, short fileId, int offset) throws PersistenceException;
 
     /**
      * 获取可插入的数据页
@@ -124,25 +112,7 @@ public interface Persistence {
     IndexPage readIndex(String tablePath, String colName, short fileId, int offset) throws PersistenceException;
 
     LeafIndexPage readLeafIndex(String tablePath, String colName, short fileId, int offset) throws PersistenceException;
-    /**
-     * 读取第一个文件的一个数据区
-     * @param tablePath table路径
-     * @param offset    偏移量
-     * @return
-     */
-    @Deprecated
-    default DataExtent readExtent(String tablePath, int offset) throws PersistenceException {
-        return readExtent(tablePath, StorageConst.TABLE_DEF_FILE_ID, offset);
-    }
-    /**
-     * 读取第一个文件的一个数据区，默认offset为0
-     * @param tablePath table路径
-     * @return
-     */
-    @Deprecated
-    default DataExtent readExtent(String tablePath) throws PersistenceException {
-        return readExtent(tablePath, 0);
-    }
+
     /**
      * 读取第一个文件的一个数据页
      * @param tablePath table路径

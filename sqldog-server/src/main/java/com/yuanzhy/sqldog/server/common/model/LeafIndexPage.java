@@ -1,13 +1,13 @@
 package com.yuanzhy.sqldog.server.common.model;
 
+import java.util.Arrays;
+
+import com.yuanzhy.sqldog.core.util.ArrayUtils;
 import com.yuanzhy.sqldog.core.util.ByteUtil;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
-import org.apache.commons.lang3.ArrayUtils;
-
-import java.util.Arrays;
 
 /**
  * @author yuanzhy
@@ -21,7 +21,7 @@ public class LeafIndexPage extends IndexPage {
     }
 
     public LeafIndexPage(String tablePath, String columnName, short fileId, int offset) {
-        this(tablePath, columnName, fileId, offset, newLeafBuffer());
+        this(tablePath, columnName, fileId, offset, newBuffer());
     }
 
     LeafIndexPage(String tablePath, String columnName, short fileId, int offset, byte[] data) {
@@ -35,6 +35,16 @@ public class LeafIndexPage extends IndexPage {
     @Override
     public LeafIndexPage copyTo(short fileId) {
         return new LeafIndexPage(tablePath, columnName, fileId, 0, data);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return freeStart() == StorageConst.INDEX_LEAF_START;
+    }
+
+    @Override
+    public void clear() {
+        updateFreeStart(StorageConst.INDEX_LEAF_START);
     }
 
     @Override

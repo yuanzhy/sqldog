@@ -368,7 +368,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
             dataPage.save();
 //            if (!updatedDatas.isEmpty()) {
 //                tableIndex.updateIndexAddr(updatedDatas,  dataPage);
-//            }
+//            } // TODO 如果更新的是所有，直接清空索引
             if (!deletedDatas.isEmpty()) {
                 tableIndex.deleteIndex(deletedDatas, dataPage);
             }

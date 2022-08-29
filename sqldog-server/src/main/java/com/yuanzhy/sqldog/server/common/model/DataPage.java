@@ -1,5 +1,9 @@
 package com.yuanzhy.sqldog.server.common.model;
 
+import java.math.BigDecimal;
+import java.util.Collection;
+
+import com.yuanzhy.sqldog.core.util.ArrayUtils;
 import com.yuanzhy.sqldog.core.util.ByteUtil;
 import com.yuanzhy.sqldog.server.common.StorageConst;
 import com.yuanzhy.sqldog.server.common.collection.PrimitiveByteList;
@@ -7,9 +11,6 @@ import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.core.constant.DataType;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
-
-import java.math.BigDecimal;
-import java.util.Collection;
 
 /**
  * 数据页 = 16KB

@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.yuanzhy.sqldog.core.exception.PersistenceException;
-import com.yuanzhy.sqldog.server.common.model.DataExtent;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
 import com.yuanzhy.sqldog.server.common.model.IndexPage;
 import com.yuanzhy.sqldog.server.common.model.LeafIndexPage;
@@ -48,11 +47,6 @@ public class PersistenceWrapper implements Persistence {
     @Override
     public DataPage readPage(String tablePath, short fileId, int offset) throws PersistenceException {
         return delegate.readPage(tablePath, fileId, offset);
-    }
-
-    @Override
-    public DataExtent readExtent(String tablePath, short fileId, int offset) throws PersistenceException {
-        return delegate.readExtent(tablePath, fileId, offset);
     }
 
     @Override

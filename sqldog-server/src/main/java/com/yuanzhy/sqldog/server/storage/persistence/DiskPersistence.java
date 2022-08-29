@@ -3,7 +3,7 @@ package com.yuanzhy.sqldog.server.storage.persistence;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -18,15 +18,14 @@ import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.core.util.ByteUtil;
 import com.yuanzhy.sqldog.core.util.StringUtils;
 import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.config.Configs;
 import com.yuanzhy.sqldog.server.common.model.BranchIndexPage;
-import com.yuanzhy.sqldog.server.common.model.DataExtent;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
 import com.yuanzhy.sqldog.server.common.model.IndexPage;
 import com.yuanzhy.sqldog.server.common.model.LeafIndexPage;
 import com.yuanzhy.sqldog.server.common.model.Page;
 import com.yuanzhy.sqldog.server.core.Codec;
 import com.yuanzhy.sqldog.server.core.Persistence;
-import com.yuanzhy.sqldog.server.util.ConfigUtil;
 
 /**
  * @author yuanzhy
@@ -109,39 +108,6 @@ public class DiskPersistence implements Persistence {
         DataPage dataPage = new DataPage(tablePath, fileId, offset);
         read(file, pos, dataPage);
         return dataPage;
-    }
-
-    @Override
-    public DataExtent readExtent(String tablePath, short fileId, int offset) throws PersistenceException {
-        Asserts.hasText(tablePath, "tablePath 不能为空");
-        File file = new File(resolvePath(rootPath, tablePath, StorageConst.TABLE_DATA_PATH, fileId));
-        if (!file.exists()) {
-            return null;
-        }
-        long pos = (long)offset * StorageConst.EXTENT_SIZE;
-        if (pos >= file.length()) { // pos 已经大于文件大小了，取下一个文件
-            short nextFileId = (short)(fileId + 1); // next fileId
-            int nextOffset = (int)((pos - file.length()) / offset);
-            return readExtent(tablePath, nextFileId, nextOffset);
-        }
-        List<Object> pages = new ArrayList<>();
-//        byte[][] pages = new byte[StorageConst.EXTENT_PAGE_COUNT][StorageConst.PAGE_SIZE];
-        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
-            raf.seek(pos);
-            byte[] page = new byte[StorageConst.PAGE_SIZE];
-            while (raf.read(page) == StorageConst.PAGE_SIZE) {
-                pages.add(page);
-                page = new byte[StorageConst.PAGE_SIZE];
-            }
-//            for (byte[] page : pages) {
-//                if (raf.read(page) < StorageConst.PAGE_SIZE) {
-//                    break;
-//                }
-//            }
-            return new DataExtent(fileId, offset, pages.toArray(new byte[0][]));
-        } catch (IOException e) {
-            throw new PersistenceException(e);
-        }
     }
 
     /*

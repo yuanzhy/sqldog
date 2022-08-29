@@ -26,12 +26,7 @@ public abstract class IndexPage extends Page {
     }
 
     protected IndexPage(String tablePath, String columnName, short fileId, int offset) {
-        this(tablePath, columnName, fileId, offset, newLeafBuffer());
-    }
-
-    @Deprecated
-    public IndexPage(String tablePath, String columnName, short fileId, byte[] data) {
-        this(tablePath, columnName, fileId, 0, data);
+        this(tablePath, columnName, fileId, offset, newBuffer());
     }
 
     protected IndexPage(String tablePath, String columnName, short fileId, int offset, byte[] data) {
@@ -49,6 +44,11 @@ public abstract class IndexPage extends Page {
 
     @Override
     public abstract IndexPage copyTo(short fileId);
+
+    public abstract boolean isEmpty();
+
+    public abstract void clear();
+
     public boolean isLeaf() {
         return data[8] == 0;
     }
@@ -91,12 +91,7 @@ public abstract class IndexPage extends Page {
         }
     }
 
-    protected static byte[] newLeafBuffer() {
-        return newBuffer(0);
-    }
-
-    @Deprecated
-    public static byte[] newBuffer(int level) {
+    protected static byte[] newBuffer() {
         // 先写入叶子节点
         byte[] buf = new byte[StorageConst.PAGE_SIZE];
         // Page Header
@@ -107,7 +102,7 @@ public abstract class IndexPage extends Page {
         byte[] endBytes = ByteUtil.toBytes(StorageConst.PAGE_SIZE);
         buf[6] = endBytes[0];
         buf[7] = endBytes[1];
-        buf[8] = (byte)level;
+        buf[8] = 0;
         return buf;
     }
 
