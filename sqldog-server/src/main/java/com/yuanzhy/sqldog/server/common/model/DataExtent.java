@@ -6,6 +6,7 @@ package com.yuanzhy.sqldog.server.common.model;
  * @version 1.0
  * @date 2022/4/16
  */
+@Deprecated
 public class DataExtent {
 
     /** 存储标识 */

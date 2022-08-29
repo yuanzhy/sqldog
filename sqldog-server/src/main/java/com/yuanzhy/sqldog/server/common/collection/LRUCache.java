@@ -1,4 +1,4 @@
-package com.yuanzhy.sqldog.server.util;
+package com.yuanzhy.sqldog.server.common.collection;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
