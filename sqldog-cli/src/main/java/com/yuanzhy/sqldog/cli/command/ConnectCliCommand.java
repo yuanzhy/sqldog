@@ -39,9 +39,8 @@ public class ConnectCliCommand extends RemoteCliCommand {
             String command = this.waitCommand(scanner);
             try {
                 if (StringUtils.startsWithAny(command, "quit", "\\q", "exit")) {
-                    close();
                     scanner.close();
-                    System.exit(0);
+                    close();
                     break;
                 }
                 execute(true, stat, command);
