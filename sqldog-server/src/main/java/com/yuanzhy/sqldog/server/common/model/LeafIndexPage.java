@@ -5,6 +5,7 @@ import java.util.Arrays;
 import com.yuanzhy.sqldog.core.util.ArrayUtils;
 import com.yuanzhy.sqldog.core.util.ByteUtil;
 import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.UpdateBranchType;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Persistence;
 import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
@@ -264,7 +265,7 @@ public class LeafIndexPage extends IndexPage {
         // dataStart后的数据后移
         final LeafIndexPage leafPage2 = persistence.getInsertableLeafIndex(tablePath, columnName);
         final byte[] buf2 = leafPage2.data;
-        int updateBranchType = 0;
+        UpdateBranchType updateBranchType = UpdateBranchType.NOOP;
         // 拷贝1后面的数据到2
         System.arraycopy(this.data, dataStartOrigin, buf2, StorageConst.INDEX_LEAF_START, freeStart - dataStartOrigin);
         int freeStart1 = dataStartOrigin;
@@ -274,7 +275,7 @@ public class LeafIndexPage extends IndexPage {
             for (byte b : dataPage.toAddress()) {
                 this.data[freeStart1++] = b;
             }
-            updateBranchType = 2; // ----- 写入1末尾的情况 需要更新2页的父索引
+            updateBranchType = UpdateBranchType.INSERT; // ----- 写入1末尾的情况 需要更新2页的父索引
         } else if (8 <= freeEnd - freeStart2) { // 2够,写入2开头
             System.arraycopy(buf2, StorageConst.INDEX_LEAF_START, buf2, StorageConst.INDEX_LEAF_START + 8, freeStart - dataStartOrigin);
             // 写入地址值
@@ -326,7 +327,7 @@ public class LeafIndexPage extends IndexPage {
         final int freeEnd = this.freeEnd();
         final int dataStartOrigin = dataStart;
         final int valCount = value.length + 2 + 4 + 8; // 2是value的长度，4索引中存储的LEN，8为数据地址8字节
-        int updateBranchType = 0;         // 结果1
+        UpdateBranchType updateBranchType = UpdateBranchType.NOOP;         // 结果1
         LeafIndexPage changedPage = null; // 结果2
         // ---------------------- 新增不重复的索引值
         if (freeEnd - freeStart >= valCount) { // 能放下一条记录，直接插入了哈
@@ -340,14 +341,14 @@ public class LeafIndexPage extends IndexPage {
             // 覆盖回写索引
             this.save();
             if (dataStartOrigin == StorageConst.INDEX_LEAF_START) {
-                updateBranchType = 1;
+                updateBranchType = UpdateBranchType.UPDATE;
                 changedPage = this;
             }
         } else {
             // 放不下了，需要新开一个页，此时可能需要判断插入前面还是后面
             // 遇到最小值，则新开一页并写入第一页，此时需要同步插入父索引
             // 遇到最大值则新开一个第二页写入开头，此时需要同步插入父索引
-            updateBranchType = 2;
+            updateBranchType = UpdateBranchType.INSERT;
             if (dataStartOrigin == StorageConst.INDEX_LEAF_START) {
                 LeafIndexPage page1 = persistence.getInsertableLeafIndex(tablePath, columnName);
 //                final byte[] newBuf1 = IndexPage.newLeafBuffer();
@@ -391,11 +392,11 @@ public class LeafIndexPage extends IndexPage {
     }
 
     public static class InsertAddressResult {
-        private static final InsertAddressResult EMPTY = new InsertAddressResult(0, null);
-        public final int updateBranchType;
+        private static final InsertAddressResult EMPTY = new InsertAddressResult(UpdateBranchType.NOOP, null);
+        public final UpdateBranchType updateBranchType;
         public final LeafIndexPage changedPage;
 
-        InsertAddressResult(int updateBranchType, LeafIndexPage changedPage) {
+        InsertAddressResult(UpdateBranchType updateBranchType, LeafIndexPage changedPage) {
             this.updateBranchType = updateBranchType;
             this.changedPage = changedPage;
         }

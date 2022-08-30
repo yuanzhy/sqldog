@@ -1,6 +1,7 @@
 package com.yuanzhy.sqldog.server.storage.disk;
 
 import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.UpdateBranchType;
 import com.yuanzhy.sqldog.server.common.model.BranchIndexPage;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
 import com.yuanzhy.sqldog.server.common.model.IndexPage;
@@ -49,6 +50,9 @@ public class DiskTableIndex {
             }
             Column column = table.getColumn(colNames[i]);
             LeafIndexPage leafPage = rootPage.findLeafIndex(column, values[i]);
+            if (leafPage == null) {
+                return false;
+            }
 //            byte[] leafBuf = leafPage.getData();
             IndexPage.LeafResult lr = leafPage.findLeafStart(column, values[i]);
             if (lr.isNew) { // 如果联合唯一有一个是新增的就不会冲突，否则继续匹配下一字段
@@ -115,14 +119,14 @@ public class DiskTableIndex {
         LeafIndexPage.InsertAddressResult iar = lr.isNew == false ? // 说明是重复的值
                 leafPage.addExistingAddressAndSave(dataPage, lr.dataStart) :
                 leafPage.addNewAddressAndSave(dataPage, value, lr.dataStart);
-        // 0 不更新，1. 更新值  2.插入值
-        int updateBranchType = iar.updateBranchType;
+        // 0 不更新，1. 更新值  2.插入值  3.删除
+        UpdateBranchType updateBranchType = iar.updateBranchType;
         LeafIndexPage changedPage = iar.changedPage;
         updateBranchIndex(colName, value, updateBranchType, toBeUpdated, changedPage);
     }
 
-    private void updateBranchIndex(String colName, byte[] value, int updateBranchType, LinkedList<UpdatedIndex> toBeUpdated, LeafIndexPage leafPage) {
-        if (updateBranchType == 0) {
+    private void updateBranchIndex(String colName, byte[] value, UpdateBranchType updateBranchType, LinkedList<UpdatedIndex> toBeUpdated, LeafIndexPage leafPage) {
+        if (updateBranchType == UpdateBranchType.NOOP) {
             return;
         }
         for (int i = 0; i < toBeUpdated.size(); i++) {
@@ -136,15 +140,14 @@ public class DiskTableIndex {
             final int freeStart = updatedPage.freeStart();
             final int freeEnd = updatedPage.freeEnd();
             final int branchValCount = value.length + 2 + 4; // 2数据长度，4索引地址长度
-            if (updateBranchType == 1) { // 替换最小值情况
-//                if (lowerIndex.isEmpty()) { // TODO 索引降级
-//                    updatedPage.clear();
-//                    continue;
-//                }
+            if (updateBranchType == UpdateBranchType.UPDATE) { // 替换最小值情况
                 final byte[] minVal = updatedPage.value(dataStart);
                 final int minValLen = minVal.length;
                 final int minValCount = 2 + minValLen + 4;
-                if (freeEnd - freeStart + minValCount >= branchValCount) { // 不需要分页
+                if (lowerIndex.isEmpty()) { // 下级索引已经空了，删除本索引对应的最小值地址
+                    updatedPage.deleteIndexValue(value, StorageConst.INDEX_BRANCH_START);
+                    updatedPage.save();
+                } else if (freeEnd - freeStart + minValCount >= branchValCount) { // 不需要分页
                     if (branchValCount == minValCount) { // 正好, 直接替换写入, 头都不用更了
                         updatedPage.replaceIndexValue(lowerIndex, value, StorageConst.INDEX_BRANCH_START);
                         updatedPage.save();
@@ -190,7 +193,7 @@ public class DiskTableIndex {
                         rootPage.save();
                     } else {
                         // 父索引需要新增了, 改为2. 前置索引改为新增的索引
-                        updateBranchType = 2;
+                        updateBranchType = UpdateBranchType.INSERT;
                         toBeUpdated.set(i, new UpdatedIndex(page1, StorageConst.INDEX_BRANCH_START));
                     }
                 }
@@ -405,9 +408,7 @@ public class DiskTableIndex {
 //                    updateFreeStart(freeStart - _len, leafBuf);
 //                    persistence.writeIndex(tablePath, colNames[i], leafPage);
                     if (needUpdateBranch) {
-                        // TODO 删除到最后需要索引降级
-//                        leafPage.minValue();
-                        updateBranchIndex(column.getName(), leafPage.minValue(), 1, toBeUpdated, leafPage);
+                        updateBranchIndex(column.getName(), leafPage.minValue(), UpdateBranchType.UPDATE, toBeUpdated, leafPage);
                     }
                 }
             }

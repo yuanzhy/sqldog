@@ -261,6 +261,9 @@ public class DiskTableData extends AbstractTableData implements TableData {
         if (_count > 0) {
             count -= _count;
             this.saveStatistics();
+            if (count == 0) {
+                this.truncate(); // 当作优化表碎片了
+            }
         }
         return _count;
     }
@@ -299,7 +302,10 @@ public class DiskTableData extends AbstractTableData implements TableData {
         SqlNode condition = sqlUpdate.getCondition();
         Predicate<Object[]> predicate;
         if (condition == null) {
-            predicate = (o) -> true;
+//            predicate = (o) -> true;
+            // 更新所有的情况单独处理一下，不然索引处可能会出现问题
+            this.updateAll(colList, valList);
+            return count;
         } else if (condition instanceof SqlBasicCall) { // TODO 基于索引的更新等查询优化后再实现
             predicate = handleWhere((SqlBasicCall) condition);
         } else {
@@ -368,7 +374,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
             dataPage.save();
 //            if (!updatedDatas.isEmpty()) {
 //                tableIndex.updateIndexAddr(updatedDatas,  dataPage);
-//            } // TODO 如果更新的是所有，直接清空索引
+//            }
             if (!deletedDatas.isEmpty()) {
                 tableIndex.deleteIndex(deletedDatas, dataPage);
             }
@@ -515,6 +521,40 @@ public class DiskTableData extends AbstractTableData implements TableData {
         } finally {
             optimizing = false;
         }
+    }
+
+    private void updateAll(List<String> colList, List<Object> valList) {
+        DataPage dataPage = persistence.readPage(tablePath);
+//        DataExtent oldDataExtend = persistence.readExtent(tablePath);
+        if (dataPage == null) return; // 没有数据，直接返回
+        Set<String> colNameSet = diskTable().getColumns().keySet();
+        int nullBytesCount = getNullBytesCount();
+        String tmpTablePath = persistence.resolvePath(tablePath, "_upt");
+        // 旧数据移入临时目录
+        persistence.move(tablePath, tmpTablePath);
+        // 删除旧索引信息
+        persistence.delete(persistence.resolvePath(tablePath, StorageConst.TABLE_INDEX_PATH));
+        // 读取临时目录的旧数据，向正式目录写入新数据
+        dataPage = persistence.readPage(tmpTablePath);
+
+        while (dataPage != null) {
+            List<Object[]> data = transformToData(dataPage, nullBytesCount);
+            for (Object[] d : data) {
+                int i = 0;
+                Map<String, Object> newRow = new LinkedHashMap<>();
+                for (String colName : colNameSet) {
+                    newRow.put(colName, d[i++]);
+                }
+                for (int j = 0; j < colList.size(); j++) {
+                    String colName = colList.get(j);
+                    Object val = valList.get(j);
+                    newRow.put(colName, val);
+                }
+                this.insertData(newRow);
+            }
+            dataPage = persistence.readPage(tablePath, dataPage.getFileId(), dataPage.getOffset() + 1);
+        }
+        persistence.delete(tmpTablePath);
     }
 
     private void alterColumn(Column column, int deleteIndex) {

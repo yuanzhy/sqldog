@@ -58,6 +58,11 @@ public class BranchIndexPage extends IndexPage {
         return addIndexValue(indexPage, value, StorageConst.INDEX_BRANCH_START);
     }
 
+    public void deleteIndexValue(byte[] value, int dataStart) {
+        int nextValueStart = 2 + value.length + 4;
+        System.arraycopy(data, nextValueStart, data, dataStart + nextValueStart, freeStart() - nextValueStart);
+    }
+
     public int replaceIndexValue(IndexPage indexPage, byte[] value, int dataStart) {
         // 非叶子节点不含 PREV_PAGE and NEXT_PAGE
         // 写入索引数据：[值-索引地址值]
@@ -159,6 +164,9 @@ public class BranchIndexPage extends IndexPage {
     }
 
     private LeafIndexPage findLeafIndex(BranchIndexPage pPage, Column column, byte[] value, LinkedList<UpdatedIndex> toBeUpdated) {
+        if (pPage.isEmpty()) {
+            return null;
+        }
         final byte[] buf = pPage.data;
         final int freeStart = pPage.freeStart();
         int dataStart = StorageConst.INDEX_BRANCH_START;
