@@ -33,7 +33,7 @@ abstract class UnregisteredDriver implements Driver {
 
     private static final String DEFAULT_PORT = "2345";
 
-    private static final Pattern URL_PTN = Pattern.compile("jdbc:sqldog://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})(:\\d{1,5})?(/[\\w\\d-_]+)?");
+    private static final Pattern URL_PTN = Pattern.compile("jdbc:sqldog://([\\w+\\d+\\._-]+)(:\\d{1,5})?(/[\\w\\d-_]+)?");
 
     static {
         String version = SqldogVersion.getVersion();
