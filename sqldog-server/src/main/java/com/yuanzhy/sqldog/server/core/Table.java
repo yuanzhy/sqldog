@@ -31,4 +31,12 @@ public interface Table extends Base {
 
     int getColumnIndex(String columnName);
 
+    /**
+     * 修改列名
+     * @param columnName 列名
+     * @param newColumnName 新列名
+     * @since  0.1.1
+     */
+    void renameColumn(String columnName, String newColumnName);
+
 }

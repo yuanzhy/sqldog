@@ -144,6 +144,19 @@ public class MemoryTable extends MemoryBase implements Table {
         return index == null ? -1 : index.intValue();
     }
 
+    @Override
+    public synchronized void renameColumn(String columnName, String newColumnName) {
+        Column column = columnMap.remove(columnName);
+        Asserts.notNull(column, columnName + " not exists");
+        column.rename(newColumnName);
+        columnMap.put(newColumnName, column);
+        if (tableData instanceof MemoryTableData) {
+            ((MemoryTableData) tableData).updateColumn(columnName, newColumnName);
+        }
+        this.setChanged();
+        this.notifyObservers();
+    }
+
     private void updateColumnIndex() {
         this.columnIndexMap.clear();
         String[] colNames = this.columnMap.keySet().toArray(new String[0]);
