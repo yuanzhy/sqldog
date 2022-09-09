@@ -22,7 +22,11 @@ public class Main {
             CliCommand cliCommand = CliCommandFactory.create(cli);
             cliCommand.execute();
         } catch (Exception e) {
-            System.out.println(e.getMessage() + "\n\n" + CliUtil.getHelpString());
+            if (e instanceof IllegalArgumentException) {
+                System.out.println(e.getMessage() + "\n\n" + CliUtil.getHelpString());
+            } else {
+                System.out.println(e.getMessage() + "\n");
+            }
             System.exit(0);
         }
     }

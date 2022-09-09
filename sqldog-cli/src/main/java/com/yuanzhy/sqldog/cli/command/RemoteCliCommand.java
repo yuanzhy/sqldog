@@ -53,8 +53,10 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
         }
     }
 
-    protected final void executeAndExit(String... sql) {
+    protected final void executeAndExit(String sql) {
         try {
+            System.out.println("execute command: " + sql);
+            System.out.println();
             execute(Boolean.FALSE, conn.createStatement(), sql);
         } catch (SQLException e) {
             printError(e);
@@ -127,8 +129,10 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
     public void close() {
         try {
             conn.close();
+            System.exit(0);
         } catch (SQLException e) {
             printError(e);
+            System.exit(1);
         }
     }
 
