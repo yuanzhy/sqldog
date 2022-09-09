@@ -12,6 +12,7 @@ import com.yuanzhy.sqldog.core.constant.Consts;
 import com.yuanzhy.sqldog.core.exception.PersistenceException;
 import com.yuanzhy.sqldog.core.util.StringUtils;
 import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.config.Configs;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
 import com.yuanzhy.sqldog.server.common.model.IndexPage;
 import com.yuanzhy.sqldog.server.common.model.LeafIndexPage;
@@ -23,7 +24,7 @@ import com.yuanzhy.sqldog.server.core.Persistence;
  * @date 2022/5/14
  */
 public class CachedPersistence extends PersistenceWrapper implements Persistence {
-    private static final int SAVE_DELAY = 1000 * 60 * 1;
+    private static final int SAVE_DELAY = Configs.get().getIntProperty("sqldog.storage.writeCacheExpired", "50") * 1000;
     private final ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
     /**
      *  key  = tablePath
@@ -94,6 +95,16 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
                 logger.warn("索引定时任务异常", e);
             }
         }, 1, 1, TimeUnit.MINUTES);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            ses.shutdownNow();
+            persistenceAll();
+        }));
+    }
+
+    private void persistenceAll() {
+        new ArrayList<>(insertableDataPageMap.keySet()).forEach(this::persistDataCache);
+        new ArrayList<>(indexPageMap.keySet()).forEach(this::persistIndexCache);
+        new ArrayList<>(statMap.keySet()).forEach(this::persistStatCache);
     }
 
     private void persistStatCache(String key) {
