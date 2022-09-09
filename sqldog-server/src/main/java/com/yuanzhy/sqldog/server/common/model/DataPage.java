@@ -266,10 +266,18 @@ public class DataPage extends Page {
                         dataStart += len;
                         break;
                     default: // VARCHAR, CHAR
-                        len = ByteUtil.toShort(pageBuf, dataStart);
-                        dataStart += 2;
-                        row[colIdx++] = ByteUtil.toString(pageBuf, dataStart, len);
-                        dataStart += len;
+                        fileId = ByteUtil.toShort(pageBuf, dataStart);
+                        extra = 0x1000 == (fileId & 0x1000);
+                        if (extra) {
+                            byte[] extraId = ArrayUtils.subarray(pageBuf, dataStart, dataStart += 8);
+                            byte[] bytes = PersistenceFactory.get().readExtraData(tablePath, extraId);
+                            row[colIdx++] = ByteUtil.toString(bytes);
+                        } else {
+                            len = ByteUtil.toShort(pageBuf, dataStart);
+                            dataStart += 2;
+                            row[colIdx++] = ByteUtil.toString(pageBuf, dataStart, len);
+                            dataStart += len;
+                        }
                 }
             }
         }

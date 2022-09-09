@@ -151,6 +151,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
                 return new byte[]{b};
             case BYTEA:
             case TEXT:
+            case VARCHAR: // varchar 超过1000的情况也挺多的，此处和大字段一样的处理吧
                 byte[] bytes = (value instanceof byte[]) ? (byte[]) value : ByteUtil.toBytes(value.toString());
                 if (bytes.length > StorageConst.LARGE_FIELD_THRESHOLD) {
                     // 需要存储在外部, 此处只存储代表外部存储的标识
@@ -164,7 +165,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
             case ARRAY:
             case JSON:
                 throw new UnsupportedOperationException("暂未实现大字段存储");
-            default: // VARCHAR, CHAR, DECIMAL, NUMERIC
+            default: // CHAR, DECIMAL, NUMERIC
                 byte[] strBytes = ByteUtil.toBytes(value.toString());
                 short len = (short)strBytes.length;
                 return ArrayUtils.addAll(ByteUtil.toBytes(len), strBytes);
