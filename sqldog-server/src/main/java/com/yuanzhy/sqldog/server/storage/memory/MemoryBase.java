@@ -31,7 +31,7 @@ public abstract class MemoryBase extends Observable implements Base {
 
     @Override
     public String getName() {
-        Asserts.hasText(name, "The name is null");
+//        Asserts.hasText(name, "The name is null");
         return name;
     }
 

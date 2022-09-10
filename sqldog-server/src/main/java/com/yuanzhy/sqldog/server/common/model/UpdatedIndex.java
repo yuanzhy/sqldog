@@ -9,19 +9,19 @@ package com.yuanzhy.sqldog.server.common.model;
  */
 public class UpdatedIndex {
     /** 待更新的索引页 */
-    private final IndexPage indexPage;
+    private final BranchIndexPage indexPage;
     /** 待更新的起始位置 - 字节数 */
     private final int dataStart;
     /** 待更新的值 */
 //    private final byte[] value;
 
-    public UpdatedIndex(IndexPage indexPage, int dataStart/*, byte[] value*/) {
+    public UpdatedIndex(BranchIndexPage indexPage, int dataStart/*, byte[] value*/) {
         this.indexPage = indexPage;
         this.dataStart = dataStart;
 //        this.value = value;
     }
 
-    public IndexPage getIndexPage() {
+    public BranchIndexPage getIndexPage() {
         return indexPage;
     }
 

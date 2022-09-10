@@ -1,6 +1,25 @@
 package com.yuanzhy.sqldog.server.storage.disk;
 
-import java.math.BigDecimal;
+import com.yuanzhy.sqldog.core.util.ArrayUtils;
+import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.ByteUtil;
+import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.collection.PrimitiveByteList;
+import com.yuanzhy.sqldog.server.common.model.DataPage;
+import com.yuanzhy.sqldog.server.core.Column;
+import com.yuanzhy.sqldog.server.core.Constraint;
+import com.yuanzhy.sqldog.server.core.Persistence;
+import com.yuanzhy.sqldog.server.core.Table;
+import com.yuanzhy.sqldog.server.core.TableData;
+import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
+import com.yuanzhy.sqldog.server.storage.base.AbstractTableData;
+import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
+import org.apache.calcite.sql.SqlBasicCall;
+import org.apache.calcite.sql.SqlDelete;
+import org.apache.calcite.sql.SqlLiteral;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlUpdate;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -8,7 +27,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -16,29 +34,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import org.apache.calcite.sql.SqlBasicCall;
-import org.apache.calcite.sql.SqlDelete;
-import org.apache.calcite.sql.SqlLiteral;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlUpdate;
-
-import com.yuanzhy.sqldog.core.util.ArrayUtils;
-import com.yuanzhy.sqldog.core.util.Asserts;
-import com.yuanzhy.sqldog.core.util.ByteUtil;
-import com.yuanzhy.sqldog.server.common.StorageConst;
-import com.yuanzhy.sqldog.server.common.model.DataExtent;
-import com.yuanzhy.sqldog.server.common.model.DataPage;
-import com.yuanzhy.sqldog.server.common.model.Location;
-import com.yuanzhy.sqldog.server.core.Column;
-import com.yuanzhy.sqldog.server.core.Constraint;
-import com.yuanzhy.sqldog.server.core.Persistence;
-import com.yuanzhy.sqldog.server.core.Table;
-import com.yuanzhy.sqldog.server.core.TableData;
-import com.yuanzhy.sqldog.server.core.constant.ConstraintType;
-import com.yuanzhy.sqldog.server.core.constant.DataType;
-import com.yuanzhy.sqldog.server.storage.base.AbstractTableData;
-import com.yuanzhy.sqldog.server.storage.persistence.PersistenceFactory;
 
 /**
  * 存储设计：
@@ -156,6 +151,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
                 return new byte[]{b};
             case BYTEA:
             case TEXT:
+            case VARCHAR: // varchar 超过1000的情况也挺多的，此处和大字段一样的处理吧
                 byte[] bytes = (value instanceof byte[]) ? (byte[]) value : ByteUtil.toBytes(value.toString());
                 if (bytes.length > StorageConst.LARGE_FIELD_THRESHOLD) {
                     // 需要存储在外部, 此处只存储代表外部存储的标识
@@ -169,7 +165,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
             case ARRAY:
             case JSON:
                 throw new UnsupportedOperationException("暂未实现大字段存储");
-            default: // VARCHAR, CHAR, DECIMAL, NUMERIC
+            default: // CHAR, DECIMAL, NUMERIC
                 byte[] strBytes = ByteUtil.toBytes(value.toString());
                 short len = (short)strBytes.length;
                 return ArrayUtils.addAll(ByteUtil.toBytes(len), strBytes);
@@ -181,30 +177,10 @@ public class DiskTableData extends AbstractTableData implements TableData {
      * @param row normalizeData
      */
     private DataPage insertData(Map<String, Object> row) {
-        List<Byte> dataBytes = transformToBinary(row);
+        PrimitiveByteList dataBytes = transformToBinary(row);
         DataPage dataPage = persistence.getInsertablePage(tablePath);
-        byte[] pageBuf = dataPage.getData();
-        short freeStart = ByteUtil.toShort(pageBuf, StorageConst.FREE_START_OFFSET);
-        short freeEnd = ByteUtil.toShort(pageBuf, StorageConst.FREE_END_OFFSET);
-        // ------- 写入数据 -------
-        if (dataBytes.size() >= StorageConst.PAGE_SIZE - 16) {
-            // TODO
-            throw new RuntimeException("单条记录大于一页的情况暂未实现：" + dataBytes.size());
-        }
-        if (freeEnd - freeStart < dataBytes.size()) {  // 剩余page空间不够存储本条记录
-            // 生成一个新的 page 追加到文件末尾
-            byte[] newPageBuf = new byte[StorageConst.PAGE_SIZE];
-            Location location = fillPageBuf(dataBytes, newPageBuf, StorageConst.DATA_START_OFFSET, StorageConst.PAGE_SIZE);
-            // dataPage.getOffset() + StorageConst.PAGE_SIZE == file.length
-            DataPage newDataPage = new DataPage(dataPage.getFileId(), dataPage.getOffset() + 1, newPageBuf);
-            dataPage = persistence.writePage(tablePath, newDataPage);
-            dataPage.setLocation(location);
-        } else { // page 空间够用, 在当前 page 空闲区写入数据
-            Location loction = fillPageBuf(dataBytes, pageBuf, freeStart, freeEnd);
-            // 将当前 page 回写文件
-            dataPage = persistence.writePage(tablePath, dataPage);
-            dataPage.setLocation(loction);
-        }
+        dataPage = dataPage.insert(dataBytes).save();
+
         // insert pk index
         String[] pkNames = table.getPkColumnName();
         if (pkNames != null) {
@@ -226,38 +202,13 @@ public class DiskTableData extends AbstractTableData implements TableData {
         return dataPage;
     }
 
-    private Location fillPageBuf(List<Byte> dataBytes, byte[] pageBuf, short freeStart, short freeEnd) {
-        // Page Header
-        //  - CHECKSUM 未实现
-        pageBuf[0] = pageBuf[1] = pageBuf[2] = pageBuf[3] = 0;
-        //  - FREE_START  FREE_END
-//        pageBuf[4] = (byte)(freeStart >> 8 & 0xff);
-//        pageBuf[5] = (byte)(freeStart & 0xff);
-        byte[] endBytes = ByteUtil.toBytes(freeEnd);
-        pageBuf[6] = endBytes[0];
-        pageBuf[7] = endBytes[1];
-        //  - PAGE_MAX_TRX_ID 未实现
-        pageBuf[8] = pageBuf[9] = pageBuf[10] = pageBuf[11] = pageBuf[12] = pageBuf[13] = pageBuf[14] = pageBuf[15] = 0;
-
-        // 写入 data (header + data)
-        int locStart = freeStart;
-        for (Byte dataByte : dataBytes) {
-            pageBuf[freeStart++] = dataByte;
-        }
-        // 更新freeStart字段
-        byte[] startBytes = ByteUtil.toBytes(freeStart);
-        pageBuf[4] = startBytes[0];
-        pageBuf[5] = startBytes[1];
-        return new Location((short)locStart, (short)(freeStart - locStart));
-    }
-
     /**
      * 数据转换为二进制
      * @param row 一行数据
      * @return
      */
-    private List<Byte> transformToBinary(Map<String, Object> row) {
-        LinkedList<Byte> dataList = new LinkedList<>();
+    private PrimitiveByteList transformToBinary(Map<String, Object> row) {
+        PrimitiveByteList dataList = new PrimitiveByteList();
         int nullBytesCount = getNullBytesCount();
         byte[] nullFlags = new byte[nullBytesCount];
         int nullIdx = 0;
@@ -273,26 +224,13 @@ public class DiskTableData extends AbstractTableData implements TableData {
                     ++nullIdx;
                 }
             }
-            addAll(dataList, valueToBytes(column, value));
+            dataList.addAll(valueToBytes(column, value));
         }
-        addFirst(dataList, nullFlags);
+        dataList.addFirst(nullFlags);
         short dataHeader = (short)dataList.size();
-        addFirst(dataList, ByteUtil.toBytes(dataHeader));
+        dataList.addFirst(ByteUtil.toBytes(dataHeader));
         // Data Header + Data
         return dataList;
-    }
-
-
-
-    private void addFirst(List<Byte> list, byte[] bytes) {
-        for (int i = bytes.length - 1; i >= 0; i--) {
-            list.add(0, bytes[i]);
-        }
-    }
-    private void addAll(List<Byte> list, byte[] bytes) {
-        for (byte b : bytes) {
-            list.add(b);
-        }
     }
 
     @Override
@@ -324,6 +262,9 @@ public class DiskTableData extends AbstractTableData implements TableData {
         if (_count > 0) {
             count -= _count;
             this.saveStatistics();
+            if (count == 0) {
+                this.truncate(); // 当作优化表碎片了
+            }
         }
         return _count;
     }
@@ -362,7 +303,10 @@ public class DiskTableData extends AbstractTableData implements TableData {
         SqlNode condition = sqlUpdate.getCondition();
         Predicate<Object[]> predicate;
         if (condition == null) {
-            predicate = (o) -> true;
+//            predicate = (o) -> true;
+            // 更新所有的情况单独处理一下，不然索引处可能会出现问题
+            this.updateAll(colList, valList);
+            return count;
         } else if (condition instanceof SqlBasicCall) { // TODO 基于索引的更新等查询优化后再实现
             predicate = handleWhere((SqlBasicCall) condition);
         } else {
@@ -379,33 +323,30 @@ public class DiskTableData extends AbstractTableData implements TableData {
 
     private int updateByCondition(DataPage dataPage, int nullBytesCount, Predicate<Object[]> predicate, List<String> colList, List<Object> valList) {
         int _count = 0;
-        final byte[] pageBuf = dataPage.getData();
+//        final byte[] pageBuf = dataPage.getData();
         final Collection<Column> columns = table.getColumns().values();
         int dataStart = StorageConst.DATA_START_OFFSET;
-        final short freeStart = ByteUtil.toShort(pageBuf, StorageConst.FREE_START_OFFSET);
-        int freeEnd = ByteUtil.toShort(pageBuf, StorageConst.FREE_END_OFFSET);
-        List<RowResult> deletedDatas = new ArrayList<>();
+        final short freeStart = dataPage.freeStart();
+//        final int freeEnd = dataPage.freeEnd();
+        List<DataPage.Row> deletedDatas = new ArrayList<>();
         List<Map<String, Object>> insertedDatas = new ArrayList<>();
-        List<Map<RowResult, Integer>> updatedDatas = new ArrayList<>();
+        List<Map<DataPage.Row, Integer>> updatedDatas = new ArrayList<>();
         while (dataStart < freeStart) {  // 读取多行数据
-            RowResult rr = readRow(pageBuf, columns, dataStart, nullBytesCount);
-            dataStart = rr.end;
-            if (rr.row == null) { // 说明是删除的记录
+            DataPage.Row row = dataPage.row(columns, nullBytesCount, dataStart);
+            dataStart = row.end;
+            if (row.data == null) { // 说明是删除的记录
                 continue;
             }
-            if (predicate.test(rr.row)) { // 符合更新条件，弄它
-                Map<String, Object> newRow = toMap(rr.row, columns);
+            if (predicate.test(row.data)) { // 符合更新条件，弄它
+                Map<String, Object> newRow = toMap(row.data, columns);
                 for (int i = 0; i < colList.size(); i++) {
                     String colName = colList.get(i);
                     Object val = valList.get(i);
                     newRow.put(colName, val);
                 }
-                List<Byte> newRowBytes = transformToBinary(newRow);
-                if (newRowBytes.size() == rr.end - rr.start) { // update后长度没变，直接复用原来的位置. 索引也不用更新了
-                    int _start = rr.start;
-                    for (Byte dataByte : newRowBytes) {
-                        pageBuf[_start++] = dataByte;
-                    }
+                PrimitiveByteList newRowBytes = transformToBinary(newRow);
+                if (newRowBytes.size() == row.end - row.start) { // update后长度没变，直接复用原来的位置. 索引也不用更新了
+                    dataPage.replace(row.start, newRowBytes);
                 }
 //                else if (newRowBytes.size() <= freeEnd - freeStart) {
 //                    // 一页能放下就动态调节 TODO 动态调节这个比较复杂，再议。调节完后面数据的索引就都得调整
@@ -422,12 +363,8 @@ public class DiskTableData extends AbstractTableData implements TableData {
 //                }
                 else {
                     // 删除原来的 插入一个新的
-                    short dataHeader = ByteUtil.toShort(pageBuf, rr.start);
-                    dataHeader |= 0x8000; // 变为删除
-                    byte[] dataHeaderBytes = ByteUtil.toBytes(dataHeader);
-                    pageBuf[rr.start] = dataHeaderBytes[0];
-                    pageBuf[rr.start + 1] = dataHeaderBytes[1];
-                    deletedDatas.add(rr);
+                    dataPage.delete(row.start);
+                    deletedDatas.add(row);
                     // 新增一条记录
                     insertedDatas.add(newRow);
                 }
@@ -435,7 +372,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
             }
         }
         if (_count > 0) {
-            persistence.writePage(tablePath, dataPage);
+            dataPage.save();
 //            if (!updatedDatas.isEmpty()) {
 //                tableIndex.updateIndexAddr(updatedDatas,  dataPage);
 //            }
@@ -447,12 +384,6 @@ public class DiskTableData extends AbstractTableData implements TableData {
             }
         }
         return _count;
-    }
-
-    private void updateFreeStart(int freeStart, byte[] newBuf) {
-        byte[] startBytes = ByteUtil.toBytes((short)freeStart);
-        newBuf[StorageConst.FREE_START_OFFSET] = startBytes[0];
-        newBuf[StorageConst.FREE_START_OFFSET+1] = startBytes[1];
     }
 
     private Map<String, Object> toMap(Object[] row, Collection<Column> columns) {
@@ -478,14 +409,11 @@ public class DiskTableData extends AbstractTableData implements TableData {
         checkTableState();
         final int nullBytesCount = getNullBytesCount();
         List<Object[]> data = new ArrayList<>();
-        DataExtent dataExtent = persistence.readExtent(tablePath);
-        while (dataExtent != null) {
-            int pageOffset = 0;
-            byte[] pageBuf;
-            while ((pageBuf = dataExtent.getPage(pageOffset++)) != null) {
-                data.addAll(transformToData(pageBuf, nullBytesCount));
-            }
-            dataExtent = persistence.readExtent(tablePath, dataExtent.getFileId(), dataExtent.getOffset() + 1);
+        // 读取临时目录的旧数据，向正式目录写入新数据
+        DataPage dataPage = persistence.readPage(tablePath);
+        while (dataPage != null) {
+            data.addAll(transformToData(dataPage, nullBytesCount));
+            dataPage = persistence.readPage(tablePath, dataPage.getFileId(), dataPage.getOffset() + 1);
         }
         return data;
     }
@@ -525,162 +453,45 @@ public class DiskTableData extends AbstractTableData implements TableData {
      * @return 删除数量
      */
     private int deleteByCondition(DataPage dataPage, int nullBytesCount, Predicate<Object[]> predicate) {
-        final byte[] pageBuf = dataPage.getData();
+//        final byte[] pageBuf = dataPage.getData();
         final Collection<Column> columns = table.getColumns().values();
         int dataStart = StorageConst.DATA_START_OFFSET;
-        short freeStart = ByteUtil.toShort(pageBuf, StorageConst.FREE_START_OFFSET);
-        List<RowResult> deletedDatas = new ArrayList<>();
+        short freeStart = dataPage.freeStart();
+        List<DataPage.Row> deletedDatas = new ArrayList<>();
         while (dataStart < freeStart) {  // 读取多行数据
-            RowResult rr = readRow(pageBuf, columns, dataStart, nullBytesCount);
-            dataStart = rr.end;
-            if (rr.row == null) { // 说明是删除的记录
+            DataPage.Row row = dataPage.row(columns, nullBytesCount, dataStart);
+            dataStart = row.end;
+            if (row.data == null) { // 说明是删除的记录
                 continue;
             }
-            if (predicate.test(rr.row)) { // 符合删除条件，干掉它
-                short dataHeader = ByteUtil.toShort(pageBuf, rr.start);
-                dataHeader |= 0x8000; // 变为删除
-                byte[] dataHeaderBytes = ByteUtil.toBytes(dataHeader);
-                pageBuf[rr.start] = dataHeaderBytes[0];
-                pageBuf[rr.start + 1] = dataHeaderBytes[1];
-                deletedDatas.add(rr);
+            if (predicate.test(row.data)) { // 符合删除条件，干掉它
+                dataPage.delete(row.start);
+                deletedDatas.add(row);
             }
         }
         if (!deletedDatas.isEmpty()) { // 有删除的情况，持久化以下
-            persistence.writePage(tablePath, dataPage);
+//            persistence.writePage(tablePath, dataPage);
+            dataPage.save();
             // 同时删除索引
             tableIndex.deleteIndex(deletedDatas, dataPage);
         }
         return deletedDatas.size();
     }
 
-    private List<Object[]> transformToData(byte[] pageBuf, int nullBytesCount) {
-        List<Object[]> data = new ArrayList<>();
-        Collection<Column> columns = diskTable().getOldColumns().values();
+    private List<Object[]> transformToData(DataPage dataPage, int nullBytesCount) {
+        final List<Object[]> data = new ArrayList<>();
+        final Collection<Column> columns = diskTable().getOldColumns().values();
         int dataStart = StorageConst.DATA_START_OFFSET;
-        short freeStart = ByteUtil.toShort(pageBuf, StorageConst.FREE_START_OFFSET);
+        final short freeStart = dataPage.freeStart();
         while (dataStart < freeStart) {  // 读取多行数据
-            RowResult rr = readRow(pageBuf, columns, dataStart, nullBytesCount);
-            dataStart = rr.end;
-            if (rr.row == null) { // 说明是删除的记录
+            DataPage.Row row = dataPage.row(columns, nullBytesCount, dataStart);
+            dataStart = row.end;
+            if (row.data == null) { // 说明是删除的记录
                 continue;
             }
-            data.add(rr.row);
+            data.add(row.data);
         }
         return data;
-    }
-
-    private RowResult readRow(byte[] pageBuf, Collection<Column> columns, final int start, final int nullBytesCount) {
-        int dataStart = start;
-        short dataHeader = ByteUtil.toShort(pageBuf, dataStart);
-        dataStart += 2;
-        final int end = dataStart + (dataHeader & 0b0111111111111111);
-        boolean deleted = ((dataHeader >> 15) & 0b1) == 1;
-        if (deleted) {
-            return new RowResult(start, end, null);
-        }
-        Object[] row = new Object[columns.size()];
-        // 读取nullFlag
-        byte[] nullFlags = new byte[nullBytesCount];
-//            for (int i = nullBytesCount - 1; i >= 0; i--) {
-//                nullFlags[i] = pageBuf[dataStart++];
-//            }
-        for (int i = 0; i < nullBytesCount; i++) {
-            nullFlags[i] = pageBuf[dataStart++];
-        }
-        // 读数据
-        while (dataStart < end) { // 读取一行数据
-            int colIdx = 0;
-            int nullIdx = 0;
-            for (Column column : columns) {
-                if (column.isNullable()) {
-                    byte nullBit = (byte) Math.pow(2, nullIdx % 8);
-                    if (nullBit == (nullFlags[nullIdx / 8] & nullBit)) { // null位为1，说明对应的值为空
-                        nullIdx++;
-                        colIdx++;
-                        continue;
-                    }
-                    nullIdx++;
-                }
-                switch (column.getDataType()) {
-                    case INT:
-                    case SERIAL:
-                        row[colIdx++] = ByteUtil.toInt(pageBuf, dataStart);
-                        dataStart += 4;
-                        break;
-                    case BIGINT:
-                    case BIGSERIAL:
-                        row[colIdx++] = ByteUtil.toLong(pageBuf, dataStart);
-                        dataStart += 8;
-                        break;
-                    case SMALLINT:
-                    case SMALLSERIAL:
-                        row[colIdx++] = ByteUtil.toShort(pageBuf, dataStart);
-                        dataStart += 2;
-                        break;
-                    case TINYINT:
-                        row[colIdx++] = pageBuf[dataStart++];
-                        break;
-                    case FLOAT:
-                        row[colIdx++] = ByteUtil.toFloat(pageBuf, dataStart);
-                        dataStart += 4;
-                        break;
-                    case DOUBLE:
-                        row[colIdx++] = ByteUtil.toDouble(pageBuf, dataStart);
-                        dataStart += 8;
-                        break;
-                    case DATE:
-                        row[colIdx++] = new java.sql.Date(ByteUtil.toLong(pageBuf, dataStart) + 28800000);
-                        dataStart += 8;
-                        break;
-                    case TIMESTAMP: // TODO calcite 坑，先用野路子处理一下
-                        row[colIdx++] = new java.sql.Timestamp(ByteUtil.toLong(pageBuf, dataStart) + 28800000);
-                        dataStart += 8;
-                        break;
-                    case TIME:
-                        row[colIdx++] = new java.sql.Time(ByteUtil.toLong(pageBuf, dataStart) + 28800000);
-                        dataStart += 8;
-                        break;
-                    case BOOLEAN:
-                        row[colIdx++] = pageBuf[dataStart++] == 1;
-                        break;
-                    case BYTEA:
-                    case TEXT:
-                        short fileId = ByteUtil.toShort(pageBuf, dataStart);
-                        boolean extra = 0x1000 == (fileId & 0x1000);
-                        if (extra) {
-                            byte[] extraId = ArrayUtils.subarray(pageBuf, dataStart, dataStart += 8);
-                            byte[] bytes = persistence.readExtraData(tablePath, extraId);
-                            row[colIdx++] = column.getDataType() == DataType.TEXT ? ByteUtil.toString(bytes) : bytes;
-                        } else {
-                            short len = ByteUtil.toShort(pageBuf, dataStart);
-                            dataStart += 2;
-                            if (column.getDataType() == DataType.TEXT) {
-                                row[colIdx++] = ByteUtil.toString(pageBuf, dataStart, len);
-                                dataStart += len;
-                            } else {
-                                row[colIdx++] = ArrayUtils.subarray(pageBuf, dataStart, dataStart += len);
-                            }
-                        }
-                        break;
-                    case ARRAY:
-                    case JSON:
-                        throw new UnsupportedOperationException("暂未实现大字段存储");
-                    case DECIMAL:
-                    case NUMERIC:
-                        int len = ByteUtil.toShort(pageBuf, dataStart);
-                        dataStart += 2;
-                        row[colIdx++] = new BigDecimal(ByteUtil.toString(pageBuf, dataStart, len));
-                        dataStart += len;
-                        break;
-                    default: // VARCHAR, CHAR
-                        len = ByteUtil.toShort(pageBuf, dataStart);
-                        dataStart += 2;
-                        row[colIdx++] = ByteUtil.toString(pageBuf, dataStart, len);
-                        dataStart += len;
-                }
-            }
-        }
-        return new RowResult(start, end, row);
     }
 
     @Override
@@ -713,10 +524,44 @@ public class DiskTableData extends AbstractTableData implements TableData {
         }
     }
 
-    private void alterColumn(Column column, int deleteIndex) {
-        DataPage pataPage = persistence.readPage(tablePath);
+    private void updateAll(List<String> colList, List<Object> valList) {
+        DataPage dataPage = persistence.readPage(tablePath);
 //        DataExtent oldDataExtend = persistence.readExtent(tablePath);
-        if (pataPage == null) return; // 没有数据，直接返回
+        if (dataPage == null) return; // 没有数据，直接返回
+        Set<String> colNameSet = diskTable().getColumns().keySet();
+        int nullBytesCount = getNullBytesCount();
+        String tmpTablePath = persistence.resolvePath(tablePath, "_upt");
+        // 旧数据移入临时目录
+        persistence.move(tablePath, tmpTablePath);
+        // 删除旧索引信息
+        persistence.delete(persistence.resolvePath(tablePath, StorageConst.TABLE_INDEX_PATH));
+        // 读取临时目录的旧数据，向正式目录写入新数据
+        dataPage = persistence.readPage(tmpTablePath);
+
+        while (dataPage != null) {
+            List<Object[]> data = transformToData(dataPage, nullBytesCount);
+            for (Object[] d : data) {
+                int i = 0;
+                Map<String, Object> newRow = new LinkedHashMap<>();
+                for (String colName : colNameSet) {
+                    newRow.put(colName, d[i++]);
+                }
+                for (int j = 0; j < colList.size(); j++) {
+                    String colName = colList.get(j);
+                    Object val = valList.get(j);
+                    newRow.put(colName, val);
+                }
+                this.insertData(newRow);
+            }
+            dataPage = persistence.readPage(tablePath, dataPage.getFileId(), dataPage.getOffset() + 1);
+        }
+        persistence.delete(tmpTablePath);
+    }
+
+    private void alterColumn(Column column, int deleteIndex) {
+        DataPage dataPage = persistence.readPage(tablePath);
+//        DataExtent oldDataExtend = persistence.readExtent(tablePath);
+        if (dataPage == null) return; // 没有数据，直接返回
         Set<String> colNameSet = diskTable().getOldColumns().keySet();
         int nullableCount = (int)diskTable().getOldColumns().values().stream().filter(Column::isNullable).count();
         int nullBytesCount = nullableCount % 8 > 0 ? nullableCount / 8 + 1 : nullableCount / 8;
@@ -727,30 +572,26 @@ public class DiskTableData extends AbstractTableData implements TableData {
         // 删除旧索引信息
         persistence.delete(persistence.resolvePath(tablePath, StorageConst.TABLE_INDEX_PATH));
         // 读取临时目录的旧数据，向正式目录写入新数据
-        DataExtent oldDataExtend = persistence.readExtent(tmpTablePath);
+        dataPage = persistence.readPage(tmpTablePath);
         Map<String, Object> row = new LinkedHashMap<>();
         boolean isAdd = column != null && deleteIndex < 0;
-        while (oldDataExtend != null) {
-            byte[] byteBuf;
-            int pageOffset = 0;
-            while ((byteBuf = oldDataExtend.getPage(pageOffset++)) != null) {
-                List<Object[]> data = transformToData(byteBuf, nullBytesCount);
-                for (Object[] d : data) {
-                    int i = 0;
-                    for (String colName : colNameSet) {
-                        if (deleteIndex == i) {
-                            i++;
-                            continue;
-                        }
-                        row.put(colName, d[i++]);
+        while (dataPage != null) {
+            List<Object[]> data = transformToData(dataPage, nullBytesCount);
+            for (Object[] d : data) {
+                int i = 0;
+                for (String colName : colNameSet) {
+                    if (deleteIndex == i) {
+                        i++;
+                        continue;
                     }
-                    if (isAdd) {
-                        row.put(column.getName(), column.defaultValue());
-                    }
-                    this.insertData(row);
+                    row.put(colName, d[i++]);
                 }
+                if (isAdd) {
+                    row.put(column.getName(), column.defaultValue());
+                }
+                this.insertData(row);
             }
-            oldDataExtend = persistence.readExtent(tablePath, oldDataExtend.getFileId(), oldDataExtend.getOffset() + 1);
+            dataPage = persistence.readPage(tablePath, dataPage.getFileId(), dataPage.getOffset() + 1);
         }
         persistence.delete(tmpTablePath);
     }
@@ -819,7 +660,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
                 close();
                 return false;
             } else {
-                pageData = transformToData(dataPage.getData(), nullBytesCount);
+                pageData = transformToData(dataPage, nullBytesCount);
                 if (pageData.isEmpty()) { // 最虽的情况，一页数据都被删除了
                     return nextData();
                 } else {
@@ -827,17 +668,6 @@ public class DiskTableData extends AbstractTableData implements TableData {
                     return true;
                 }
             }
-        }
-    }
-
-    class RowResult {
-        final int start; // start in data page
-        final int end; // end in data page
-        final Object[] row;
-        RowResult(int start, int end, Object[] row) {
-            this.start = start;
-            this.end = end;
-            this.row = row;
         }
     }
 }

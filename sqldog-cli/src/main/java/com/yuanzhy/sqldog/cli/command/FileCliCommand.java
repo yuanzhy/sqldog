@@ -27,6 +27,12 @@ public class FileCliCommand extends RemoteCliCommand {
     @Override
     public void execute() {
         try {
+            if (file.isDirectory()) {
+                System.out.println("execute folder's sql files: " + file.getAbsolutePath());
+            } else {
+                System.out.println("execute sql files: " + file.getAbsolutePath());
+            }
+            System.out.println();
             recursiveExec(file);
         } catch (Exception e) {
             printError(e);

@@ -28,6 +28,7 @@ public class AlterTableCommand extends AbstractSqlCommand {
         // ALTER TABLE schema.table_name ADD CONSTRAINT MyPrimaryKey PRIMARY KEY (column1, column2...);
         // ALTER TABLE schema.table_name DROP CONSTRAINT MyUniqueConstraint;
         // ALTER TABLE schema.table_name RENAME TO new_table_name;
+        // ALTER TABLE schema.table_name RENAME old_column_name TO new_column_name;
         String tmp = sql.substring("ALTER TABLE ".length());
         super.parseSchemaTable(tmp);
         tmp = StringUtils.substringAfter(tmp, " ");
@@ -39,9 +40,18 @@ public class AlterTableCommand extends AbstractSqlCommand {
             throw new UnsupportedOperationException("operation not supported: " + sql);
         } else if (tmp.startsWith("ALTER")) {
             throw new UnsupportedOperationException("operation not supported: " + sql);
-        } else if (tmp.startsWith("RENAME TO")) {
-            String newTableName = tmp.substring("RENAME TO ".length()).trim();
-            table.rename(newTableName);
+        } else if (tmp.startsWith("RENAME")) {
+            if (tmp.startsWith("RENAME TO")) {
+                String newTableName = tmp.substring("RENAME TO ".length()).trim();
+                table.rename(newTableName);
+            } else {
+                String oldColName = StringUtils.substringBetween(tmp, "RENAME ", " TO").trim();
+                String newColName = StringUtils.substringAfter(tmp, " TO ").trim();
+                if (StringUtils.isAnyEmpty(oldColName, newColName)) {
+                    throw new UnsupportedOperationException("operation not supported: " + sql);
+                }
+                table.renameColumn(oldColName, newColName);
+            }
         } else if (tmp.startsWith("DROP COLUMN")) {
             String columnName = tmp.substring("DROP COLUMN ".length());
             table.dropColumn(columnName);

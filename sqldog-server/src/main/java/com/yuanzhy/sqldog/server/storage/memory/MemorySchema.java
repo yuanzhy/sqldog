@@ -62,4 +62,14 @@ public class MemorySchema extends MemoryBase implements Schema {
             table.drop();
         }
     }
+
+    @Override
+    public void renameTable(String oldName, String newName) {
+        Table table = this.tables.remove(oldName);
+        if (table != null) {
+            this.tables.put(newName, table);
+            this.setChanged();
+            this.notifyObservers();
+        }
+    }
 }

@@ -32,8 +32,6 @@ import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.Statistics;
 import org.apache.calcite.schema.impl.AbstractTableQueryable;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.yuanzhy.sqldog.core.util.Asserts;
 import com.yuanzhy.sqldog.server.core.Column;
@@ -45,7 +43,7 @@ import com.yuanzhy.sqldog.server.core.Table;
  * @date 2022/4/4
  */
 public class FilterableCalciteTable extends AbstractQueryableTable implements FilterableTable, ModifiableTable {
-    private static final Logger LOG = LoggerFactory.getLogger(FilterableCalciteTable.class);
+//    private static final Logger LOG = LoggerFactory.getLogger(FilterableCalciteTable.class);
     private static final Type TYPE = Object[].class;
 
     private final Table table;

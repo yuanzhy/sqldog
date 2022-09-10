@@ -192,6 +192,10 @@ public class MemoryTableData extends AbstractTableData implements TableData {
         // do nothing
     }
 
+    void updateColumn(String oldColumnName, String newColumnName) {
+        this.data.forEach(row -> row.put(newColumnName, row.remove(oldColumnName)));
+    }
+
     /**
      * @param values
      */

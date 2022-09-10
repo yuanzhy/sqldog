@@ -53,8 +53,10 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
         }
     }
 
-    protected final void executeAndExit(String... sql) {
+    protected final void executeAndExit(String sql) {
         try {
+            System.out.println("execute command: " + sql);
+            System.out.println();
             execute(Boolean.FALSE, conn.createStatement(), sql);
         } catch (SQLException e) {
             printError(e);
@@ -276,7 +278,7 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
                 scanner.close();
             }
         } while (rs.next());
-        System.out.println("(total -> " + rows + " rows)");
+        System.out.println("(total -> " + rows + " rows)"); // TODO rows拿的不是总数
     }
 
     private List<Integer> getShowColumnIndex(ResultSetMetaData metaData) throws SQLException {

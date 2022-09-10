@@ -11,9 +11,11 @@ import java.util.Set;
 
 import com.yuanzhy.sqldog.core.util.ArrayUtils;
 import com.yuanzhy.sqldog.core.util.Asserts;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 import com.yuanzhy.sqldog.server.core.Base;
 import com.yuanzhy.sqldog.server.core.Column;
 import com.yuanzhy.sqldog.server.core.Constraint;
+import com.yuanzhy.sqldog.server.core.Schema;
 import com.yuanzhy.sqldog.server.core.Serial;
 import com.yuanzhy.sqldog.server.core.Table;
 import com.yuanzhy.sqldog.server.core.TableData;
@@ -142,6 +144,29 @@ public class MemoryTable extends MemoryBase implements Table {
         }
         Integer index = columnIndexMap.get(columnName);
         return index == null ? -1 : index.intValue();
+    }
+
+    @Override
+    public void rename(String newName) {
+        String oldName = getName();
+        super.rename(newName);
+        if (StringUtils.isNotEmpty(oldName)) {
+            Schema schema = (Schema) getParent();
+            schema.renameTable(oldName, getName());
+        }
+    }
+
+    @Override
+    public synchronized void renameColumn(String columnName, String newColumnName) {
+        Column column = columnMap.remove(columnName);
+        Asserts.notNull(column, columnName + " not exists");
+        column.rename(newColumnName);
+        columnMap.put(newColumnName, column);
+        if (tableData instanceof MemoryTableData) {
+            ((MemoryTableData) tableData).updateColumn(columnName, newColumnName);
+        }
+        this.setChanged();
+        this.notifyObservers();
     }
 
     private void updateColumnIndex() {

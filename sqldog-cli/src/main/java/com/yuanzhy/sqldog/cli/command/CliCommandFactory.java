@@ -1,5 +1,7 @@
 package com.yuanzhy.sqldog.cli.command;
 
+import java.util.stream.Collectors;
+
 import org.apache.commons.cli.CommandLine;
 
 import com.yuanzhy.sqldog.cli.util.CliUtil;
@@ -18,9 +20,9 @@ public final class CliCommandFactory {
     private static final CliCommand VERSION_COMMAND = () -> System.out.println(SqldogVersion.getVersionOfEmpty());
 
     public static CliCommand create(CommandLine cli) {
-        if (cli.getArgList().size() > 0) {
-            throw new IllegalArgumentException("Unknown params: " + cli.getArgList().toString());
-        }
+//        if (cli.getArgList().size() > 0) {
+//            throw new IllegalArgumentException("Unknown params: " + cli.getArgList().toString());
+//        }
         if (cli.hasOption("help")) {
             return HELP_COMMAND;
         } else if (cli.hasOption("V")) {
@@ -39,7 +41,7 @@ public final class CliCommandFactory {
             String password = cli.getOptionValue("P");
             RemoteCliCommand cliCommand;
             if (cli.hasOption("c")) {
-                cliCommand = new CommandCliCommand(host, port, username, password, cli.getOptionValue("c"));
+                cliCommand = new CommandCliCommand(host, port, username, password, cli.getOptionValue("c") + " " + cli.getArgList().stream().collect(Collectors.joining(" ")));
             } else if (cli.hasOption("f")) {
                 cliCommand = new FileCliCommand(host, port, username, password, cli.getOptionValue("f"));
             } else if (cli.hasOption("l")) {

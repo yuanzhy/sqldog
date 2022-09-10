@@ -4,9 +4,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author yuanzhy
@@ -18,7 +16,7 @@ public class CommandUtil {
     public static List<Object[]> resolveResultSet(ResultSet rs, ResultSetMetaData rsmd) throws SQLException {
         // TODO 返回太多卡死内存占用过大问题
         List<Object[]> data = new ArrayList<>();
-        Map<String, Boolean> labelIsDate = new HashMap<>();
+//        Map<String, Boolean> labelIsDate = new HashMap<>();
         while (rs.next()) {
             Object[] values = new Object[rsmd.getColumnCount()];
             for (int i = 0; i < rsmd.getColumnCount(); i++) {

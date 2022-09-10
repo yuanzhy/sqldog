@@ -188,4 +188,10 @@ public class DiskTable extends MemoryTable implements Table, Persistable {
 
         persistence.writeMeta(storagePath, json);
     }
+
+    @Override
+    public synchronized void renameColumn(String columnName, String newColumnName) {
+        super.renameColumn(columnName, newColumnName);
+        this.persistence();
+    }
 }

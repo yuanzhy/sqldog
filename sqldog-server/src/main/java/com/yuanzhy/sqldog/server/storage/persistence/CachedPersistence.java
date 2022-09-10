@@ -12,8 +12,10 @@ import com.yuanzhy.sqldog.core.constant.Consts;
 import com.yuanzhy.sqldog.core.exception.PersistenceException;
 import com.yuanzhy.sqldog.core.util.StringUtils;
 import com.yuanzhy.sqldog.server.common.StorageConst;
+import com.yuanzhy.sqldog.server.common.config.Configs;
 import com.yuanzhy.sqldog.server.common.model.DataPage;
 import com.yuanzhy.sqldog.server.common.model.IndexPage;
+import com.yuanzhy.sqldog.server.common.model.LeafIndexPage;
 import com.yuanzhy.sqldog.server.core.Persistence;
 
 /**
@@ -22,7 +24,7 @@ import com.yuanzhy.sqldog.server.core.Persistence;
  * @date 2022/5/14
  */
 public class CachedPersistence extends PersistenceWrapper implements Persistence {
-    private static final int SAVE_DELAY = 1000 * 60 * 1;
+    private static final int SAVE_DELAY = Configs.get().getIntProperty("sqldog.storage.writeCacheExpired", "50") * 1000;
     private final ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
     /**
      *  key  = tablePath
@@ -93,6 +95,16 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
                 logger.warn("索引定时任务异常", e);
             }
         }, 1, 1, TimeUnit.MINUTES);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            ses.shutdownNow();
+            persistenceAll();
+        }));
+    }
+
+    private void persistenceAll() {
+        new ArrayList<>(insertableDataPageMap.keySet()).forEach(this::persistDataCache);
+        new ArrayList<>(indexPageMap.keySet()).forEach(this::persistIndexCache);
+        new ArrayList<>(statMap.keySet()).forEach(this::persistStatCache);
     }
 
     private void persistStatCache(String key) {
@@ -190,14 +202,41 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
     }
 
     @Override
-    public IndexPage writeIndex(String tablePath, String colName, byte[] newBuf) throws PersistenceException {
-        // 如果是写入新页面，则尝试持久化所有缓存避免不一致问题
+    public LeafIndexPage readLeafIndex(String tablePath, String colName, short fileId, int offset) throws PersistenceException {
+        String key = indexKey(tablePath, colName, fileId, offset);
+        CacheObject<IndexPage> cacheObject = indexPageMap.get(key);
+        if (cacheObject == null) {
+            LeafIndexPage indexPage = super.readLeafIndex(tablePath, colName, fileId, offset);
+            if (indexPage == null) {
+                return null;
+            }
+            cacheObject = new CacheObject(indexPage);
+            indexPageMap.put(key, cacheObject);
+        } else {
+            cacheObject.lastModified = System.currentTimeMillis();
+            logger.debug("命中索引缓存：{}", key);
+        }
+        return (LeafIndexPage)cacheObject.data;
+    }
+
+    @Override
+    public IndexPage newIndex(String tablePath, String colName, int level) throws PersistenceException {
         final String indexKeyPrefix = tablePath + Consts.SEPARATOR + colName + Consts.SEPARATOR;
         String[] keyArr = indexPageMap.keySet().stream().filter(k -> k.startsWith(indexKeyPrefix)).toArray(String[]::new);
         for (String key : keyArr) {
             persistIndexCache(key);
         }
-        return super.writeIndex(tablePath, colName, newBuf);
+        return super.newIndex(tablePath, colName, level);
+    }
+
+    @Override
+    public IndexPage getInsertableIndex(String tablePath, String colName, int level) throws PersistenceException {
+        final String indexKeyPrefix = tablePath + Consts.SEPARATOR + colName + Consts.SEPARATOR;
+        String[] keyArr = indexPageMap.keySet().stream().filter(k -> k.startsWith(indexKeyPrefix)).toArray(String[]::new);
+        for (String key : keyArr) {
+            persistIndexCache(key);
+        }
+        return super.getInsertableIndex(tablePath, colName, level);
     }
 
     @Override
@@ -300,6 +339,10 @@ public class CachedPersistence extends PersistenceWrapper implements Persistence
 
     private String indexKey(String tablePath, String colName, short fileId, int offset) {
         return tablePath + Consts.SEPARATOR + colName + Consts.SEPARATOR + fileId + Consts.SEPARATOR + offset;
+    }
+
+    private String insertableIndexKey(String tablePath, String colName) {
+        return tablePath + Consts.SEPARATOR + colName;
     }
 
     private class CacheObject<T> {
