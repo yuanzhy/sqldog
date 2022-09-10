@@ -21,19 +21,19 @@ sqldog 是一款 Java 开发的简易关系型数据库，支持内存和硬盘�
 <dependency>
     <groupId>com.yuanzhy.sqldog</groupId>
     <artifactId>sqldog-jdbc</artifactId>
-    <version>0.1</version>
+    <version>0.1.1</version>
 </dependency>
 <dependency>
     <groupId>com.yuanzhy.sqldog</groupId>
     <artifactId>sqldog-server</artifactId>
-    <version>0.1</version>
+    <version>0.1.1</version>
 </dependency>
 ```
 2. gradle
 ```groovy
 dependencies {
-    implementation "com.yuanzhy.sqldog:sqldog-jdbc:0.1"
-    implementation "com.yuanzhy.sqldog:sqldog-server:0.1"
+    implementation "com.yuanzhy.sqldog:sqldog-jdbc:0.1.1"
+    implementation "com.yuanzhy.sqldog:sqldog-server:0.1.1"
 }
 ```
 
@@ -125,13 +125,13 @@ exit
 <dependency>
     <groupId>com.yuanzhy.sqldog</groupId>
     <artifactId>sqldog-jdbc</artifactId>
-    <version>0.1</version>
+    <version>0.1.1</version>
 </dependency>
 ```
 2. gradle
 ```groovy
 dependencies {
-    implementation "com.yuanzhy.sqldog:sqldog-jdbc:0.1"
+    implementation "com.yuanzhy.sqldog:sqldog-jdbc:0.1.1"
 }
 ```
 
