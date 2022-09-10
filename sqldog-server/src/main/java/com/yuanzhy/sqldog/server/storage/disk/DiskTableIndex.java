@@ -66,9 +66,10 @@ public class DiskTableIndex {
             List<Object> mAddrs = new ArrayList<>();
             for (IndexPage.LeafResult lr : list) {
                 final int dataAddrLen = lr.addressLength;
-                final int ds = lr.dataStart;
+                int ds = lr.dataStart;
                 for (int i = 0; i < dataAddrLen; i++) {
                     final byte[] addr = lr.leafPage.address(ds);
+                    ds += 8;
                     for (Object mAddr : mAddrs) {
                         byte[] existsAddr = (byte[]) mAddr;
                         if (Arrays.equals(existsAddr, addr)) {
