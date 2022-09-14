@@ -1,5 +1,6 @@
 package com.yuanzhy.sqldog.server.util;
 
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -23,7 +24,7 @@ public class CommandUtil {
                 final int index = i + 1;
                 String columnLabel = rsmd.getColumnLabel(index); // 别名
                 String className = rsmd.getColumnClassName(index);
-                Object value = null;
+                Object value;
                 if ("java.sql.Timestamp".equals(className)) {
                     value = rs.getTimestamp(columnLabel);
 //                    Long ts = rs.getLong(columnLabel);
@@ -42,7 +43,15 @@ public class CommandUtil {
 //                    }
                 }
                     else if ("java.sql.Date".equals(className)) {
-                        value = rs.getDate(columnLabel);
+                        Object obj = rs.getObject(columnLabel);
+                        if (obj instanceof Date) {
+                            value = (Date) obj;
+                        } else if (obj instanceof Number) {
+                            value = new Date(((Number)obj).longValue());
+                        } else {
+                            value = rs.getDate(columnLabel);
+                        }
+//                        value = rs.getDate(columnLabel);
 //                        if (date != null) {
 //                            value = new Date(date.longValue());
 //                        }

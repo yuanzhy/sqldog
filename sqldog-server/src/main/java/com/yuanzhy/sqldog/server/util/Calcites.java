@@ -42,6 +42,7 @@ public class Calcites {
         System.setProperty("saffron.default.charset", ConversionUtil.NATIVE_UTF16_CHARSET_NAME);
         System.setProperty("saffron.default.nationalcharset",ConversionUtil.NATIVE_UTF16_CHARSET_NAME);
         System.setProperty("saffron.default.collation.name",ConversionUtil.NATIVE_UTF16_CHARSET_NAME + "$en_US");
+        System.setProperty("calcite.bindable.cache.maxSize", "200");
         Properties config = new Properties();
         //config.put("model", MyCsvTest.class.getClassLoader().getResource("my_csv_model.json").getPath());
         config.put("parserFactory", "com.yuanzhy.sqldog.server.sql.adapter.CalciteParserFactory");
