@@ -324,7 +324,7 @@ public class DiskTableIndex {
                     Map.Entry<DataPage.Row, Integer> entry = map.entrySet().iterator().next();
                     final DataPage.Row rr = entry.getKey();
                     final int newEnd = entry.getValue();
-                    final byte[] value = tableData.valueToBytes(column, rr.data[idx]);
+                    final byte[] value = tableData.valueToBytes(column, rr.data[idx], true);
                     final LinkedList<UpdatedIndex> toBeUpdated = new LinkedList<>();
                     LeafIndexPage leafPage = rootPage.findLeafIndex(column, value, toBeUpdated);
                     IndexPage.LeafResult lr = leafPage.findLeafStart(column, value);
@@ -359,7 +359,7 @@ public class DiskTableIndex {
                 BranchIndexPage rootPage = (BranchIndexPage) persistence.readIndex(tablePath, colNames[i]);
                 int idx = table.getColumnIndex(colNames[i]);
                 for (DataPage.Row row : rowList) {
-                    final byte[] value = tableData.valueToBytes(column, row.data[idx]);
+                    final byte[] value = tableData.valueToBytes(column, row.data[idx], true);
                     final LinkedList<UpdatedIndex> toBeUpdated = new LinkedList<>();
                     LeafIndexPage leafPage = rootPage.findLeafIndex(column, value, toBeUpdated);
 //                    byte[] leafBuf = leafPage.getData();

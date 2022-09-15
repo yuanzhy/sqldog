@@ -19,7 +19,7 @@ public enum DataType {
     FLOAT(Double.class, Types.FLOAT, 20), DOUBLE(Double.class, Types.DOUBLE, 20),
     NUMERIC(BigDecimal.class, Types.NUMERIC, 50, true), DECIMAL(BigDecimal.class, Types.DECIMAL, 50, true), // 数字
     SERIAL(Integer.class, Types.INTEGER, 10), SMALLSERIAL(Short.class, Types.SMALLINT, 5), BIGSERIAL(Long.class, Types.BIGINT, 20), // 序列
-    CHAR(String.class, Types.CHAR, 1000, true), VARCHAR(String.class, Types.VARCHAR, 65535, true),  // 字符串
+    CHAR(String.class, Types.CHAR, 1000, true), VARCHAR(String.class, Types.VARCHAR, 16384, true),  // 字符串
     TEXT(String.class, Types.LONGVARCHAR, Integer.MAX_VALUE), BYTEA(byte[].class, Types.BINARY, Integer.MAX_VALUE), // 大字段，二进制
     DATE(java.sql.Date.class, Types.DATE, 20), TIMESTAMP(Timestamp.class, Types.TIMESTAMP, 20), TIME(java.sql.Time.class, Types.TIME, 10), // 日期时间
     BOOLEAN(Boolean.class, Types.BOOLEAN, 1), //
@@ -103,7 +103,7 @@ public enum DataType {
         } else if (this == DataType.BOOLEAN) {
             return Boolean.valueOf(rawValue);
         } else if (this == DataType.NUMERIC || this == DataType.DECIMAL) {
-            return BigDecimal.valueOf(Double.parseDouble(rawValue));
+            return new BigDecimal(rawValue);
         } else if (this == DataType.FLOAT || this == DataType.DOUBLE) {
             return Double.valueOf(rawValue);
         } else if (this.getClazz() == String.class) {
@@ -141,7 +141,7 @@ public enum DataType {
         } else if (this == DataType.BOOLEAN) {
             return Boolean.valueOf(value);
         } else if (this == DataType.NUMERIC || this == DataType.DECIMAL) {
-            return BigDecimal.valueOf(Double.parseDouble(value));
+            return new BigDecimal(value);
         } else if (this == DataType.FLOAT || this == DataType.DOUBLE) {
             return Double.valueOf(value);
         }

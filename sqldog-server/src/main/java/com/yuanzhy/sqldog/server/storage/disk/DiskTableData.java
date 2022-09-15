@@ -76,7 +76,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
             String[] pkNames = table.getPkColumnName();
             byte[][] bytes = new byte[pkValues.length][];
             for (int i = 0; i < pkValues.length; i++) {
-                bytes[i] = valueToBytes(table.getColumn(pkNames[i]), pkValues[i]);
+                bytes[i] = valueToBytes(table.getColumn(pkNames[i]), pkValues[i], true);
             }
             Asserts.isFalse(tableIndex.isConflict(pkNames, bytes), "Primary key conflict：" + Arrays.stream(pkValues).map(Object::toString).collect(Collectors.joining(", ")));
         }
@@ -87,7 +87,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
             if (c.getType() == ConstraintType.UNIQUE) {
                 byte[][] bytes = new byte[columnNames.length][];
                 for (int i = 0; i < columnNames.length; i++) {
-                    bytes[i] = valueToBytes(table.getColumn(columnNames[i]), values.get(columnNames[i]));
+                    bytes[i] = valueToBytes(table.getColumn(columnNames[i]), values.get(columnNames[i]), true);
                 }
                 if (tableIndex.isConflict(columnNames, bytes)) {
                     String columnValues = Arrays.stream(columnNames).map(n -> Objects.toString(values.get(n))).collect(Collectors.joining(", "));
@@ -108,7 +108,13 @@ public class DiskTableData extends AbstractTableData implements TableData {
         persistence.writeStatistics(tablePath, Collections.singletonMap("count", count));
     }
 
-    byte[] valueToBytes(Column column, Object value) {
+    /**
+     *
+     * @param column 列信息
+     * @param value  值
+     * @return byte数组，如果是char,varchar,decimal,number类型则包含长度
+     */
+    byte[] valueToBytes(Column column, Object value, boolean toIndex) {
         switch (column.getDataType()) {
             case INT:
             case SERIAL:
@@ -159,6 +165,9 @@ public class DiskTableData extends AbstractTableData implements TableData {
                     return extraId;
                 } else {
                     // 存储在数据内部，和varchar逻辑一致
+                    if (toIndex) {
+                        return bytes;
+                    }
                     short len = (short)bytes.length;
                     return ArrayUtils.addAll(ByteUtil.toBytes(len), bytes);
                 }
@@ -167,6 +176,9 @@ public class DiskTableData extends AbstractTableData implements TableData {
                 throw new UnsupportedOperationException("暂未实现大字段存储");
             default: // CHAR, DECIMAL, NUMERIC
                 byte[] strBytes = ByteUtil.toBytes(value.toString());
+                if (toIndex) {
+                    return strBytes;
+                }
                 short len = (short)strBytes.length;
                 return ArrayUtils.addAll(ByteUtil.toBytes(len), strBytes);
         }
@@ -194,7 +206,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
             }
             for (int i = 0; i < pkNames.length; i++) {
                 Column col = table.getColumn(pkNames[i]);
-                tableIndex.insertIndex(col, valueToBytes(col, pkValues[i]), dataPage);
+                tableIndex.insertIndex(col, valueToBytes(col, pkValues[i], true), dataPage);
             }
         }
         // TODO insert unique index and other
@@ -224,7 +236,7 @@ public class DiskTableData extends AbstractTableData implements TableData {
                     ++nullIdx;
                 }
             }
-            dataList.addAll(valueToBytes(column, value));
+            dataList.addAll(valueToBytes(column, value, false));
         }
         dataList.addFirst(nullFlags);
         short dataHeader = (short)dataList.size();
