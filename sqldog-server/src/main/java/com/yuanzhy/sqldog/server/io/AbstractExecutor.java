@@ -10,13 +10,13 @@ import org.slf4j.LoggerFactory;
 
 import com.yuanzhy.sqldog.core.SqldogVersion;
 import com.yuanzhy.sqldog.core.constant.RequestType;
+import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.service.Executor;
 import com.yuanzhy.sqldog.core.service.PreparedRequest;
 import com.yuanzhy.sqldog.core.service.Request;
 import com.yuanzhy.sqldog.core.service.Response;
 import com.yuanzhy.sqldog.core.service.impl.ResponseImpl;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
-import com.yuanzhy.sqldog.core.util.StringUtils;
 import com.yuanzhy.sqldog.server.common.collection.LRUCache;
 import com.yuanzhy.sqldog.server.sql.PreparedSqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlCommand;
@@ -70,21 +70,25 @@ class AbstractExecutor implements Executor {
     private Response simpleQuery(Request request) {
         try {
             String[] sqls = request.getSql();
+            String reqSchema = request.getSchema();
             List<SqlResult> results = new ArrayList<>();
             for (int i = 0; i < sqls.length; i++) {
-                String[] arr = sqls[i].split("(;\\s+\n)");
-                for (String sql : arr) {
-                    if (StringUtils.isBlank(sql)) {
-                        continue;
-                    }
-                    SqlCommand sqlCommand = sqlParser.parse(sql);
-                    sqlCommand.defaultSchema(request.getSchema());
-                    SqlResult result = sqlCommand.execute();
+//                String[] arr = sqls[i].split("(;\\s+\n)");
+//                for (String sql : arr) {
+//                    if (StringUtils.isBlank(sql)) {
+//                        continue;
+//                    }
+                SqlCommand sqlCommand = sqlParser.parse(sqls[i]);
+                sqlCommand.defaultSchema(reqSchema);
+                SqlResult result = sqlCommand.execute();
 //                        if (sqlCommand instanceof SetCommand && result.getSchema() != null) {
 //                            this.currentSchema = result.getSchema();
 //                        }
-                    results.add(result);
+                results.add(result);
+                if (result.getType() == StatementType.SWITCH_SCHEMA) {
+                    reqSchema = result.getSchema();
                 }
+//                }
             }
             return new ResponseImpl(true, results.toArray(new SqlResult[0]));
         } catch (Exception e) {

@@ -11,5 +11,6 @@ public enum StatementType {
     DQL,
     DTL,
     DCL,
+    SWITCH_SCHEMA,
     OTHER;
 }

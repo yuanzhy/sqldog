@@ -61,7 +61,7 @@ public class ConnectionImpl extends AbstractConnection implements SqldogConnecti
     private boolean isReconnect = false;
 
     private String database = "default";
-    private String schema;
+    String schema;
     private volatile boolean isClosed = false;
 
     public ConnectionImpl(String filePath, String schema, Properties info) throws SQLException {

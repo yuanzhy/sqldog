@@ -32,6 +32,6 @@ public class SetCommand extends AbstractSqlCommand {
         }
         Asserts.hasText(schemaName, "Illegal schema name");
         Asserts.notNull(Databases.getDefault().getSchema(schemaName), "'" + schemaName + "' not exists");
-        return new SqlResultBuilder(StatementType.OTHER).schema(schemaName).build();
+        return new SqlResultBuilder(StatementType.SWITCH_SCHEMA).schema(schemaName).build();
     }
 }

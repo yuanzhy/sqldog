@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.yuanzhy.sqldog.core.constant.StatementType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.util.SqlUtil;
 import com.yuanzhy.sqldog.jdbc.SQLError;
@@ -62,29 +63,53 @@ class StatementImpl extends AbstractStatement implements Statement {
         beforeExecute();
         try {
             this.sql = sql;
-            SqlResult sqlResult = connection.execute(this, sql);
-            this.handleResult(sqlResult);
+            if (sql.contains(";")) {
+                String[] arr = sql.split("(;\\s*\n?)");
+                if (arr.length == 1) {
+                    SqlResult sqlResult = connection.execute(this, sql);
+                    this.handleResult(sqlResult);
+                } else {
+                    SqlResult[] sqlResults = connection.execute(this, 0, arr);
+                    this.handleResult(sqlResults);
+                }
+            } else {
+                SqlResult sqlResult = connection.execute(this, sql);
+                this.handleResult(sqlResult);
+            }
         } finally {
             afterExecute();
         }
     }
 
-    protected void handleResult(SqlResult result) {
+    protected void handleResult(SqlResult... results) {
         try {
             closeAllResultSets();
         } catch (SQLException e) {
             // ignore
         }
+        SqlResult result = results[results.length - 1];
         this.rows = result.getRows();
         if (result.getData() == null /*|| result.getData().isEmpty()*/) {
             this.rs = null;
 //            this.rows = result.getRows();
+            if (result.getType() == StatementType.SWITCH_SCHEMA) {
+                ((ConnectionImpl) this.connection).schema = result.getSchema();
+                return;
+            }
         } else {
             ResultSetImpl rs = resultSetConcurrency == ResultSet.CONCUR_READ_ONLY ?
                     new ResultSetImpl(this, direction, fetchSize, result) :
                     new UpdatedResultSetImpl(this, direction, 0, result);
             this.openResultSets.add(rs);
             this.rs = rs;
+        }
+        if (results.length > 1) {
+            for (int i = results.length - 2; i >= 0; i--) {
+                if (results[i].getType() == StatementType.SWITCH_SCHEMA) {
+                    ((ConnectionImpl) this.connection).schema = results[i].getSchema();
+                    return;
+                }
+            }
         }
     }
 
