@@ -58,6 +58,8 @@ public abstract class AbstractTableData implements TableData {
                 BigDecimal d = (BigDecimal) val;
                 d = d.setScale(column.getScale(), BigDecimal.ROUND_HALF_UP);
                 val = d;
+            } else if (column.getDataType() == DataType.CHAR) {
+                val = StringUtils.rightPad(val.toString(), column.getPrecision());
             }
         }
         return val;
@@ -85,9 +87,10 @@ public abstract class AbstractTableData implements TableData {
 //                    continue;
 //                }
 //                value = column.getDataType().parseRawValue(value.toString());
-            if (value != null && column.getDataType() == DataType.CHAR && value.toString().length() < column.getPrecision()) {
-                value = StringUtils.rightPad(value.toString(), column.getPrecision());
-            }
+
+//            if (value != null && column.getDataType() == DataType.CHAR && value.toString().length() < column.getPrecision()) {
+//                value = StringUtils.rightPad(value.toString(), column.getPrecision());
+//            }
             row.put(columnName, value);
         }
         return row;
