@@ -19,6 +19,7 @@ import com.yuanzhy.sqldog.core.constant.TableType;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.core.sql.SqlResultImpl;
 import com.yuanzhy.sqldog.core.util.SqlUtil;
+import com.yuanzhy.sqldog.core.util.StringUtils;
 import com.yuanzhy.sqldog.jdbc.Driver;
 import com.yuanzhy.sqldog.jdbc.SqldogConnection;
 
@@ -760,6 +761,10 @@ class DatabaseMetaDataImpl extends AbstractWrapper implements DatabaseMetaData {
         }
         schemaPattern = handlePattern(schemaPattern);
         tableNamePattern = handlePattern(tableNamePattern);
+        if (StringUtils.containsAny(tableNamePattern, '.')) {
+            schemaPattern = StringUtils.substringBefore(tableNamePattern, ".");
+            tableNamePattern = StringUtils.substringAfter(tableNamePattern, ".");
+        }
         columnNamePattern = handlePattern(columnNamePattern);
         StringBuilder builder = new StringBuilder("select * from ").append(Consts.SYSTABLE_PREFIX).append("COLUMN");
         int baseLen = builder.length();
