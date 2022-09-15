@@ -10,6 +10,8 @@ import com.yuanzhy.sqldog.core.service.Request;
  */
 public class RequestImpl implements Request {
 
+    private static final long serialVersionUID = 1L;
+
     private final String schema;
     private final int timeout;
 
@@ -18,13 +20,16 @@ public class RequestImpl implements Request {
     private final RequestType type;
     private final String[] sql;
 
-    RequestImpl(String schema, int timeout, int fetchSize, int offset, RequestType type, String... sql) {
+    private final String[] returnValues;
+
+    RequestImpl(String schema, int timeout, int fetchSize, int offset, RequestType type, String[] sql, String[] returnValues) {
         this.schema = schema;
         this.timeout = timeout;
         this.fetchSize = fetchSize;
         this.offset = offset;
         this.type = type;
         this.sql = sql == null ? new String[0] : sql;
+        this.returnValues = returnValues;
     }
 
     @Override
@@ -55,5 +60,9 @@ public class RequestImpl implements Request {
     @Override
     public String[] getSql() {
         return sql;
+    }
+
+    public String[] getReturnValues() {
+        return returnValues;
     }
 }

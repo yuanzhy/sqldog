@@ -17,11 +17,17 @@
             <artifactId>sqldog-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <dependency>
             <groupId>com.yuanzhy.sqldog</groupId>
             <artifactId>sqldog-dialect</artifactId>
             <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yuanzhy.sqldog</groupId>
+            <artifactId>sqldog-server</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

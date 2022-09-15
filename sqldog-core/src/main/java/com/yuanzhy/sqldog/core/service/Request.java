@@ -26,4 +26,10 @@ public interface Request extends Serializable {
     RequestType getType();
 
     String[] getSql();
+
+    /**
+     * 返回的列
+     * @return
+     */
+    String[] getReturnValues();
 }

@@ -19,4 +19,6 @@ public final class Consts {
     public static final char SQL_QUESTION_MARK = '?';
 
     public static final String SERVER_NAME = "rmiServer";
+
+    public static final String PRODUCT_NAME = "sqldog";
 }

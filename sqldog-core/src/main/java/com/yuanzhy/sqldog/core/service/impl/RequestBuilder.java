@@ -24,6 +24,8 @@ public class RequestBuilder {
     private RequestType type;
     private String preparedId;
     private String[] sqls;
+
+    private String[] returnValues;
     private List<Object[]> parameters = new ArrayList<>();
 
     public RequestBuilder(RequestType type) {
@@ -82,17 +84,22 @@ public class RequestBuilder {
         return this;
     }
 
+    public RequestBuilder returnValues(String[] returnValues) {
+        this.returnValues = returnValues;
+        return this;
+    }
+
     public Request build() {
         Asserts.notNull(type, "请求类型不能为空");
 //        Asserts.notNull(sqls, "sqls不能为空");
-        return new RequestImpl(schema, timeout, fetchSize, offset, type, sqls);
+        return new RequestImpl(schema, timeout, fetchSize, offset, type, sqls, returnValues);
     }
 
     public PreparedRequest buildPrepared() {
         Asserts.notNull(type, "请求类型不能为空");
         Asserts.hasText(preparedId, "preparedId不能为空");
 //        Asserts.notNull(sqls, "sqls不能为空");
-        PreparedRequestImpl req = new PreparedRequestImpl(schema, timeout, fetchSize, offset, type, preparedId, sqls);
+        PreparedRequestImpl req = new PreparedRequestImpl(schema, timeout, fetchSize, offset, type, preparedId, sqls, returnValues);
         req.parameters = parameters.toArray(new Object[0][]);
         return req;
     }

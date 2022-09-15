@@ -47,4 +47,8 @@ public class Asserts {
     public static void gteZero(long value, String msg) {
         isTrue(value >= 0, msg);
     }
+
+    public static void between(int value, int left, int right, String msg) {
+        isTrue(left < value && value < right, msg);
+    }
 }
