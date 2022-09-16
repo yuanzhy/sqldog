@@ -18,11 +18,12 @@ import com.yuanzhy.sqldog.core.service.Response;
 import com.yuanzhy.sqldog.core.service.impl.ResponseImpl;
 import com.yuanzhy.sqldog.core.sql.SqlResult;
 import com.yuanzhy.sqldog.server.common.collection.LRUCache;
+import com.yuanzhy.sqldog.server.common.config.Configs;
 import com.yuanzhy.sqldog.server.sql.PreparedSqlCommand;
+import com.yuanzhy.sqldog.server.sql.PreparedSqlParser;
 import com.yuanzhy.sqldog.server.sql.SqlCommand;
 import com.yuanzhy.sqldog.server.sql.SqlParser;
-import com.yuanzhy.sqldog.server.sql.parser.DefaultSqlParser;
-import com.yuanzhy.sqldog.server.sql.parser.PreparedSqlParser;
+import com.yuanzhy.sqldog.server.sql.SqlParserFactory;
 import com.yuanzhy.sqldog.server.util.RequestHolder;
 
 /**
@@ -33,14 +34,13 @@ import com.yuanzhy.sqldog.server.util.RequestHolder;
 class AbstractExecutor implements Executor {
 
     protected static final Logger log = LoggerFactory.getLogger(AbstractExecutor.class);
-
-    protected final static SqlParser sqlParser = new DefaultSqlParser();
-    protected final static PreparedSqlParser preparedSqlParser = new PreparedSqlParser();
+    protected static final int preparedCacheSize = Configs.get().getIntProperty("sqldog.sql.preparedCacheSize", "50");
+    protected final static SqlParser sqlParser = SqlParserFactory.createSqlParser();
+    protected final static PreparedSqlParser preparedSqlParser = SqlParserFactory.createPreparedSqlParser();
 
     protected final int serialNum;
     protected final String version;
-    protected final Map<String, PreparedSqlCommand> preparedSqlCache = new LRUCache<>(20);
-    //        private String currentSchema = StorageConst.DEF_SCHEMA_NAME;
+    protected final Map<String, PreparedSqlCommand> preparedSqlCache = new LRUCache<>(preparedCacheSize);
     protected long lastRequest = System.currentTimeMillis();
     AbstractExecutor(int serialNum) {
         this.serialNum = serialNum;

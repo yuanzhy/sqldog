@@ -35,6 +35,11 @@ public abstract class AbstractSqlCommand implements SqlCommand {
         Asserts.notNull(this.defaultSchema, "current schema is unset");
     }
 
+    @Override
+    public String getSql() {
+        return sql;
+    }
+
     /**
      * 获取当前语句的schema, 如果sql中没指定则获取default
      */

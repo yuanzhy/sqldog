@@ -56,13 +56,13 @@ public class RmiServer implements Server {
             // 但是,将远程对象注册到RMI Registry之后,
             // 客户端就可以通过RMI Registry请求到该远程服务对象的stub，
             // 利用stub代理就可以访问远程服务对象了。
-            Service remoteHandler = new RMIService();
             System.setProperty("java.rmi.server.hostname", host);
             System.setProperty("com.rmi.service.hostname", host);
+            Service remoteHandler = new RMIService();
             Registry registry = LocateRegistry.createRegistry(port);
             registry.bind(Consts.SERVER_NAME, remoteHandler);
             Databases.getDatabase(StorageConst.DEF_DATABASE_NAME); // 触发一下初始化
-            log.info("Sqldog server ready, bind host is ", host);
+            log.info("Sqldog server ready, bind host is {}", host);
             // 添加定时器
             ses.scheduleAtFixedRate(() -> {
                 long now = System.currentTimeMillis();

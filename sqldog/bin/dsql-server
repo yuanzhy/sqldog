@@ -9,4 +9,4 @@ echo Using JAVA_HOME:    $JAVA_HOME
 echo Using SQLDOG_HOME:  $SQLDOG_HOME
 echo Sqldog Version is $VERSION
 
-nohup java -DSQLDOG_HOME=$SQLDOG_HOME -Dlogback.configurationFile=$SQLDOG_HOME/conf/logback.xml -jar ${SQLDOG_HOME}/server/sqldog-server-$VERSION.jar > /dev/null &
+java -DSQLDOG_HOME=$SQLDOG_HOME -Dlogback.configurationFile=$SQLDOG_HOME/conf/logback.xml -jar ${SQLDOG_HOME}/server/sqldog-server-$VERSION.jar

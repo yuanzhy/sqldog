@@ -43,6 +43,11 @@ public abstract class AbstractPreparedSqlCommand implements PreparedSqlCommand {
     }
 
     @Override
+    public String getSql() {
+        return preparedSql;
+    }
+
+    @Override
     public SqlResult execute() {
         try {
             ResultSetMetaData rsmd = ps.getMetaData();

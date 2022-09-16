@@ -14,4 +14,6 @@ public interface SqlCommand {
     SqlResult execute();
 
     void defaultSchema(String schema);
+
+    String getSql();
 }

@@ -1,10 +1,18 @@
 <configuration>
-    <appender name="file" class="ch.qos.logback.core.FileAppender">
+    <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${SQLDOG_HOME}/logs/sqldog.log</file>
         <encoder>
             <!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符-->
             <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{35} - %msg%n</pattern>
         </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- 日志文件名格式 -->
+            <fileNamePattern>${SQLDOG_HOME}/logs/sqldog.%d{yyyy-MM-dd}-%i.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
     </appender>
 
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
@@ -12,6 +20,27 @@
             <pattern>[%thread] %d{yyyy-MM-dd HH:mm:ss} %-5level %logger{35} - %msg%n </pattern>
         </encoder>
     </appender>
+
+    <appender name="slowLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${SQLDOG_HOME}/logs/slow_query.log</file>
+        <!-- 循环政策：基于时间创建日志文件 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- 日志文件名格式 -->
+            <fileNamePattern>${log.path}/slow_query.%d{yyyy-MM-dd}-%i.log</fileNamePattern>
+            <!-- 日志保留最大 30个 -->
+            <maxHistory>30</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+        <encoder>
+            <!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符-->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <logger name="slowLog" level="info" additivity="false">
+        <appender-ref ref="slowLog"/>
+    </logger>
     <root level="info">
         <appender-ref ref="file" />
         <appender-ref ref="stdout" />
