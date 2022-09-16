@@ -186,6 +186,8 @@ public class CalciteSqlParser extends SqlParserImpl {
                 handleBasicCall((SqlBasicCall) targetTable);
             } else if (targetTable instanceof SqlJoin) {
                 handleJoin((SqlJoin) targetTable);
+            } else if (targetTable instanceof SqlSelect) {
+                handleSelect((SqlSelect) targetTable);
             }
         }
     }
@@ -266,6 +268,8 @@ public class CalciteSqlParser extends SqlParserImpl {
             SqlNode o1 = sqlBasicCall.getOperandList().get(0);
             if (o1 instanceof SqlIdentifier) {
                 handleIdentifier((SqlIdentifier)o1);
+            } else if (o1 instanceof SqlSelect) {
+                handleSelect((SqlSelect) o1);
             }
         } else {
             for (SqlNode sqlNode : sqlBasicCall.getOperandList()) {
