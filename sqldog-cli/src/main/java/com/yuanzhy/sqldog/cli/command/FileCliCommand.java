@@ -34,8 +34,10 @@ public class FileCliCommand extends RemoteCliCommand {
             }
             System.out.println();
             recursiveExec(file);
+            System.exit(0);
         } catch (Exception e) {
             printError(e);
+            System.exit(1);
         } finally {
             close();
         }

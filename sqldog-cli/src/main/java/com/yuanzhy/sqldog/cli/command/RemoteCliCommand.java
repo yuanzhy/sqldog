@@ -58,8 +58,10 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
             System.out.println("execute command: " + sql);
             System.out.println();
             execute(Boolean.FALSE, conn.createStatement(), sql);
+            System.exit(0);
         } catch (SQLException e) {
             printError(e);
+            System.exit(1);
         } finally {
             close();
         }
@@ -129,10 +131,8 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
     public void close() {
         try {
             conn.close();
-            System.exit(0);
         } catch (SQLException e) {
             printError(e);
-            System.exit(1);
         }
     }
 
@@ -160,7 +160,7 @@ public abstract class RemoteCliCommand implements CliCommand, Closeable {
 
     public void execute(boolean useMore, Statement stmt, String... sqls) throws SQLException {
         for (int i = 0; i < sqls.length; i++) {
-            String[] arr = sqls[i].split("(;\\s+\n)");
+            String[] arr = sqls[i].split("(;\\s*\n)");
             for (String sql : arr) {
                 if (StringUtils.isBlank(sql)) {
                     continue;

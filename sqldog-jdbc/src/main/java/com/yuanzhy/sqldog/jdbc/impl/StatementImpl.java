@@ -62,19 +62,14 @@ class StatementImpl extends AbstractStatement implements Statement {
     protected void executeInternal(String sql) throws SQLException {
         beforeExecute();
         try {
-            this.sql = sql;
-            if (sql.contains(";")) {
-                String[] arr = sql.split("(;\\s*\n?)");
-                if (arr.length == 1) {
-                    SqlResult sqlResult = connection.execute(this, sql);
-                    this.handleResult(sqlResult);
-                } else {
-                    SqlResult[] sqlResults = connection.execute(this, 0, arr);
-                    this.handleResult(sqlResults);
-                }
-            } else {
+            List<String> sqlList = Util.splitSqlScript(sql, ";");
+            this.sql = sqlList.get(sqlList.size() - 1);
+            if (sqlList.size() == 1) {
                 SqlResult sqlResult = connection.execute(this, sql);
                 this.handleResult(sqlResult);
+            } else {
+                SqlResult[] sqlResults = connection.execute(this, 0, sqlList.toArray(new String[0]));
+                this.handleResult(sqlResults);
             }
         } finally {
             afterExecute();

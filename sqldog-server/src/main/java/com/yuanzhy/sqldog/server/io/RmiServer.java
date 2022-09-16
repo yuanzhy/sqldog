@@ -58,11 +58,11 @@ public class RmiServer implements Server {
             // 利用stub代理就可以访问远程服务对象了。
             Service remoteHandler = new RMIService();
             System.setProperty("java.rmi.server.hostname", host);
-//            System.setProperty("com.rmi.service.hostname", host);
+            System.setProperty("com.rmi.service.hostname", host);
             Registry registry = LocateRegistry.createRegistry(port);
             registry.bind(Consts.SERVER_NAME, remoteHandler);
             Databases.getDatabase(StorageConst.DEF_DATABASE_NAME); // 触发一下初始化
-            log.info("Sqldog server ready");
+            log.info("Sqldog server ready, bind host is ", host);
             // 添加定时器
             ses.scheduleAtFixedRate(() -> {
                 long now = System.currentTimeMillis();
