@@ -190,7 +190,7 @@ public class TestConn {
 
     private void await() {
         try {
-            Thread.currentThread().join();
+            Thread.currentThread().join(3500);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
