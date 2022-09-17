@@ -25,7 +25,15 @@ public class LRUCache<K, V> extends LinkedHashMap<K, V> {
      */
     @Override
     protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-        return (size() > this.maxElements);
+        boolean needRemove = (size() > this.maxElements);
+        if (needRemove && eldest.getValue() instanceof AutoCloseable) {
+            try {
+                ((AutoCloseable) eldest.getValue()).close();
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+        return needRemove;
     }
 
 }
