@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.io.IOUtils;
@@ -23,7 +25,7 @@ public class ServerConfig implements Config {
     /**
      *
      */
-    protected final Properties props = new Properties();
+    protected final Map<String, String> props = new HashMap<>();
 
     {
         String sqldogHome = System.getProperty("SQLDOG_HOME");
@@ -40,7 +42,9 @@ public class ServerConfig implements Config {
                 log.info("SQLDOG_HOME/conf 目录下没有 sqldog.properties，默认读取jar包中的配置");
                 in = Config.class.getClassLoader().getResourceAsStream("sqldog.properties");
             }
-            props.load(in);
+            Properties p = new Properties();
+            p.load(in);
+            this.props.putAll((Map<String, String>)(Object)p);
         } catch (IOException e) {
             log.error("读取config配置文件失败", e);
         } finally {
@@ -50,6 +54,6 @@ public class ServerConfig implements Config {
 
     @Override
     public String getProperty(String key) {
-        return props.getProperty(key);
+        return props.get(key);
     }
 }

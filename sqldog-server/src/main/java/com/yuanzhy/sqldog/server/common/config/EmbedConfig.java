@@ -2,6 +2,8 @@ package com.yuanzhy.sqldog.server.common.config;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.io.IOUtils;
@@ -21,7 +23,7 @@ public class EmbedConfig implements Config {
     /**
      *
      */
-    private final Properties props = new Properties();
+    private final Map<String, String> props = new HashMap<>();
 
     public EmbedConfig(String filePath) {
         InputStream in = null;
@@ -31,7 +33,9 @@ public class EmbedConfig implements Config {
                 log.info("META-INF/sqldog.properties not exists, load default");
                 in = Config.class.getClassLoader().getResourceAsStream("sqldog.properties");
             }
-            props.load(in);
+            Properties p = new Properties();
+            p.load(in);
+            this.props.putAll((Map<String, String>)(Object)p);
         } catch (IOException e) {
             log.error("读取config配置文件失败", e);
         } finally {
@@ -52,7 +56,7 @@ public class EmbedConfig implements Config {
 
     @Override
     public String getProperty(String key) {
-        return props.getProperty(key);
+        return props.get(key);
     }
 
     @Override

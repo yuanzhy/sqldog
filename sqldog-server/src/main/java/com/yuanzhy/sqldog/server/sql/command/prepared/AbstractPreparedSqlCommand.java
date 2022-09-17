@@ -20,15 +20,19 @@ import com.yuanzhy.sqldog.server.util.Databases;
  * @version 1.0
  * @date 2021/11/21
  */
-public abstract class AbstractPreparedSqlCommand implements PreparedSqlCommand {
+abstract class AbstractPreparedSqlCommand implements PreparedSqlCommand {
 
     protected final String preparedSql;
     protected Schema defaultSchema;
     protected PreparedStatement ps;
-    public AbstractPreparedSqlCommand(String preparedSql) {
+    protected AbstractPreparedSqlCommand(String preparedSql) {
         this.preparedSql = preparedSql;
+        this.ps = this.precompile(preparedSql);
+    }
+
+    protected PreparedStatement precompile(String preparedSql) {
         try {
-            ps = Calcites.getConnection().prepareStatement(preparedSql);
+            return Calcites.getConnection().prepareStatement(preparedSql);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

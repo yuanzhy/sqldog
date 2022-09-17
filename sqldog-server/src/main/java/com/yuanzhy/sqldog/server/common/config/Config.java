@@ -14,7 +14,7 @@ public interface Config {
     String getProperty(String key);
 
     default int getIntProperty(String key) {
-        String value = getProperty(key, null);
+        String value = getProperty(key);
         return Integer.parseInt(value);
     }
 

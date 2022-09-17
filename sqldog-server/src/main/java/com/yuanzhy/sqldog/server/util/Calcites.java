@@ -35,6 +35,7 @@ public class Calcites {
 
     private static final SchemaPlus SCHEMA_PLUS /*= Frameworks.createRootSchema(true)*/;
     private static final FrameworkConfig FRAMEWORK_CONFIG;
+    private static final Planner PLANNER;
     private static final CalciteConnection CONNECTION;
     static {
 //        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"));
@@ -71,10 +72,11 @@ public class Calcites {
                 )
 //                .operatorTable(sqlStdOperatorTable)
                 .build();
+        PLANNER = Frameworks.getPlanner(FRAMEWORK_CONFIG);
     }
 
     public static Planner getPanner() {
-        return Frameworks.getPlanner(FRAMEWORK_CONFIG);
+        return PLANNER;
     }
 
     public static Connection getConnection() {
