@@ -29,6 +29,7 @@
         <module>sqldog-server</module>
         <module>sqldog-dialect</module>
         <module>sqldog-jdbc</module>
+        <module>sqldog-r2dbc</module>
     </modules>
     <dependencies>
         <dependency>

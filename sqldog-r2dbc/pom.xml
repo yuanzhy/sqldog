@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>sqldog</artifactId>
+        <groupId>com.yuanzhy.sqldog</groupId>
+        <version>0.1.2-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>sqldog-r2dbc</artifactId>
+
+    <properties>
+        <reactor.version>3.4.22</reactor.version>
+        <r2dbc-spi.version>1.0.0.RELEASE</r2dbc-spi.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>com.yuanzhy.sqldog</groupId>
+            <artifactId>sqldog-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <version>${reactor.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.r2dbc</groupId>
+            <artifactId>r2dbc-spi</artifactId>
+            <version>${r2dbc-spi.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yuanzhy.sqldog</groupId>
+            <artifactId>sqldog-server</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <version>${reactor.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+</project>
